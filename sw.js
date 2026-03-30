@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'logiwise-step1-v2';
+const CACHE_VERSION = 'logiwise-step2-v1';
 const APP_SHELL = [
   './',
   './index.html',

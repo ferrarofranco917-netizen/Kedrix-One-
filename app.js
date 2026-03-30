@@ -1,7 +1,8 @@
+
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'logiwise.step1.data';
+  const STORAGE_KEY = 'logiwise.step2.data';
   const ROUTES = {
     dashboard: 'Dashboard',
     practices: 'Pratiche',
@@ -17,6 +18,12 @@
   const initialState = {
     currentRoute: 'dashboard',
     sidebarOpen: false,
+    ui: {
+      selectedPracticeId: null,
+      practiceFilter: '',
+      practiceStatusFilter: 'Tutti',
+      practiceSort: 'eta_asc'
+    },
     data: {
       practices: [
         {
@@ -31,7 +38,11 @@
           priority: 'Alta',
           status: 'In attesa documenti',
           docs: { invoice: true, packingList: false, customsMandate: true, bl: true },
-          notes: 'Packing list aggiornata da richiedere al fornitore.'
+          notes: 'Packing list aggiornata da richiedere al fornitore.',
+          timeline: [
+            { when: '2026-03-28 09:20', text: 'Pratica creata' },
+            { when: '2026-03-29 14:10', text: 'Documentazione iniziale ricevuta' }
+          ]
         },
         {
           id: 'PR-2026-002',
@@ -45,7 +56,10 @@
           priority: 'Media',
           status: 'Operativa',
           docs: { invoice: true, packingList: true, customsMandate: true, bl: false },
-          notes: 'Verificare ritiro e conferma mezzo.'
+          notes: 'Verificare ritiro e conferma mezzo.',
+          timeline: [
+            { when: '2026-03-29 10:00', text: 'Ritiro pianificato' }
+          ]
         },
         {
           id: 'PR-2026-003',
@@ -59,7 +73,10 @@
           priority: 'Alta',
           status: 'Sdoganamento',
           docs: { invoice: true, packingList: true, customsMandate: false, bl: true },
-          notes: 'Container duplicato su altra pratica, verificare allineamento dati.'
+          notes: 'Container duplicato su altra pratica, verificare allineamento dati.',
+          timeline: [
+            { when: '2026-03-30 08:45', text: 'Documenti doganali in verifica' }
+          ]
         }
       ],
       logs: []
@@ -74,6 +91,9 @@
   function init() {
     cacheDom();
     bindEvents();
+    if (!state.ui.selectedPracticeId && state.data.practices.length) {
+      state.ui.selectedPracticeId = state.data.practices[0].id;
+    }
     render();
     registerServiceWorker();
   }
@@ -93,6 +113,8 @@
   function bindEvents() {
     document.addEventListener('click', onClick);
     document.addEventListener('submit', onSubmit);
+    document.addEventListener('input', onInput);
+    document.addEventListener('change', onChange);
     window.addEventListener('resize', onResize);
     document.addEventListener('keydown', onKeyDown);
   }
@@ -138,13 +160,37 @@
     const saveBackupBtn = event.target.closest('[data-action="save-local-backup"]');
     if (saveBackupBtn) {
       saveState();
-      toast('Backup locale aggiornato', 'I dati demo e le pratiche inserite sono stati salvati nello storage locale.');
+      toast('Backup locale aggiornato', 'I dati correnti sono stati salvati nello storage locale.', 'success');
       return;
     }
 
     const resetDemoBtn = event.target.closest('[data-action="reset-demo"]');
     if (resetDemoBtn) {
       resetToDemoData();
+      return;
+    }
+
+    const practiceRow = event.target.closest('[data-practice-select]');
+    if (practiceRow) {
+      selectPractice(practiceRow.dataset.practiceSelect);
+      return;
+    }
+
+    const editBtn = event.target.closest('[data-action="load-selected-into-form"]');
+    if (editBtn) {
+      loadSelectedPracticeIntoForm();
+      return;
+    }
+
+    const addTimelineBtn = event.target.closest('[data-action="add-timeline-note"]');
+    if (addTimelineBtn) {
+      addTimelineNote();
+      return;
+    }
+
+    const nextStatusBtn = event.target.closest('[data-action="advance-status"]');
+    if (nextStatusBtn) {
+      advanceSelectedPracticeStatus();
       return;
     }
   }
@@ -154,6 +200,27 @@
     if (!form) return;
     event.preventDefault();
     savePractice(form);
+  }
+
+  function onInput(event) {
+    if (event.target.id === 'practiceSearch') {
+      state.ui.practiceFilter = event.target.value || '';
+      render();
+      return;
+    }
+  }
+
+  function onChange(event) {
+    if (event.target.id === 'practiceStatusFilter') {
+      state.ui.practiceStatusFilter = event.target.value || 'Tutti';
+      render();
+      return;
+    }
+    if (event.target.id === 'practiceSort') {
+      state.ui.practiceSort = event.target.value || 'eta_asc';
+      render();
+      return;
+    }
   }
 
   function onResize() {
@@ -188,17 +255,18 @@
   function renderDashboard() {
     const alerts = computeAlerts();
     const kpi = computeKpi();
-    const upcoming = [...state.data.practices].sort((a, b) => a.eta.localeCompare(b.eta)).slice(0, 5);
+    const upcoming = getVisiblePractices().slice(0, 5);
+    const selected = getSelectedPractice();
 
     return `
       <section class="view-stack">
         <section class="hero-panel">
           <div class="hero-content">
             <span class="eyebrow">Operational control</span>
-            <h2 class="hero-title">Una dashboard riposante, leggibile e pronta a diventare SaaS.</h2>
+            <h2 class="hero-title">Base approvata di STEP 1, ora resa più operativa senza toccare la grafica.</h2>
             <p class="hero-text">
-              LogiWise nasce come strumento di lavoro quotidiano: ordine visivo, segnali chiari,
-              nessun popup di sistema e struttura dati già pronta per passare dal backup locale al cloud.
+              Lo stile rimane congelato. In STEP 2 aggiungiamo selezione pratica, stato operativo,
+              timeline e strumenti reali per lavorare senza regressioni visive.
             </p>
             <div class="action-row">
               <button class="primary-button" type="button" data-action-route="practices">Apri pratiche</button>
@@ -210,12 +278,12 @@
             <div class="stat-card">
               <span class="stat-label">WiseMind alerts</span>
               <span class="stat-value">${alerts.length}</span>
-              <span class="stat-hint">Controlli non bloccanti su dati demo e pratiche inserite.</span>
+              <span class="stat-hint">Segnalazioni raggruppate per operatività, documenti e duplicati.</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">Storage mode</span>
-              <span class="stat-value">Local</span>
-              <span class="stat-hint">Struttura pronta per evoluzione cloud senza sporcare il progetto.</span>
+              <span class="stat-label">Pratica selezionata</span>
+              <span class="stat-value">${selected ? escapeHtml(selected.reference) : '—'}</span>
+              <span class="stat-hint">${selected ? escapeHtml(selected.client) : 'Nessuna pratica selezionata'}</span>
             </div>
           </div>
         </section>
@@ -248,7 +316,7 @@
             <div class="panel-head">
               <div>
                 <h3 class="panel-title">WiseMind™ · Alert operativi</h3>
-                <p class="panel-subtitle">Controlli iniziali: duplicati, documenti mancanti, ETA vicine e coerenza minima dati.</p>
+                <p class="panel-subtitle">Base STEP 1 mantenuta, con ordinamento logico e stessa UX approvata.</p>
               </div>
             </div>
             <div class="alert-list">
@@ -265,80 +333,40 @@
             <div class="panel-head">
               <div>
                 <h3 class="panel-title">Agenda operativa</h3>
-                <p class="panel-subtitle">Pratiche con ETA più vicina o alta priorità.</p>
+                <p class="panel-subtitle">Seleziona una pratica per vederne il dettaglio nello step operativo.</p>
               </div>
             </div>
             <div class="activity-list">
               ${upcoming.map(practice => `
-                <div class="activity-item">
+                <button class="activity-item practice-card-button ${state.ui.selectedPracticeId === practice.id ? 'is-selected' : ''}" type="button" data-practice-select="${escapeHtml(practice.id)}">
                   <div class="activity-top">
                     <span class="activity-title">${escapeHtml(practice.client)}</span>
                     <span class="badge ${badgeSeverityForStatus(practice.status)}">${escapeHtml(practice.status)}</span>
                   </div>
                   <div class="activity-text">${escapeHtml(practice.reference)} · ${escapeHtml(practice.port)} · ETA ${formatDate(practice.eta)}</div>
-                </div>
+                </button>
               `).join('')}
             </div>
           </article>
-        </section>
-
-        <section class="table-panel">
-          <div class="panel-head">
-            <div>
-              <h3 class="panel-title">Snapshot pratiche</h3>
-              <p class="panel-subtitle">Vista sintetica della base operativa corrente.</p>
-            </div>
-            <button class="secondary-button" type="button" data-action-route="practices">Gestisci pratiche</button>
-          </div>
-
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Riferimento</th>
-                  <th>Cliente</th>
-                  <th>Tipo</th>
-                  <th>Container</th>
-                  <th>Porto</th>
-                  <th>ETA</th>
-                  <th>Stato</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${state.data.practices.map(p => `
-                  <tr>
-                    <td>${escapeHtml(p.id)}</td>
-                    <td>${escapeHtml(p.reference)}</td>
-                    <td>${escapeHtml(p.client)}</td>
-                    <td>${escapeHtml(p.type)}</td>
-                    <td>${escapeHtml(p.container || '—')}</td>
-                    <td>${escapeHtml(p.port)}</td>
-                    <td>${escapeHtml(formatDate(p.eta))}</td>
-                    <td><span class="badge ${badgeSeverityForStatus(p.status)}">${escapeHtml(p.status)}</span></td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
         </section>
       </section>
     `;
   }
 
   function renderPractices() {
-    const sorted = [...state.data.practices].sort((a, b) => a.eta.localeCompare(b.eta));
     const alerts = computeAlerts().slice(0, 4);
+    const visiblePractices = getVisiblePractices();
+    const selected = getSelectedPractice();
 
     return `
       <section class="view-stack">
         <section class="hero-panel">
           <div class="hero-content">
             <span class="eyebrow">Practice module</span>
-            <h2 class="hero-title">Modulo pratiche base, già predisposto per backup locale e futuro cloud.</h2>
+            <h2 class="hero-title">Più operatività, stessa grafica blindata di STEP 1.</h2>
             <p class="hero-text">
-              Inserisci pratiche senza popup di sistema. Tutti i feedback appartengono all'app,
-              con focus states chiari e navigazione da tastiera coerente.
+              Aggiungiamo ricerca, filtro, ordinamento, selezione pratica, editing veloce e timeline minima,
+              senza alterare il design approvato.
             </p>
             <div class="action-row">
               <button class="primary-button" type="button" data-action="prefill-practice">Prefill demo</button>
@@ -348,28 +376,56 @@
           </div>
           <div class="hero-side">
             <div class="stat-card">
-              <span class="stat-label">Records</span>
-              <span class="stat-value">${state.data.practices.length}</span>
-              <span class="stat-hint">Pratiche persistite nello storage locale del browser.</span>
+              <span class="stat-label">Records visibili</span>
+              <span class="stat-value">${visiblePractices.length}</span>
+              <span class="stat-hint">Filtro e ordinamento attivi senza refresh pagina.</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">Quick QA</span>
-              <span class="stat-value">${alerts.length}</span>
-              <span class="stat-hint">Segnali principali visibili anche qui.</span>
+              <span class="stat-label">Pratica attiva</span>
+              <span class="stat-value">${selected ? escapeHtml(selected.id) : '—'}</span>
+              <span class="stat-hint">${selected ? escapeHtml(selected.client) : 'Nessuna pratica selezionata'}</span>
             </div>
           </div>
         </section>
 
-        <section class="two-col">
-          <article class="form-panel">
+        <section class="toolbar-panel">
+          <div class="toolbar-grid">
+            <div class="field">
+              <label for="practiceSearch">Ricerca pratica</label>
+              <input id="practiceSearch" type="text" value="${escapeHtml(state.ui.practiceFilter)}" placeholder="Cliente, riferimento, porto, container..." />
+            </div>
+            <div class="field">
+              <label for="practiceStatusFilter">Filtro stato</label>
+              <select id="practiceStatusFilter">
+                ${['Tutti','In attesa documenti','Operativa','Pianificata','Sdoganamento','Chiusa'].map(option => `
+                  <option value="${escapeHtml(option)}" ${state.ui.practiceStatusFilter === option ? 'selected' : ''}>${escapeHtml(option)}</option>
+                `).join('')}
+              </select>
+            </div>
+            <div class="field">
+              <label for="practiceSort">Ordinamento</label>
+              <select id="practiceSort">
+                <option value="eta_asc" ${state.ui.practiceSort === 'eta_asc' ? 'selected' : ''}>ETA più vicina</option>
+                <option value="eta_desc" ${state.ui.practiceSort === 'eta_desc' ? 'selected' : ''}>ETA più lontana</option>
+                <option value="client_asc" ${state.ui.practiceSort === 'client_asc' ? 'selected' : ''}>Cliente A-Z</option>
+                <option value="priority_desc" ${state.ui.practiceSort === 'priority_desc' ? 'selected' : ''}>Priorità alta prima</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="three-col">
+          <article class="panel">
             <div class="panel-head">
               <div>
-                <h3 class="panel-title">Nuova pratica</h3>
-                <p class="panel-subtitle">Salvataggio locale, struttura dati pulita, nessun codice sporco.</p>
+                <h3 class="panel-title">Nuova / Modifica pratica</h3>
+                <p class="panel-subtitle">Seleziona una pratica e caricala nel form, oppure creane una nuova.</p>
               </div>
+              <button class="secondary-button" type="button" data-action="load-selected-into-form">Carica selezionata</button>
             </div>
 
             <form id="practiceForm" novalidate>
+              <input type="hidden" id="practiceEditId" name="editId" value="" />
               <div class="form-grid">
                 <div class="field">
                   <label for="practiceReference">Riferimento pratica</label>
@@ -443,15 +499,62 @@
                 <button class="primary-button" type="submit">Salva pratica</button>
                 <button class="secondary-button" type="reset">Reset</button>
               </div>
-              <p class="meta-note">Usa il tasto Tab per muoverti nel form: tutti i controlli hanno focus state visibile.</p>
+              <p class="meta-note">Il salvataggio aggiorna il backup locale e mantiene la pratica selezionata.</p>
             </form>
           </article>
 
           <article class="panel">
             <div class="panel-head">
               <div>
-                <h3 class="panel-title">Controllo rapido</h3>
-                <p class="panel-subtitle">Stesse regole WiseMind, visibili senza interrompere il flusso.</p>
+                <h3 class="panel-title">Elenco pratiche</h3>
+                <p class="panel-subtitle">Selezione singola, filtri live e ordinamento senza regressioni grafiche.</p>
+              </div>
+            </div>
+
+            <div class="list-scroll">
+              ${visiblePractices.map(practice => `
+                <button class="activity-item practice-card-button ${state.ui.selectedPracticeId === practice.id ? 'is-selected' : ''}" type="button" data-practice-select="${escapeHtml(practice.id)}">
+                  <div class="activity-top">
+                    <span class="activity-title">${escapeHtml(practice.reference)}</span>
+                    <span class="badge ${badgeSeverityForStatus(practice.status)}">${escapeHtml(practice.status)}</span>
+                  </div>
+                  <div class="activity-text">${escapeHtml(practice.client)} · ${escapeHtml(practice.port)} · ETA ${formatDate(practice.eta)}</div>
+                </button>
+              `).join('') || `
+                <div class="alert-item info">
+                  <div class="alert-top"><span class="alert-title">Nessun risultato</span><span class="badge info">INFO</span></div>
+                  <div class="alert-text">Nessuna pratica corrisponde ai filtri selezionati.</div>
+                </div>
+              `}
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3 class="panel-title">Dettaglio pratica</h3>
+                <p class="panel-subtitle">Vista rapida per lavorare senza aprire popup o finestre esterne.</p>
+              </div>
+              <div class="action-row">
+                <button class="secondary-button" type="button" data-action="advance-status">Avanza stato</button>
+                <button class="secondary-button" type="button" data-action="add-timeline-note">Log rapido</button>
+              </div>
+            </div>
+            ${selected ? renderPracticeDetail(selected) : `
+              <div class="alert-item info">
+                <div class="alert-top"><span class="alert-title">Nessuna pratica selezionata</span><span class="badge info">INFO</span></div>
+                <div class="alert-text">Seleziona una pratica dalla colonna centrale.</div>
+              </div>
+            `}
+          </article>
+        </section>
+
+        <section class="two-col">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h3 class="panel-title">Controllo rapido WiseMind</h3>
+                <p class="panel-subtitle">Stesse regole di STEP 1, rese più utili per il lavoro quotidiano.</p>
               </div>
             </div>
             <div class="alert-list">
@@ -463,51 +566,96 @@
               `}
             </div>
           </article>
-        </section>
 
-        <section class="table-panel">
-          <div class="panel-head">
-            <div>
-              <h3 class="panel-title">Elenco pratiche</h3>
-              <p class="panel-subtitle">Vista ordinata per ETA, pronta per evoluzione tabellare più avanzata.</p>
+          <article class="table-panel">
+            <div class="panel-head">
+              <div>
+                <h3 class="panel-title">Vista tabellare</h3>
+                <p class="panel-subtitle">Snapshot professionale coerente con la lista selezionabile.</p>
+              </div>
             </div>
-          </div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Riferimento</th>
-                  <th>Cliente</th>
-                  <th>Tipo</th>
-                  <th>Modalità</th>
-                  <th>Container</th>
-                  <th>Porto</th>
-                  <th>ETA</th>
-                  <th>Priorità</th>
-                  <th>Stato</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${sorted.map(p => `
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
                   <tr>
-                    <td>${escapeHtml(p.id)}</td>
-                    <td>${escapeHtml(p.reference)}</td>
-                    <td>${escapeHtml(p.client)}</td>
-                    <td>${escapeHtml(p.type)}</td>
-                    <td>${escapeHtml(p.mode)}</td>
-                    <td>${escapeHtml(p.container || '—')}</td>
-                    <td>${escapeHtml(p.port)}</td>
-                    <td>${escapeHtml(formatDate(p.eta))}</td>
-                    <td>${escapeHtml(p.priority)}</td>
-                    <td><span class="badge ${badgeSeverityForStatus(p.status)}">${escapeHtml(p.status)}</span></td>
+                    <th>ID</th>
+                    <th>Riferimento</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Modalità</th>
+                    <th>Container</th>
+                    <th>Porto</th>
+                    <th>ETA</th>
+                    <th>Priorità</th>
+                    <th>Stato</th>
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  ${visiblePractices.map(p => `
+                    <tr>
+                      <td>${escapeHtml(p.id)}</td>
+                      <td>${escapeHtml(p.reference)}</td>
+                      <td>${escapeHtml(p.client)}</td>
+                      <td>${escapeHtml(p.type)}</td>
+                      <td>${escapeHtml(p.mode)}</td>
+                      <td>${escapeHtml(p.container || '—')}</td>
+                      <td>${escapeHtml(p.port)}</td>
+                      <td>${escapeHtml(formatDate(p.eta))}</td>
+                      <td>${escapeHtml(p.priority)}</td>
+                      <td><span class="badge ${badgeSeverityForStatus(p.status)}">${escapeHtml(p.status)}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </article>
         </section>
       </section>
+    `;
+  }
+
+  function renderPracticeDetail(practice) {
+    return `
+      <div class="detail-grid">
+        <div class="detail-row"><span class="detail-label">Cliente</span><span class="detail-value">${escapeHtml(practice.client)}</span></div>
+        <div class="detail-row"><span class="detail-label">Riferimento</span><span class="detail-value">${escapeHtml(practice.reference)}</span></div>
+        <div class="detail-row"><span class="detail-label">Container</span><span class="detail-value">${escapeHtml(practice.container || '—')}</span></div>
+        <div class="detail-row"><span class="detail-label">Porto</span><span class="detail-value">${escapeHtml(practice.port)}</span></div>
+        <div class="detail-row"><span class="detail-label">ETA</span><span class="detail-value">${escapeHtml(formatDate(practice.eta))}</span></div>
+        <div class="detail-row"><span class="detail-label">Priorità</span><span class="detail-value">${escapeHtml(practice.priority)}</span></div>
+        <div class="detail-row"><span class="detail-label">Stato</span><span class="detail-value"><span class="badge ${badgeSeverityForStatus(practice.status)}">${escapeHtml(practice.status)}</span></span></div>
+      </div>
+
+      <div class="doc-grid">
+        ${[
+          ['Invoice', practice.docs?.invoice],
+          ['Packing List', practice.docs?.packingList],
+          ['Mandato Doganale', practice.docs?.customsMandate],
+          ['B/L', practice.docs?.bl]
+        ].map(([label, ok]) => `
+          <div class="doc-card ${ok ? 'doc-ok' : 'doc-missing'}">
+            <span>${escapeHtml(label)}</span>
+            <span class="badge ${ok ? 'success' : 'warning'}">${ok ? 'OK' : 'Mancante'}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="panel-subsection">
+        <div class="panel-subtitle" style="margin:0 0 10px;">Note operative</div>
+        <div class="notes-box">${escapeHtml(practice.notes || 'Nessuna nota')}</div>
+      </div>
+
+      <div class="panel-subsection">
+        <div class="panel-subtitle" style="margin:0 0 10px;">Timeline</div>
+        <div class="timeline-list">
+          ${(practice.timeline || []).map(item => `
+            <div class="timeline-item">
+              <div class="timeline-when">${escapeHtml(item.when)}</div>
+              <div class="timeline-text">${escapeHtml(item.text)}</div>
+            </div>
+          `).join('') || '<div class="timeline-item"><div class="timeline-text">Nessun evento registrato.</div></div>'}
+        </div>
+      </div>
     `;
   }
 
@@ -520,8 +668,8 @@
 
   function savePractice(form) {
     const data = new FormData(form);
-    const practice = {
-      id: nextPracticeId(),
+    const editId = val(data.get('editId'));
+    const payload = {
       reference: val(data.get('reference')),
       client: val(data.get('client')),
       type: val(data.get('type')),
@@ -531,26 +679,89 @@
       eta: val(data.get('eta')),
       priority: val(data.get('priority')),
       status: val(data.get('status')),
-      notes: val(data.get('notes')),
-      docs: docsByStatus(val(data.get('status')))
+      notes: val(data.get('notes'))
     };
 
-    if (!practice.reference || !practice.client || !practice.port || !practice.eta) {
+    if (!payload.reference || !payload.client || !payload.port || !payload.eta) {
       toast('Campi obbligatori mancanti', 'Compila riferimento, cliente, porto ed ETA prima del salvataggio.', 'warning');
       return;
     }
 
-    state.data.practices.unshift(practice);
+    if (editId) {
+      const existing = state.data.practices.find(item => item.id === editId);
+      if (!existing) {
+        toast('Pratica non trovata', 'La pratica selezionata non è più disponibile.', 'danger');
+        return;
+      }
+      existing.reference = payload.reference;
+      existing.client = payload.client;
+      existing.type = payload.type;
+      existing.mode = payload.mode;
+      existing.container = payload.container;
+      existing.port = payload.port;
+      existing.eta = payload.eta;
+      existing.priority = payload.priority;
+      existing.status = payload.status;
+      existing.notes = payload.notes;
+      existing.docs = mergeDocsWithStatus(existing.docs, payload.status);
+      existing.timeline = existing.timeline || [];
+      existing.timeline.unshift({
+        when: timestampNow(),
+        text: 'Pratica aggiornata manualmente'
+      });
+      state.ui.selectedPracticeId = existing.id;
+      toast('Pratica aggiornata', `La pratica ${existing.reference} è stata aggiornata.`, 'success');
+    } else {
+      const practice = {
+        id: nextPracticeId(),
+        reference: payload.reference,
+        client: payload.client,
+        type: payload.type,
+        mode: payload.mode,
+        container: payload.container,
+        port: payload.port,
+        eta: payload.eta,
+        priority: payload.priority,
+        status: payload.status,
+        notes: payload.notes,
+        docs: docsByStatus(payload.status),
+        timeline: [
+          { when: timestampNow(), text: 'Pratica creata manualmente' }
+        ]
+      };
+      state.data.practices.unshift(practice);
+      state.ui.selectedPracticeId = practice.id;
+      toast('Pratica salvata', `La pratica ${practice.reference} è stata salvata nel backup locale.`, 'success');
+    }
+
     state.data.logs.unshift({
-      type: 'practice_created',
-      practiceId: practice.id,
+      type: editId ? 'practice_updated' : 'practice_created',
+      practiceId: state.ui.selectedPracticeId,
       at: new Date().toISOString()
     });
-    saveState();
 
+    saveState();
     form.reset();
+    const editField = document.getElementById('practiceEditId');
+    if (editField) editField.value = '';
     render();
-    toast('Pratica salvata', `La pratica ${practice.reference} è stata salvata nel backup locale.`, 'success');
+  }
+
+  function mergeDocsWithStatus(existingDocs, status) {
+    const docs = { ...(existingDocs || {}) };
+    if (status === 'Chiusa') {
+      docs.invoice = true;
+      docs.packingList = true;
+      docs.customsMandate = true;
+      docs.bl = true;
+      return docs;
+    }
+    return {
+      invoice: Boolean(docs.invoice),
+      packingList: Boolean(docs.packingList),
+      customsMandate: Boolean(docs.customsMandate),
+      bl: Boolean(docs.bl)
+    };
   }
 
   function computeKpi() {
@@ -677,19 +888,9 @@
   }
 
   function prefillPracticeForm() {
-    const fields = {
-      reference: document.getElementById('practiceReference'),
-      client: document.getElementById('practiceClient'),
-      type: document.getElementById('practiceType'),
-      mode: document.getElementById('practiceMode'),
-      container: document.getElementById('practiceContainer'),
-      port: document.getElementById('practicePort'),
-      eta: document.getElementById('practiceEta'),
-      priority: document.getElementById('practicePriority'),
-      status: document.getElementById('practiceStatus'),
-      notes: document.getElementById('practiceNotes')
-    };
+    const fields = getPracticeFormFields();
     if (!fields.reference) return;
+    fields.editId.value = '';
     fields.reference.value = `KX-IMP-${String(state.data.practices.length + 1).padStart(4, '0')}`;
     fields.client.value = 'Nuovo Cliente Demo';
     fields.type.value = 'Import';
@@ -702,6 +903,87 @@
     fields.notes.value = 'Verificare documentazione pre-arrival e disponibilità terminal.';
     fields.reference.focus();
     toast('Form precompilato', 'Il form è stato popolato con valori demo modificabili.', 'info');
+  }
+
+  function getPracticeFormFields() {
+    return {
+      editId: document.getElementById('practiceEditId'),
+      reference: document.getElementById('practiceReference'),
+      client: document.getElementById('practiceClient'),
+      type: document.getElementById('practiceType'),
+      mode: document.getElementById('practiceMode'),
+      container: document.getElementById('practiceContainer'),
+      port: document.getElementById('practicePort'),
+      eta: document.getElementById('practiceEta'),
+      priority: document.getElementById('practicePriority'),
+      status: document.getElementById('practiceStatus'),
+      notes: document.getElementById('practiceNotes')
+    };
+  }
+
+  function loadSelectedPracticeIntoForm() {
+    const selected = getSelectedPractice();
+    if (!selected) {
+      toast('Nessuna pratica selezionata', 'Seleziona prima una pratica dalla lista.', 'warning');
+      return;
+    }
+    const fields = getPracticeFormFields();
+    if (!fields.reference) return;
+    fields.editId.value = selected.id;
+    fields.reference.value = selected.reference;
+    fields.client.value = selected.client;
+    fields.type.value = selected.type;
+    fields.mode.value = selected.mode;
+    fields.container.value = selected.container || '';
+    fields.port.value = selected.port;
+    fields.eta.value = selected.eta;
+    fields.priority.value = selected.priority;
+    fields.status.value = selected.status;
+    fields.notes.value = selected.notes || '';
+    fields.reference.focus();
+    toast('Pratica caricata nel form', `Ora puoi modificare ${selected.reference}.`, 'info');
+  }
+
+  function addTimelineNote() {
+    const selected = getSelectedPractice();
+    if (!selected) {
+      toast('Nessuna pratica selezionata', 'Seleziona una pratica prima di aggiungere un log rapido.', 'warning');
+      return;
+    }
+    selected.timeline = selected.timeline || [];
+    selected.timeline.unshift({
+      when: timestampNow(),
+      text: 'Log rapido inserito dall’operatore'
+    });
+    state.data.logs.unshift({
+      type: 'timeline_added',
+      practiceId: selected.id,
+      at: new Date().toISOString()
+    });
+    saveState();
+    render();
+    toast('Log rapido aggiunto', `Timeline aggiornata per ${selected.reference}.`, 'success');
+  }
+
+  function advanceSelectedPracticeStatus() {
+    const selected = getSelectedPractice();
+    if (!selected) {
+      toast('Nessuna pratica selezionata', 'Seleziona una pratica prima di avanzare lo stato.', 'warning');
+      return;
+    }
+    const flow = ['In attesa documenti', 'Pianificata', 'Operativa', 'Sdoganamento', 'Chiusa'];
+    const currentIndex = flow.indexOf(selected.status);
+    const nextStatus = flow[currentIndex + 1] || flow[0];
+    selected.status = nextStatus;
+    selected.docs = mergeDocsWithStatus(selected.docs, nextStatus);
+    selected.timeline = selected.timeline || [];
+    selected.timeline.unshift({
+      when: timestampNow(),
+      text: `Stato avanzato a "${nextStatus}"`
+    });
+    saveState();
+    render();
+    toast('Stato aggiornato', `${selected.reference} ora è in stato "${nextStatus}".`, 'success');
   }
 
   function futureDate(days) {
@@ -723,6 +1005,51 @@
     if (status === 'In attesa documenti' || status === 'Pianificata') return 'warning';
     if (status === 'Operativa' || status === 'Sdoganamento') return 'info';
     return 'danger';
+  }
+
+  function getVisiblePractices() {
+    const query = normalize(state.ui.practiceFilter);
+    const statusFilter = state.ui.practiceStatusFilter;
+    const sort = state.ui.practiceSort;
+
+    const list = state.data.practices.filter(practice => {
+      const matchesQuery = !query || [
+        practice.id,
+        practice.reference,
+        practice.client,
+        practice.port,
+        practice.container,
+        practice.type
+      ].some(value => normalize(value).includes(query));
+
+      const matchesStatus = statusFilter === 'Tutti' || practice.status === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+
+    list.sort((a, b) => {
+      if (sort === 'eta_desc') return b.eta.localeCompare(a.eta);
+      if (sort === 'client_asc') return a.client.localeCompare(b.client, 'it');
+      if (sort === 'priority_desc') return priorityRank(b.priority) - priorityRank(a.priority);
+      return a.eta.localeCompare(b.eta);
+    });
+
+    return list;
+  }
+
+  function priorityRank(value) {
+    if (value === 'Alta') return 3;
+    if (value === 'Media') return 2;
+    return 1;
+  }
+
+  function getSelectedPractice() {
+    return state.data.practices.find(item => item.id === state.ui.selectedPracticeId) || null;
+  }
+
+  function selectPractice(id) {
+    state.ui.selectedPracticeId = id;
+    saveState();
+    render();
   }
 
   function setRoute(route) {
@@ -773,32 +1100,45 @@
     const fresh = JSON.parse(JSON.stringify(initialState));
     state.currentRoute = fresh.currentRoute;
     state.sidebarOpen = false;
+    state.ui = fresh.ui;
     state.data = fresh.data;
+    state.ui.selectedPracticeId = state.data.practices[0]?.id || null;
     render();
-    toast('Dati demo ripristinati', 'Lo storage locale è stato riportato allo stato iniziale del progetto.', 'success');
+    toast('Dati demo ripristinati', 'Lo storage locale è stato riportato allo stato iniziale di STEP 2.', 'success');
   }
 
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return JSON.parse(JSON.stringify(initialState));
+      if (!raw) return hydrateFromInitial();
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.data || !Array.isArray(parsed.data.practices)) {
-        return JSON.parse(JSON.stringify(initialState));
+        return hydrateFromInitial();
       }
       return {
         currentRoute: parsed.currentRoute && ROUTES[parsed.currentRoute] ? parsed.currentRoute : 'dashboard',
         sidebarOpen: false,
+        ui: {
+          selectedPracticeId: parsed.ui?.selectedPracticeId || null,
+          practiceFilter: parsed.ui?.practiceFilter || '',
+          practiceStatusFilter: parsed.ui?.practiceStatusFilter || 'Tutti',
+          practiceSort: parsed.ui?.practiceSort || 'eta_asc'
+        },
         data: parsed.data
       };
     } catch (error) {
-      return JSON.parse(JSON.stringify(initialState));
+      return hydrateFromInitial();
     }
+  }
+
+  function hydrateFromInitial() {
+    return JSON.parse(JSON.stringify(initialState));
   }
 
   function saveState() {
     const payload = {
       currentRoute: state.currentRoute,
+      ui: state.ui,
       data: state.data
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -809,6 +1149,16 @@
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
+  }
+
+  function timestampNow() {
+    return new Intl.DateTimeFormat('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date());
   }
 
   function normalize(v) {
