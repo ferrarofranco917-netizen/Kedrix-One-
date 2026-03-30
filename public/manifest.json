@@ -1,9 +1,0 @@
-
-{
-"name":"LogiWise",
-"short_name":"LogiWise",
-"start_url":"./index.html",
-"display":"standalone",
-"background_color":"#0F1720",
-"theme_color":"#0F1720"
-}
