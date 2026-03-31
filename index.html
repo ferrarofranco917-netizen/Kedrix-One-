@@ -1,26 +1,60 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kedrix One</title>
-<link rel="stylesheet" href="./style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kedrix One</title>
+  <meta name="theme-color" content="#111A23" />
+  <meta name="description" content="Kedrix One - Operational workspace." />
+  <link rel="icon" href="./favicon.ico" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="./brand/kedrix-one-mark.svg" alt="Kedrix One" class="brand-logo" />
+        <div>
+          <div class="brand-company">Kedrix</div>
+          <div class="brand-product">Kedrix One</div>
+          <div class="brand-subtitle">Operational Workspace</div>
+        </div>
+      </div>
 
-<div id="app">
-  <h1>Kedrix One</h1>
-  <div id="mainContent"></div>
-</div>
+      <nav class="nav-grid">
+        <button class="nav-tab active" data-route="dashboard" type="button">Dashboard</button>
+        <button class="nav-tab" data-route="practices" type="button">Pratiche</button>
+        <button class="nav-tab" data-route="contacts" type="button">Anagrafiche</button>
+        <button class="nav-tab" data-route="documents" type="button">Documenti</button>
+        <button class="nav-tab" data-route="settings" type="button">Impostazioni</button>
+      </nav>
+    </aside>
 
-<div id="appToastRegion"></div>
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Kedrix One</div>
+          <h1 id="pageTitle" class="page-title">Dashboard</h1>
+        </div>
 
-<script src="./js/storage.js"></script>
-<script src="./js/data.js"></script>
-<script src="./js/utils.js"></script>
-<script src="./js/wisemind.js"></script>
-<script src="./js/templates.js"></script>
-<script src="./js/app.js"></script>
+        <div class="topbar-actions">
+          <button class="btn secondary" type="button" data-action="save-backup">Salva backup locale</button>
+          <button class="btn" type="button" data-route-action="practices">Nuova pratica</button>
+        </div>
+      </header>
 
+      <section id="mainContent" class="main-content" tabindex="-1" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <section id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></section>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/data.js"></script>
+  <script src="./js/utils.js"></script>
+  <script src="./js/wisemind.js"></script>
+  <script src="./js/templates.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>
