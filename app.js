@@ -1,1 +1,0 @@
-document.getElementById('mainContent').innerHTML = 'STEP 3 ACTIVE - Kedrix One';
