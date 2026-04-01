@@ -382,6 +382,13 @@
       renderDynamicPanels();
     }
 
+    function syncDerivedPreviewFields() {
+      const currentClientLabel = draft.clientName || I18N.t('ui.clientRequired', 'Cliente');
+      main.querySelectorAll('[data-field-wrap="client"] .derived-chip').forEach((node) => {
+        node.textContent = currentClientLabel;
+      });
+    }
+
     function persistIdentity(options = {}) {
       const shouldRefreshValidation = options.refreshValidation !== false;
       draft.practiceType = practiceType?.value || '';
@@ -392,6 +399,7 @@
       draft.status = practiceStatus?.value || 'In attesa documenti';
       draft.generatedReference = draft.practiceType ? buildCurrentPracticeReference() : '';
       if (generatedReference) generatedReference.value = draft.generatedReference;
+      syncDerivedPreviewFields();
       save();
       if (shouldRefreshValidation) refreshValidationState();
     }
