@@ -329,7 +329,7 @@ window.KedrixOneTemplates = (() => {
           </div>
 
           <div class="practice-search-meta-row">
-            <div class="search-meta-pill">${U.escapeHtml(T.t('ui.indexedFieldsHint', 'Campi indicizzati'))}: ${U.escapeHtml(T.t('ui.indexedFieldsList', 'pratiche · cliente · container · booking · HBL/MBL · AWB/HAWB/MAWB · CMR'))}</div>
+            <div class="search-meta-pill">${U.escapeHtml(T.t('ui.indexedFieldsHint', 'Campi indicizzati'))}: ${U.escapeHtml(T.t('ui.indexedFieldsList', 'pratiche · cliente · container · booking · HBL/MBL · AWB/HAWB/MAWB · CMR · terminal · quotazione · polizza'))}</div>
             <div class="search-meta-pill">${searchQuery ? `${searchResults.length} ${U.escapeHtml(T.t('ui.searchResults', 'risultati'))}` : U.escapeHtml(T.t('ui.searchReady', 'Ricerca pronta'))}</div>
           </div>
 
@@ -345,6 +345,7 @@ window.KedrixOneTemplates = (() => {
                   <div class="search-preview-badges">
                     <span class="badge info">${U.escapeHtml(activeSearchPreview.practiceTypeLabel || activeSearchPreview.practiceType || '—')}</span>
                     <span class="badge ${activeSearchPreview.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(activeSearchPreview.status || '—')}</span>
+                    <button class="btn secondary small-btn" type="button" data-open-practice-id="${U.escapeHtml(activeSearchPreview.id)}">${U.escapeHtml(T.t('ui.openAndEdit', 'Apri e modifica'))}</button>
                   </div>
                 </div>
                 <div class="search-preview-grid">

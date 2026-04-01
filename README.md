@@ -52,3 +52,11 @@ Sostituisci integralmente il contenuto del repo con questo pacchetto oppure appl
 ## STEP 5C.5A — Mare contact + UN/LOCODE
 - `Rif. / Contatto` non usa più l'elenco città: resta un campo libero per riferimento cliente o nominativo contatto.
 - `Porto imbarco` e `Porto sbarco` usano ora suggerimenti UN/LOCODE con normalizzazione city -> code (es. Genova -> ITGOA - Genova).
+
+
+## STEP 5C.5D — Port hardening + sea schema completion
+- archivio `UN/LOCODE` ampliato per i porti mare più ricorrenti, con merge retrocompatibile tra default di prodotto e configurazione già salvata nel browser
+- normalizzazione retrocompatibile dei valori porto nelle pratiche mare esistenti (`Genova` -> `ITGOA - Genova`, ecc.) per tenere coerenti ricerca, riapertura e modifica
+- completamento sicuro dello schema mare con inserimento **solo dei campi mancanti** e skip automatico dei duplicati già presenti
+- nuovi campi mare aggiunti: corrispondente, assicurazione, fatt. estera, deposito, terminal ritiro/consegna, effettuata, scarico, fumigazione, importo fattura, commerciale, sezione doganale, figure aggiuntive, trasportatore, bolla, perizia/cessione, collega a, città consegna, rif. aggiuntivo, tags
+- ricerca base ampliata ai nuovi riferimenti operativi/documentali mare e CTA esplicita `Apri e modifica` anche dall'anteprima risultato

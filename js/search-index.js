@@ -36,6 +36,8 @@ window.KedrixOneSearchIndex = (() => {
     pickupPlace: 'Ritiro',
     deliveryPlace: 'Consegna',
     terminal: 'Terminal',
+    terminalPickup: 'Terminal ritiro',
+    terminalDelivery: 'Terminal consegna',
     deposit: 'Deposito',
     movementDirection: 'Movimento',
     airportDeparture: 'Aeroporto partenza',
@@ -46,13 +48,21 @@ window.KedrixOneSearchIndex = (() => {
     importer: 'Importatore',
     shipper: 'Speditore',
     customsOffice: 'Dogana',
+    customsSection: 'Sezione doganale',
     baseQuotation: 'Quotazione',
     policyNumber: 'Polizza',
+    transporter: 'Trasportatore',
+    bolla: 'Bolla',
+    foreignInvoice: 'Fatt. estera',
+    invoiceAmount: 'Importo fattura',
+    additionalReference: 'Rif. aggiuntivo',
+    deliveryCity: 'Città consegna',
+    tags: 'Tags',
     originRef: 'Origine',
     destinationRef: 'Destinazione'
   };
 
-  const DYNAMIC_FIELD_REGEX = /(booking|container|bl|bill|lading|awb|mawb|hawb|cmr|client|consignee|shipper|importer|port|terminal|airport|deposit|pickup|delivery|customs|reference|quotation|policy|origin|destination|lot|vehicle|carrier|movement)/i;
+  const DYNAMIC_FIELD_REGEX = /(booking|container|bl|bill|lading|awb|mawb|hawb|cmr|client|consignee|shipper|sender|importer|port|terminal|airport|deposit|pickup|delivery|customs|reference|quotation|policy|origin|destination|lot|vehicle|carrier|transport|movement|invoice|bolla|city|fumig|tag)/i;
 
   function normalize(value) {
     return Utils && typeof Utils.normalize === 'function'

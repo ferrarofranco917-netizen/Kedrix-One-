@@ -83,12 +83,17 @@
   }
 
   function sanitizeLegacyPortSuggestions() {
+    if (!PracticeSchemas || typeof PracticeSchemas.getFieldOptionEntries !== 'function') return;
     const directories = state.companyConfig?.practiceConfig?.directories;
-    if (!directories || typeof PracticeSchemas.getFieldOptionEntries !== 'function') return;
+    if (!directories) return;
     const normalized = PracticeSchemas.getFieldOptionEntries('sea_import', { suggestionKey: 'seaPortLocodes' }, state.companyConfig)
       .map((entry) => sanitizeOptionEntryForRender(entry))
       .filter(Boolean);
     if (!normalized.length) return;
+    const current = Array.isArray(directories.seaPortLocodes) ? directories.seaPortLocodes : [];
+    const currentSerialized = JSON.stringify(current);
+    const normalizedSerialized = JSON.stringify(normalized);
+    if (currentSerialized === normalizedSerialized) return;
     directories.seaPortLocodes = normalized;
     save();
   }
@@ -198,6 +203,15 @@
     return base;
   }
 
+
+  function normalizeSeaPortField(practiceType, fieldName, rawValue) {
+    if (!rawValue || !PracticeSchemas || typeof PracticeSchemas.getField !== 'function' || typeof PracticeSchemas.normalizeSuggestedValue !== 'function') {
+      return rawValue || '';
+    }
+    const field = PracticeSchemas.getField(practiceType, fieldName);
+    return PracticeSchemas.normalizeSuggestedValue(practiceType, field, rawValue, state.companyConfig);
+  }
+
   function normalizePracticeRecordsState() {
     let changed = false;
     state.practices = (state.practices || []).map((practice) => {
@@ -207,19 +221,40 @@
         ...(practice.dynamicLabels || {})
       };
 
+      const normalizedPortLoading = String(practice.practiceType || '').startsWith('sea_')
+        ? normalizeSeaPortField(practice.practiceType, 'portLoading', dynamicData.portLoading || practice.portLoading || '')
+        : (practice.portLoading || dynamicData.portLoading || '');
+      const normalizedPortDischarge = String(practice.practiceType || '').startsWith('sea_')
+        ? normalizeSeaPortField(practice.practiceType, 'portDischarge', dynamicData.portDischarge || practice.portDischarge || '')
+        : (practice.portDischarge || dynamicData.portDischarge || '');
+
+      if (normalizedPortLoading) dynamicData.portLoading = normalizedPortLoading;
+      if (normalizedPortDischarge) dynamicData.portDischarge = normalizedPortDischarge;
+
       const next = {
         ...practice,
         dynamicData,
         dynamicLabels,
-        terminal: practice.terminal || dynamicData.terminal || '',
+        portLoading: normalizedPortLoading,
+        portDischarge: normalizedPortDischarge,
+        port: normalizedPortDischarge || practice.port || '',
+        terminal: practice.terminal || dynamicData.terminal || dynamicData.terminalPickup || dynamicData.terminalDelivery || '',
+        terminalPickup: practice.terminalPickup || dynamicData.terminalPickup || '',
+        terminalDelivery: practice.terminalDelivery || dynamicData.terminalDelivery || '',
         mbl: practice.mbl || dynamicData.mbl || '',
         hbl: practice.hbl || dynamicData.hbl || '',
         mawb: practice.mawb || dynamicData.mawb || '',
         hawb: practice.hawb || dynamicData.hawb || '',
         cmr: practice.cmr || dynamicData.cmr || '',
         carrier: practice.carrier || dynamicData.carrier || '',
+        transporter: practice.transporter || dynamicData.transporter || '',
         airline: practice.airline || dynamicData.airline || '',
-        deposit: practice.deposit || dynamicData.deposit || ''
+        deposit: practice.deposit || dynamicData.deposit || '',
+        baseQuotation: practice.baseQuotation || dynamicData.baseQuotation || '',
+        policyNumber: practice.policyNumber || dynamicData.policyNumber || '',
+        deliveryCity: practice.deliveryCity || dynamicData.deliveryCity || '',
+        additionalReference: practice.additionalReference || dynamicData.additionalReference || '',
+        bolla: practice.bolla || dynamicData.bolla || ''
       };
 
       if (JSON.stringify(next) !== JSON.stringify(practice)) changed = true;
@@ -793,6 +828,15 @@
       const dynamicLabels = buildDynamicLabelsForType(draft.practiceType);
 
       const existingRecord = draft.editingPracticeId ? state.practices.find((item) => item.id === draft.editingPracticeId) : null;
+      const normalizedSeaPortLoading = draft.practiceType && draft.practiceType.startsWith('sea_')
+        ? normalizeSeaPortField(draft.practiceType, 'portLoading', draft.dynamicData.portLoading || '')
+        : (draft.dynamicData.portLoading || '');
+      const normalizedSeaPortDischarge = draft.practiceType && draft.practiceType.startsWith('sea_')
+        ? normalizeSeaPortField(draft.practiceType, 'portDischarge', draft.dynamicData.portDischarge || '')
+        : (draft.dynamicData.portDischarge || '');
+      if (normalizedSeaPortLoading) draft.dynamicData.portLoading = normalizedSeaPortLoading;
+      if (normalizedSeaPortDischarge) draft.dynamicData.portDischarge = normalizedSeaPortDischarge;
+
       const record = {
         id: draft.editingPracticeId || Utils.nextPracticeId(state.practices),
         reference: draft.generatedReference || buildCurrentPracticeReference(),
@@ -810,23 +854,32 @@
         priority: existingRecord?.priority || 'Media',
         importer: draft.dynamicData.importer || '',
         consignee: draft.dynamicData.consignee || '',
-        portLoading: draft.dynamicData.portLoading || draft.dynamicData.airportDeparture || '',
-        portDischarge: draft.dynamicData.portDischarge || draft.dynamicData.airportDestination || '',
+        portLoading: normalizedSeaPortLoading || draft.dynamicData.airportDeparture || draft.dynamicData.portLoading || '',
+        portDischarge: normalizedSeaPortDischarge || draft.dynamicData.airportDestination || draft.dynamicData.portDischarge || '',
         containerCode: draft.dynamicData.containerCode || '',
         packageCount: draft.dynamicData.packageCount || '',
         grossWeight: draft.dynamicData.grossWeight || '',
         goodsDescription: draft.dynamicData.goodsDescription || '',
         booking: draft.dynamicData.booking || '',
-        terminal: draft.dynamicData.terminal || '',
+        terminal: draft.dynamicData.terminal || draft.dynamicData.terminalPickup || draft.dynamicData.terminalDelivery || '',
+        terminalPickup: draft.dynamicData.terminalPickup || '',
+        terminalDelivery: draft.dynamicData.terminalDelivery || '',
         mbl: draft.dynamicData.mbl || '',
         hbl: draft.dynamicData.hbl || '',
         mawb: draft.dynamicData.mawb || '',
         hawb: draft.dynamicData.hawb || '',
         cmr: draft.dynamicData.cmr || '',
         carrier: draft.dynamicData.carrier || '',
+        transporter: draft.dynamicData.transporter || '',
         airline: draft.dynamicData.airline || '',
         deposit: draft.dynamicData.deposit || '',
         customsOffice: draft.dynamicData.customsOffice || draft.dynamicData.customsOperator || '',
+        customsSection: draft.dynamicData.customsSection || '',
+        policyNumber: draft.dynamicData.policyNumber || '',
+        baseQuotation: draft.dynamicData.baseQuotation || '',
+        deliveryCity: draft.dynamicData.deliveryCity || '',
+        additionalReference: draft.dynamicData.additionalReference || '',
+        bolla: draft.dynamicData.bolla || '',
         eta: draft.dynamicData.arrivalDate || draft.dynamicData.departureDate || draft.dynamicData.deliveryDate || draft.practiceDate,
         type: draft.practiceType.includes('export') ? 'Export' : draft.practiceType.includes('import') ? 'Import' : 'Magazzino',
         port: draft.dynamicData.portDischarge || draft.dynamicData.airportDestination || draft.dynamicData.deliveryPlace || draft.dynamicData.deposit || '',
@@ -874,6 +927,14 @@
         const practiceId = node.dataset.practiceId;
         const source = node.classList.contains('practice-search-result') ? 'search' : 'list';
         openPracticeForEditing(practiceId, { source });
+      });
+    });
+
+    main.querySelectorAll('[data-open-practice-id]').forEach((node) => {
+      node.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const practiceId = node.dataset.openPracticeId;
+        openPracticeForEditing(practiceId, { source: 'search' });
       });
     });
 
