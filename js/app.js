@@ -14,6 +14,9 @@
   const PracticeDraftValidator = window.KedrixOnePracticeDraftValidator;
   const PracticeFormRenderer = window.KedrixOnePracticeFormRenderer;
   const PracticeOpenEdit = window.KedrixOnePracticeOpenEdit;
+  const PracticeIdentity = window.KedrixOnePracticeIdentity;
+  const PracticePersistence = window.KedrixOnePracticePersistence;
+  const PracticeSavePipeline = window.KedrixOnePracticeSavePipeline;
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
 
   const state = Storage.load(() => Data.initialState());
@@ -314,8 +317,9 @@
   }
 
   function ensureDraftPractice() {
-    if (!state.draftPractice) {
-      state.draftPractice = {
+    return PracticeIdentity && typeof PracticeIdentity.ensureDraft === 'function'
+      ? PracticeIdentity.ensureDraft(state)
+      : (state.draftPractice || (state.draftPractice = {
         editingPracticeId: '',
         practiceType: '',
         clientId: '',
@@ -325,12 +329,14 @@
         status: 'In attesa documenti',
         generatedReference: '',
         dynamicData: {}
-      };
-    }
-    return state.draftPractice;
+      }));
   }
 
   function resetPracticeDraft() {
+    if (PracticeIdentity && typeof PracticeIdentity.resetDraft === 'function') {
+      PracticeIdentity.resetDraft(state);
+      return;
+    }
     state.draftPractice = {
       editingPracticeId: '',
       practiceType: '',
@@ -349,6 +355,9 @@
   }
 
   function syncClientMatch(clientName) {
+    if (PracticeIdentity && typeof PracticeIdentity.syncClientMatch === 'function') {
+      return PracticeIdentity.syncClientMatch(state, clientName);
+    }
     const clean = String(clientName || '').trim().toUpperCase();
     const match = (state.clients || []).find((client) => String(client.name || '').trim().toUpperCase() === clean) || null;
     const draft = ensureDraftPractice();
@@ -358,6 +367,13 @@
   }
 
   function buildCurrentPracticeReference() {
+    if (PracticeIdentity && typeof PracticeIdentity.buildCurrentPracticeReference === 'function') {
+      return PracticeIdentity.buildCurrentPracticeReference(state, {
+        getClientById,
+        buildPracticeReference: Utils.buildPracticeReference,
+        buildFallbackPracticeReference: Utils.buildFallbackPracticeReference
+      });
+    }
     const draft = ensureDraftPractice();
     const matchedClient = getClientById(draft.clientId);
     if (matchedClient) return Utils.buildPracticeReference(matchedClient.numberingRule, draft.practiceDate);
@@ -365,6 +381,10 @@
   }
 
   function loadPracticeIntoDraft(practiceId) {
+    if (PracticeIdentity && typeof PracticeIdentity.loadPracticeIntoDraft === 'function') {
+      PracticeIdentity.loadPracticeIntoDraft(state, practiceId, { extractPracticeDynamicData });
+      return;
+    }
     const practice = state.practices.find((item) => item.id === practiceId);
     if (!practice) return;
     state.selectedPracticeId = practice.id;
@@ -578,22 +598,60 @@
 
     function persistIdentity(options = {}) {
       const shouldRefreshValidation = options.refreshValidation !== false;
-      draft.practiceType = practiceType?.value || '';
-      draft.clientName = clientName?.value || '';
-      draft.clientId = clientId?.value || '';
-      draft.practiceDate = practiceDate?.value || new Date().toISOString().slice(0, 10);
-      draft.category = category?.value || '';
-      draft.status = practiceStatus?.value || 'In attesa documenti';
-      draft.generatedReference = draft.practiceType ? buildCurrentPracticeReference() : '';
-      if (generatedReference) generatedReference.value = draft.generatedReference;
+      if (PracticePersistence && typeof PracticePersistence.persistIdentity === 'function') {
+        PracticePersistence.persistIdentity({
+          draft,
+          practiceType,
+          clientName,
+          clientId,
+          practiceDate,
+          category,
+          practiceStatus,
+          generatedReference,
+          buildCurrentPracticeReference,
+          save,
+          updateVerificationBannerState,
+          refreshValidation: shouldRefreshValidation ? refreshValidationState : null
+        });
+      } else {
+        draft.practiceType = practiceType?.value || '';
+        draft.clientName = clientName?.value || '';
+        draft.clientId = clientId?.value || '';
+        draft.practiceDate = practiceDate?.value || new Date().toISOString().slice(0, 10);
+        draft.category = category?.value || '';
+        draft.status = practiceStatus?.value || 'In attesa documenti';
+        draft.generatedReference = draft.practiceType ? buildCurrentPracticeReference() : '';
+        if (generatedReference) generatedReference.value = draft.generatedReference;
+        save();
+        updateVerificationBannerState(draft);
+        if (shouldRefreshValidation) refreshValidationState();
+      }
       syncDerivedPreviewFields();
-      save();
-      updateVerificationBannerState(draft);
-      if (shouldRefreshValidation) refreshValidationState();
     }
 
     function bindDynamicPersistence() {
       if (!dynamicFields) return;
+      if (PracticePersistence && typeof PracticePersistence.bindDynamicFieldPersistence === 'function') {
+        PracticePersistence.bindDynamicFieldPersistence({
+          root: dynamicFields,
+          draft,
+          normalizeValue: (fieldName, rawValue, node) => {
+            let nextValue = rawValue;
+            if (draft.practiceType && typeof PracticeSchemas.getField === 'function' && typeof PracticeSchemas.normalizeSuggestedValue === 'function') {
+              const field = PracticeSchemas.getField(draft.practiceType, fieldName);
+              nextValue = PracticeSchemas.normalizeSuggestedValue(draft.practiceType, field, rawValue, state.companyConfig);
+              if (!Array.isArray(nextValue) && node && nextValue !== node.value) node.value = nextValue;
+            }
+            return nextValue;
+          },
+          save: () => {
+            save();
+            refreshValidationState();
+          },
+          updateVerificationBannerState
+        });
+        return;
+      }
       dynamicFields.querySelectorAll('input, select, textarea').forEach((node) => {
         if (node.dataset.boundDraft === '1') return;
         node.dataset.boundDraft = '1';
@@ -698,6 +756,34 @@
 
       state._practiceValidationErrors = [];
       clearValidationState();
+
+      if (PracticeSavePipeline && typeof PracticeSavePipeline.saveDraft === 'function') {
+        const result = PracticeSavePipeline.saveDraft({
+          state,
+          draft,
+          i18n: I18N,
+          getClientById,
+          getPracticeSchema,
+          buildDynamicLabelsForType,
+          normalizeSeaPortField,
+          practiceTypeLabel,
+          buildCurrentPracticeReference,
+          nextPracticeId: Utils.nextPracticeId,
+          commitPracticeNumber: Utils.commitPracticeNumber,
+          nextLogId: Utils.nextLogId,
+          nowStamp: Utils.nowStamp,
+          toast,
+          save,
+          render,
+          loadPracticeIntoDraft,
+          focusPracticeEditor
+        });
+        if (!result.ok && Array.isArray(result.errors) && result.errors.length) {
+          state._practiceValidationErrors = result.errors;
+          applyValidationState(result.errors);
+        }
+        return;
+      }
 
       const schema = getPracticeSchema(draft.practiceType);
       const dynamicLabels = buildDynamicLabelsForType(draft.practiceType);

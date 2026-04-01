@@ -78,3 +78,12 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 - `js/search/practice-search-ui.js` introdotto per gestire query input e runtime UI della ricerca pratiche.
 - `index.html` aggiornato per caricare i nuovi moduli prima di `app.js`.
 - `js/app.js` alleggerito: la logica autonoma search/open/edit non viene più stratificata nel file principale.
+
+
+## STEP 5C.6 — Practice Identity / Persistence / Save Pipeline Modularization
+- `js/practices/identity.js` introdotto per centralizzare draft identity, reset, load in edit e base clone-safe per il prossimo step di duplicazione pratica.
+- `js/practices/persistence.js` introdotto per isolare persistenza del draft identity/dynamic fields e ridurre la pressione di `app.js` durante input/change/blur.
+- `js/practices/save-pipeline.js` introdotto per isolare build record, hook pre-save, commit/update record, log operatore e toast di salvataggio.
+- `index.html` aggiornato per caricare i nuovi moduli practices prima di `app.js`.
+- `js/app.js` alleggerito: identity, persistence e save pipeline passano a moduli dedicati mantenendo il comportamento esistente.
+- Base pronta per i prossimi step: duplicazione pratica, controlli container/pre-save, allegati pratica e ulteriori regole di integrità dati.
