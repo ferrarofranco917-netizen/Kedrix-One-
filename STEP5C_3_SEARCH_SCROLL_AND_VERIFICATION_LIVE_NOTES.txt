@@ -1,4 +1,0 @@
-STEP 5C.3
-- hard fix apertura pratica da ricerca con scroll affidabile verso editor
-- banner verifica sempre disponibile e aggiornato live
-- parsing flag verifica robusto (array/stringhe)
