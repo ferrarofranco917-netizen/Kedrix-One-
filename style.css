@@ -337,7 +337,9 @@ img {
   border: 1px solid rgba(199, 82, 82, 0.35);
   background: rgba(199, 82, 82, 0.08);
 }
-
+.validation-summary[hidden] {
+  display: none !important;
+}
 .validation-summary-title {
   font-size: 14px;
   font-weight: 700;
