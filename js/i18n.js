@@ -626,6 +626,62 @@ Object.assign(dictionary.en.ui, {
   newDraft: 'New practice'
 });
 
+
+
+Object.assign(dictionary.it.ui, {
+  shipper: 'Speditore',
+  practiceConsolidationReady: 'Consolidamento pratiche operativo',
+  step5cIntro: 'Il modulo Pratiche ora valida i campi in modo coerente per tipologia, filtra categorie operative, usa Incoterms configurabili e prepara i collegamenti interni verso anagrafica cliente e futura fatturazione.',
+  categoryHint: 'La categoria viene filtrata in base al tipo pratica selezionato.',
+  validationCoverage: 'Validazione per tipo pratica',
+  incotermConfigHint: 'Incoterms dinamici da configurazione aziendale',
+  mappingHint: 'Mapping operativo coerente per mare / aerea / terra / magazzino',
+  billingLinkStatus: 'Stato collegamento fatturazione',
+  billingLinkPending: 'Da collegare',
+  validationPracticeTypeRequired: 'Seleziona il tipo pratica.',
+  validationClientRequired: 'Compila il cliente.',
+  validationPracticeDateRequired: 'Compila la data pratica.',
+  validationInvalidPracticeType: 'Tipologia pratica non riconosciuta.',
+  validationCategoryRequired: 'Seleziona la categoria coerente con il tipo pratica.',
+  validationCategoryInvalid: 'Categoria non coerente con la tipologia selezionata.',
+  validationFieldRequired: 'Campo obbligatorio.',
+  validationPositiveNumber: 'Inserisci un valore numerico valido e non negativo.',
+  validationSelectInvalid: 'Seleziona un valore previsto dalla configurazione.',
+  validationContainerRequired: 'Il container è obbligatorio per le pratiche FCL.',
+  validationDeliveryAfterPickup: 'La consegna non può essere precedente alla presa.',
+  validationDepositRequired: 'Seleziona il deposito di riferimento.',
+  validationSummaryTitle: 'Controlli da completare prima del salvataggio',
+  validationSummaryHint: 'Sistema i campi evidenziati: la tab con errori viene segnalata automaticamente.',
+  validationBlockedSave: 'Salvataggio bloccato: completa i controlli evidenziati.'
+});
+
+Object.assign(dictionary.en.ui, {
+  shipper: 'Shipper',
+  practiceConsolidationReady: 'Operational practice consolidation',
+  step5cIntro: 'The Practices module now validates fields consistently by type, filters operational categories, uses configurable Incoterms and prepares internal links toward client master data and future billing.',
+  categoryHint: 'Category options are filtered according to the selected practice type.',
+  validationCoverage: 'Validation by practice type',
+  incotermConfigHint: 'Dynamic Incoterms from company configuration',
+  mappingHint: 'Operational mapping aligned for sea / air / road / warehouse',
+  billingLinkStatus: 'Billing link status',
+  billingLinkPending: 'To be linked',
+  validationPracticeTypeRequired: 'Select the practice type.',
+  validationClientRequired: 'Fill in the client.',
+  validationPracticeDateRequired: 'Fill in the practice date.',
+  validationInvalidPracticeType: 'Unknown practice type.',
+  validationCategoryRequired: 'Select a category consistent with the practice type.',
+  validationCategoryInvalid: 'Category is not consistent with the selected practice type.',
+  validationFieldRequired: 'Required field.',
+  validationPositiveNumber: 'Enter a valid non-negative numeric value.',
+  validationSelectInvalid: 'Select a value allowed by configuration.',
+  validationContainerRequired: 'Container code is required for FCL practices.',
+  validationDeliveryAfterPickup: 'Delivery date cannot be earlier than pickup date.',
+  validationDepositRequired: 'Select the reference warehouse deposit.',
+  validationSummaryTitle: 'Checks to complete before saving',
+  validationSummaryHint: 'Fix the highlighted fields: tabs containing errors are marked automatically.',
+  validationBlockedSave: 'Save blocked: complete the highlighted checks.'
+});
+
   return {
     dictionary,
     setLanguage,

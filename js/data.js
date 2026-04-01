@@ -40,7 +40,27 @@ window.KedrixOneData = (() => {
         disabledSubmodules: [
           'practices/richiesta-fondi',
           'practices/delivery-order'
-        ]
+        ],
+        practiceConfig: {
+          incotermProfiles: {
+            sea: ['EXW', 'FCA', 'FOB', 'CFR', 'CIF', 'DAP', 'DPU', 'DDP'],
+            air: ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'],
+            road: ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'],
+            warehouse: ['EXW', 'FCA', 'DAP', 'DPU', 'DDP']
+          },
+          directories: {
+            seaPorts: ['Genova', 'La Spezia', 'Vado Ligure', 'Shanghai', 'Ningbo', 'Yantian'],
+            airports: ['MXP Milano Malpensa', 'FCO Roma Fiumicino', 'CDG Paris Charles de Gaulle', 'PVG Shanghai Pudong'],
+            shippingCompanies: ['MSC', 'Maersk', 'CMA CGM', 'Hapag-Lloyd'],
+            airlines: ['Lufthansa Cargo', 'Air France KLM Martinair Cargo', 'Qatar Airways Cargo'],
+            carriers: ['TERCOM', 'BRT', 'DHL Freight', 'DB Schenker'],
+            vehicleTypes: ['Bilico centinato', 'Motrice', 'Furgone', 'Container chassis'],
+            logisticsLocations: ['Fossano', 'Torino', 'Genova', 'Milano', 'Lione'],
+            deposits: ['Magazzino interno', 'Deposito doganale', 'Transit point'],
+            warehouseLinks: ['Pratica import', 'Pratica export', 'Transito interno'],
+            customsOffices: ['Genova Porto', 'La Spezia', 'Torino', 'Milano 1']
+          }
+        }
       },
       users: [
         {

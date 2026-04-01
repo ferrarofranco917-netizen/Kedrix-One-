@@ -127,6 +127,7 @@ window.KedrixOneTemplates = (() => {
   }
 
   function practices(state, selected, filtered) {
+    const PracticeSchemas = window.KedrixOnePracticeSchemas;
     const clients = state.clients || [];
     const draft = state.draftPractice || {};
     const practiceTypes = [
@@ -143,23 +144,27 @@ window.KedrixOneTemplates = (() => {
       { key: 'detail', label: T.t('ui.tabDetail', 'Dettaglio') },
       { key: 'notes', label: T.t('ui.tabNotes', 'Note') }
     ];
+    const currentTabKey = state.practiceTab || 'practice';
+    const currentTab = tabs.find((tab) => tab.key === currentTabKey) || tabs[0];
+    const selectedType = practiceTypes.find((item) => item.value === draft.practiceType) || null;
+    const categoryOptions = draft.practiceType ? PracticeSchemas.getCategoryOptions(draft.practiceType) : [];
 
     return `
       <section class="hero">
-        <div class="hero-meta">STEP 5B FIX 2 · ${U.escapeHtml(T.t('ui.dynamicSchemaReady', 'Schema dinamico per tipologia pratica'))}</div>
+        <div class="hero-meta">STEP 5C · ${U.escapeHtml(T.t('ui.practiceConsolidationReady', 'Consolidamento pratiche operativo'))}</div>
         <h2>${U.escapeHtml(T.moduleLabel('practices', 'Pratiche'))}</h2>
-        <p>${U.escapeHtml(T.t('ui.step5bIntro', ''))}</p>
+        <p>${U.escapeHtml(T.t('ui.step5cIntro', ''))}</p>
       </section>
 
       <section class="kpi-grid compact-kpi-grid">
         <article class="kpi-card">
           <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))}</div>
-          <div class="kpi-value">${draft.practiceType ? U.escapeHtml(T.t(`ui.type_${draft.practiceType}`, draft.practiceType)) : '—'}</div>
+          <div class="kpi-value">${U.escapeHtml(selectedType ? selectedType.label : '—')}</div>
           <div class="kpi-hint">${U.escapeHtml(T.t('ui.dynamicSchemaIntro', ''))}</div>
         </article>
         <article class="kpi-card">
           <div class="kpi-label">${U.escapeHtml(T.t('ui.currentTab', 'Tab attiva'))}</div>
-          <div class="kpi-value">${U.escapeHtml(T.t(`ui.tab${state.practiceTab.charAt(0).toUpperCase() + state.practiceTab.slice(1)}`, state.practiceTab))}</div>
+          <div class="kpi-value">${U.escapeHtml(currentTab.label)}</div>
           <div class="kpi-hint">${U.escapeHtml(T.t('ui.tabInstruction', ''))}</div>
         </article>
         <article class="kpi-card">
@@ -180,53 +185,64 @@ window.KedrixOneTemplates = (() => {
         <form id="practiceForm">
           <div class="practice-form-stack">
             <div class="form-grid three">
-              <div class="field">
-                <label for="practiceType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))} *</label>
+              <div class="field" data-field-wrap="practiceType">
+                <label for="practiceType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))} <span class="required-mark">*</span></label>
                 <select id="practiceType" name="practiceType" required>
                   <option value="">—</option>
                   ${practiceTypes.map((item) => `<option value="${item.value}" ${draft.practiceType === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}
                 </select>
               </div>
 
-              <div class="field" data-practice-dependent>
-                <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} *</label>
+              <div class="field" data-practice-dependent data-field-wrap="clientName">
+                <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} <span class="required-mark">*</span></label>
                 <input id="clientName" name="clientName" list="clientSuggestions" value="${U.escapeHtml(draft.clientName || '')}" autocomplete="off" ${draft.practiceType ? '' : 'disabled'} />
                 <datalist id="clientSuggestions">
                   ${clients.map((client) => `<option value="${U.escapeHtml(client.name)}"></option>`).join('')}
                 </datalist>
+                <div class="field-hint">${U.escapeHtml(T.t('ui.clientSuggestionHint', ''))}</div>
                 <input id="clientId" name="clientId" type="hidden" value="${U.escapeHtml(draft.clientId || '')}" />
               </div>
 
-              <div class="field" data-practice-dependent>
-                <label for="practiceDate">${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))} *</label>
+              <div class="field" data-practice-dependent data-field-wrap="practiceDate">
+                <label for="practiceDate">${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))} <span class="required-mark">*</span></label>
                 <input id="practiceDate" name="practiceDate" type="date" value="${U.escapeHtml(draft.practiceDate || new Date().toISOString().slice(0, 10))}" ${draft.practiceType ? '' : 'disabled'} required />
               </div>
 
-              <div class="field" data-practice-dependent>
+              <div class="field" data-practice-dependent data-field-wrap="generatedReference">
                 <label for="generatedReference">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</label>
                 <input id="generatedReference" name="generatedReference" readonly value="${U.escapeHtml(draft.generatedReference || '')}" ${draft.practiceType ? '' : 'disabled'} />
+                <div class="field-hint">${U.escapeHtml(T.t('ui.profileByClient', 'Numero progressivo generato in base al cliente selezionato.'))}</div>
               </div>
 
-              <div class="field" data-practice-dependent>
-                <label for="category">${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))}</label>
+              <div class="field" data-practice-dependent data-field-wrap="category">
+                <label for="category">${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))} <span class="required-mark">*</span></label>
                 <select id="category" name="category" ${draft.practiceType ? '' : 'disabled'}>
                   <option value="">—</option>
-                  ${['FCL-FULL','LCL-GROUPAGE','TERRA-FULL','GROUPAGE','MAGAZZINO'].map((option) => `<option ${draft.category === option ? 'selected' : ''}>${option}</option>`).join('')}
+                  ${categoryOptions.map((option) => `<option value="${U.escapeHtml(option)}" ${draft.category === option ? 'selected' : ''}>${U.escapeHtml(option)}</option>`).join('')}
                 </select>
+                <div class="field-hint">${U.escapeHtml(T.t('ui.categoryHint', 'La categoria viene filtrata in base al tipo pratica selezionato.'))}</div>
               </div>
 
-              <div class="field" data-practice-dependent>
+              <div class="field" data-practice-dependent data-field-wrap="status">
                 <label for="status">${U.escapeHtml(T.t('ui.status', 'Stato'))}</label>
                 <select id="status" name="status" ${draft.practiceType ? '' : 'disabled'}>
-                  ${['In attesa documenti','Operativa','Sdoganamento','Chiusa'].map((option) => `<option ${draft.status === option ? 'selected' : ''}>${option}</option>`).join('')}
+                  ${['In attesa documenti', 'Operativa', 'Sdoganamento', 'Chiusa'].map((option) => `<option value="${U.escapeHtml(option)}" ${draft.status === option ? 'selected' : ''}>${U.escapeHtml(option)}</option>`).join('')}
                 </select>
               </div>
             </div>
 
             <div class="locked-banner" id="practiceLockedBanner">${U.escapeHtml(T.t('ui.typeBlockedHint', ''))}</div>
 
+            <div id="practiceValidationSummary" class="validation-summary" hidden></div>
+
+            <div class="practice-helper-row" data-practice-dependent>
+              <span class="helper-pill">${U.escapeHtml(T.t('ui.validationCoverage', 'Validazione per tipo pratica'))}</span>
+              <span class="helper-pill">${U.escapeHtml(T.t('ui.incotermConfigHint', 'Incoterms dinamici da configurazione aziendale'))}</span>
+              <span class="helper-pill">${U.escapeHtml(T.t('ui.mappingHint', 'Mapping operativo coerente per mare / aerea / terra / magazzino'))}</span>
+            </div>
+
             <div class="practice-tab-row" id="practiceTabRow">
-              ${tabs.map((tab) => `<button class="practice-tab ${state.practiceTab === tab.key ? 'active' : ''}" type="button" data-practice-tab="${tab.key}">${U.escapeHtml(tab.label)}</button>`).join('')}
+              ${tabs.map((tab) => `<button class="practice-tab ${currentTabKey === tab.key ? 'active' : ''}" type="button" data-practice-tab="${tab.key}">${U.escapeHtml(tab.label)}</button>`).join('')}
             </div>
 
             <div class="panel inset-panel practice-dynamic-panel" data-practice-dependent>
@@ -302,11 +318,11 @@ window.KedrixOneTemplates = (() => {
             ${Object.entries(selected.dynamicData || {}).map(([key, value]) => `
               <div class="detail-row"><div class="detail-label">${U.escapeHtml(selected.dynamicLabels?.[key] || key)}</div><div>${U.escapeHtml(Array.isArray(value) ? value.join(', ') : (value || '—'))}</div></div>
             `).join('')}
+            <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.billingLinkStatus', 'Stato collegamento fatturazione'))}</div><div>${U.escapeHtml(selected.billingLinkStatus || T.t('ui.billingLinkPending', 'Da collegare'))}</div></div>
             <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.notes', 'Note'))}</div><div>${U.escapeHtml(selected.notes || '—')}</div></div>
           </div>` : `<div class="empty-text">${U.escapeHtml(T.t('ui.noSelection', 'Nessuna pratica selezionata.'))}</div>`}
       </section>`;
   }
-
   function contacts(state, module) {
     return `
       <section class="hero">

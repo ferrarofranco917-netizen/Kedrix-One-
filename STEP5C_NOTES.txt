@@ -1,0 +1,22 @@
+KEDRIX ONE — STEP 5C CONSOLIDAMENTO PRATICHE
+
+Applicato con patch modulari e senza refactor distruttivo.
+
+Modifiche principali:
+- validazione avanzata per tipo pratica (mare / aerea / terra / magazzino)
+- campi obbligatori reali per tipologia e per tab
+- categorie dinamiche per tipo pratica
+- Incoterms dinamici letti da companyConfig.practiceConfig
+- mapping suggerimenti operativi per porti / aeroporti / vettori / mezzi / depositi / dogane
+- summary errori + evidenziazione tab con errori
+- collegamento interno base cliente -> pratica -> futura fatturazione
+- fix duplicazione funzione practiceTypeLabel
+- fix KPI tipo pratica nel template
+
+File toccati:
+- js/practice-schemas.js
+- js/app.js
+- js/templates.js
+- js/data.js
+- js/i18n.js
+- style.css

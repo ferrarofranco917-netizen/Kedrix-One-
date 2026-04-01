@@ -76,25 +76,19 @@
     return map[value] || value || '—';
   }
 
-
   function getPracticeSchema(type) {
     return PracticeSchemas.getSchema(type);
   }
 
-  function practiceTypeLabel(value) {
-    const map = {
-      sea_import: I18N.t('ui.typeSeaImport', 'Mare Import'),
-      sea_export: I18N.t('ui.typeSeaExport', 'Mare Export'),
-      air_import: I18N.t('ui.typeAirImport', 'Aerea Import'),
-      air_export: I18N.t('ui.typeAirExport', 'Aerea Export'),
-      road_import: I18N.t('ui.typeRoadImport', 'Terra Import'),
-      road_export: I18N.t('ui.typeRoadExport', 'Terra Export'),
-      warehouse: I18N.t('ui.typeWarehouse', 'Magazzino')
-    };
-    return map[value] || value || '—';
+  function getPracticeCategoryOptions(type) {
+    return PracticeSchemas.getCategoryOptions(type, state.companyConfig);
   }
 
-  function renderDynamicFieldsHTML(type, tab) {
+  function validatePracticeDraft(draft) {
+    return PracticeSchemas.validateDraft(draft, state.companyConfig);
+  }
+
+  function renderDynamicFieldsHTML(type, tab, draft = ensureDraftPractice()) {
     const schema = getPracticeSchema(type);
     if (!schema) {
       return `<div class="empty-text">${Utils.escapeHtml(I18N.t('ui.tabInstruction', 'Seleziona una tipologia pratica per caricare i campi corretti.'))}</div>`;
@@ -106,26 +100,35 @@
     }
 
     return `<div class="dynamic-section-grid">` + fields.map((field) => {
+      const label = `${Utils.escapeHtml(I18N.t(field.labelKey, field.name))}${field.required ? ' <span class="required-mark">*</span>' : ''}`;
+      const wrapClass = `field${field.full ? ' full' : ''}`;
+      const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+      const fieldOptions = PracticeSchemas.getFieldOptions(type, field, state.companyConfig);
+      const currentValue = draft.dynamicData?.[field.name];
+
       if (field.type === 'derived') {
-        return `<div class="field"><label>${Utils.escapeHtml(I18N.t(field.labelKey, field.name))}</label><div class="derived-chip">${Utils.escapeHtml(I18N.t('ui.clientRequired', 'Cliente'))}</div></div>`;
+        return `<div ${wrapAttrs}><label>${label}</label><div class="derived-chip">${Utils.escapeHtml(draft.clientName || I18N.t('ui.clientRequired', 'Cliente'))}</div></div>`;
       }
       if (field.type === 'select-derived') {
         return '';
       }
       if (field.type === 'textarea') {
-        return `<div class="field full"><label for="dyn_${field.name}">${Utils.escapeHtml(I18N.t(field.labelKey, field.name))}</label><textarea id="dyn_${field.name}" name="${field.name}" rows="4"></textarea></div>`;
+        return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><textarea id="dyn_${field.name}" name="${field.name}" rows="4">${Utils.escapeHtml(currentValue || '')}</textarea></div>`;
       }
       if (field.type === 'select') {
-        return `<div class="field"><label for="dyn_${field.name}">${Utils.escapeHtml(I18N.t(field.labelKey, field.name))}</label><select id="dyn_${field.name}" name="${field.name}"><option value="">—</option>${(field.options || []).map((option) => `<option value="${Utils.escapeHtml(option)}">${Utils.escapeHtml(option)}</option>`).join('')}</select></div>`;
+        return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><select id="dyn_${field.name}" name="${field.name}"><option value="">—</option>${fieldOptions.map((option) => `<option value="${Utils.escapeHtml(option)}" ${currentValue === option ? 'selected' : ''}>${Utils.escapeHtml(option)}</option>`).join('')}</select></div>`;
       }
       if (field.type === 'checkbox-group') {
-        return `<div class="field full"><label>${Utils.escapeHtml(I18N.t(field.labelKey, field.name))}</label><div class="checkbox-group">${(field.options || []).map((option) => `<label class="checkbox-chip"><input type="checkbox" name="${field.name}" value="${Utils.escapeHtml(option)}" /> ${Utils.escapeHtml(I18N.t(option, option))}</label>`).join('')}</div></div>`;
+        const currentValues = Array.isArray(currentValue) ? currentValue : [];
+        return `<div ${wrapAttrs}><label>${label}</label><div class="checkbox-group">${(field.options || []).map((option) => `<label class="checkbox-chip"><input type="checkbox" name="${field.name}" value="${Utils.escapeHtml(option)}" ${currentValues.includes(option) ? 'checked' : ''} /> ${Utils.escapeHtml(I18N.t(option, option))}</label>`).join('')}</div></div>`;
       }
-      return `<div class="field"><label for="dyn_${field.name}">${Utils.escapeHtml(I18N.t(field.labelKey, field.name))}</label><input id="dyn_${field.name}" name="${field.name}" type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" ${field.type === 'number' ? 'step="0.01" min="0"' : ''} /></div>`;
+
+      const datalistId = fieldOptions.length && field.type !== 'date' && field.type !== 'number' ? `dyn_list_${field.name}` : '';
+      const datalistHtml = datalistId ? `<datalist id="${datalistId}">${fieldOptions.map((option) => `<option value="${Utils.escapeHtml(option)}"></option>`).join('')}</datalist>` : '';
+      const hintHtml = fieldOptions.length && datalistId ? `<div class="field-hint">${Utils.escapeHtml(I18N.t('ui.clientRuleHint', 'Seleziona un valore coerente con la configurazione operativa.'))}</div>` : '';
+      return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><input id="dyn_${field.name}" name="${field.name}" value="${Utils.escapeHtml(currentValue || '')}" type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" ${field.type === 'number' ? 'step="0.01" min="0"' : ''} ${datalistId ? `list="${datalistId}"` : ''} />${datalistHtml}${hintHtml}</div>`;
     }).join('') + `</div>`;
   }
-
-
 
   function ensureDraftPractice() {
     if (!state.draftPractice) {
@@ -157,6 +160,7 @@
       dynamicData: {}
     };
     state.practiceTab = 'practice';
+    state._practiceValidationErrors = [];
   }
 
   function syncClientMatch(clientName) {
@@ -180,6 +184,7 @@
     if (!practice) return;
     state.selectedPracticeId = practice.id;
     state.practiceTab = 'practice';
+    state._practiceValidationErrors = [];
     state.draftPractice = {
       editingPracticeId: practice.id,
       practiceType: practice.practiceType || '',
@@ -278,36 +283,94 @@
     const generatedReference = document.getElementById('generatedReference');
     const lockedBanner = document.getElementById('practiceLockedBanner');
     const dynamicFields = document.getElementById('practiceDynamicFields');
+    const validationSummary = document.getElementById('practiceValidationSummary');
     const dependentFields = Array.from(main.querySelectorAll('[data-practice-dependent]')).flatMap((node) => {
-      if (['INPUT','SELECT','TEXTAREA','BUTTON'].includes(node.tagName)) return [node];
+      if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(node.tagName)) return [node];
       return Array.from(node.querySelectorAll('input, select, textarea, button'));
     });
 
-    function renderDynamicPanels() {
-      if (!dynamicFields) return;
-      dynamicFields.innerHTML = renderDynamicFieldsHTML(draft.practiceType || '', state.practiceTab || 'practice');
-      Object.entries(draft.dynamicData || {}).forEach(([key, value]) => {
-        const nodes = Array.from(dynamicFields.querySelectorAll(`[name="${key}"]`));
-        if (!nodes.length) return;
-        if (nodes[0].type === 'checkbox') {
-          const values = Array.isArray(value) ? value : [];
-          nodes.forEach((node) => {
-            node.checked = values.includes(node.value) || values.includes(I18N.t(node.value, node.value));
-          });
-        } else {
-          nodes[0].value = value || '';
+    function focusField(fieldName, tab) {
+      const selector = tab === 'identity' ? `#${fieldName}` : `[name="${fieldName}"]`;
+      const node = main.querySelector(selector);
+      if (node && typeof node.focus === 'function') {
+        node.focus({ preventScroll: false });
+        node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+
+    function clearValidationState() {
+      main.querySelectorAll('.field.is-invalid').forEach((node) => node.classList.remove('is-invalid'));
+      main.querySelectorAll('.field-error').forEach((node) => node.remove());
+      main.querySelectorAll('.practice-tab.has-error').forEach((node) => node.classList.remove('has-error'));
+      if (validationSummary) {
+        validationSummary.hidden = true;
+        validationSummary.innerHTML = '';
+      }
+    }
+
+    function applyValidationState(errors) {
+      clearValidationState();
+      if (!Array.isArray(errors) || !errors.length) return;
+
+      const tabsWithErrors = new Set(errors.filter((error) => error.tab && error.tab !== 'identity').map((error) => error.tab));
+      main.querySelectorAll('[data-practice-tab]').forEach((button) => {
+        button.classList.toggle('has-error', tabsWithErrors.has(button.dataset.practiceTab));
+      });
+
+      if (validationSummary) {
+        validationSummary.hidden = false;
+        validationSummary.innerHTML = `
+          <div class="validation-summary-title">${Utils.escapeHtml(I18N.t('ui.validationSummaryTitle', 'Controlli da completare prima del salvataggio'))}</div>
+          <div class="validation-summary-hint">${Utils.escapeHtml(I18N.t('ui.validationSummaryHint', 'Sistema i campi evidenziati: la tab con errori viene segnalata automaticamente.'))}</div>
+          <ul class="validation-summary-list">
+            ${errors.map((error) => `<li><strong>${Utils.escapeHtml(error.label || error.field)}</strong> — ${Utils.escapeHtml(error.message || '')}</li>`).join('')}
+          </ul>`;
+      }
+
+      errors.forEach((error) => {
+        const fieldWrap = main.querySelector(`[data-field-wrap="${error.field}"]`);
+        if (!fieldWrap) return;
+        fieldWrap.classList.add('is-invalid');
+        if (!fieldWrap.querySelector('.field-error')) {
+          const errorNode = document.createElement('div');
+          errorNode.className = 'field-error';
+          errorNode.textContent = error.message || '';
+          fieldWrap.appendChild(errorNode);
         }
       });
+    }
+
+    function refreshValidationState() {
+      if (!Array.isArray(state._practiceValidationErrors) || !state._practiceValidationErrors.length) return;
+      const validation = validatePracticeDraft(draft);
+      state._practiceValidationErrors = validation.errors;
+      if (validation.errors.length) applyValidationState(validation.errors);
+      else clearValidationState();
+    }
+
+    function syncCategoryOptions() {
+      if (!category) return;
+      const options = getPracticeCategoryOptions(draft.practiceType);
+      if (draft.category && !options.includes(draft.category)) draft.category = '';
+      if (!draft.category && options.length === 1) draft.category = options[0];
+      category.innerHTML = `<option value="">—</option>${options.map((option) => `<option value="${Utils.escapeHtml(option)}" ${draft.category === option ? 'selected' : ''}>${Utils.escapeHtml(option)}</option>`).join('')}`;
+      category.disabled = !draft.practiceType;
+    }
+
+    function renderDynamicPanels() {
+      if (!dynamicFields) return;
+      dynamicFields.innerHTML = renderDynamicFieldsHTML(draft.practiceType || '', state.practiceTab || 'practice', draft);
       bindDynamicPersistence();
+      refreshValidationState();
     }
 
     function syncPracticeLock() {
       const unlocked = Boolean(draft.practiceType);
       dependentFields.forEach((field) => {
-  if (field.id === 'practiceType') return;
-  if (field.type === 'hidden') return;
-  field.disabled = !unlocked;
-});
+        if (field.id === 'practiceType' || field.type === 'hidden' || field.readOnly) return;
+        field.disabled = !unlocked;
+      });
+      syncCategoryOptions();
       if (lockedBanner) lockedBanner.style.display = unlocked ? 'none' : 'block';
       if (!unlocked) {
         draft.generatedReference = '';
@@ -315,20 +378,22 @@
       } else {
         draft.generatedReference = buildCurrentPracticeReference();
         if (generatedReference) generatedReference.value = draft.generatedReference;
-        renderDynamicPanels();
       }
+      renderDynamicPanels();
     }
 
-    function persistIdentity() {
+    function persistIdentity(options = {}) {
+      const shouldRefreshValidation = options.refreshValidation !== false;
       draft.practiceType = practiceType?.value || '';
       draft.clientName = clientName?.value || '';
       draft.clientId = clientId?.value || '';
       draft.practiceDate = practiceDate?.value || new Date().toISOString().slice(0, 10);
       draft.category = category?.value || '';
       draft.status = practiceStatus?.value || 'In attesa documenti';
-      draft.generatedReference = buildCurrentPracticeReference();
+      draft.generatedReference = draft.practiceType ? buildCurrentPracticeReference() : '';
       if (generatedReference) generatedReference.value = draft.generatedReference;
       save();
+      if (shouldRefreshValidation) refreshValidationState();
     }
 
     function bindDynamicPersistence() {
@@ -343,6 +408,7 @@
             draft.dynamicData[node.name] = node.value;
           }
           save();
+          refreshValidationState();
         };
         node.addEventListener('input', handler);
         node.addEventListener('change', handler);
@@ -362,29 +428,25 @@
     });
 
     practiceType?.addEventListener('change', () => {
-  draft.practiceType = practiceType.value || '';
-  draft.dynamicData = {};
-  state.practiceTab = 'practice';
+      draft.practiceType = practiceType.value || '';
+      draft.dynamicData = {};
+      draft.category = '';
+      state.practiceTab = 'practice';
+      state._practiceValidationErrors = [];
+      clearValidationState();
+      persistIdentity({ refreshValidation: false });
+      render();
+    });
 
-  persistIdentity();
-
-  if (clientName) clientName.disabled = !draft.practiceType;
-  if (practiceDate) practiceDate.disabled = !draft.practiceType;
-  if (category) category.disabled = !draft.practiceType;
-  if (practiceStatus) practiceStatus.disabled = !draft.practiceType;
-  if (generatedReference) generatedReference.disabled = !draft.practiceType;
-
-  syncPracticeLock();
-});
     clientName?.addEventListener('input', () => {
       const match = syncClientMatch(clientName.value || '');
       if (clientId) clientId.value = match ? match.id : '';
       persistIdentity();
     });
 
-    practiceDate?.addEventListener('change', persistIdentity);
-    category?.addEventListener('change', persistIdentity);
-    practiceStatus?.addEventListener('change', persistIdentity);
+    practiceDate?.addEventListener('change', () => persistIdentity());
+    category?.addEventListener('change', () => persistIdentity());
+    practiceStatus?.addEventListener('change', () => persistIdentity());
 
     main.querySelectorAll('[data-practice-tab]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -396,33 +458,51 @@
 
     form?.addEventListener('submit', (event) => {
       event.preventDefault();
-      persistIdentity();
+      persistIdentity({ refreshValidation: false });
 
-      if (!draft.practiceType || !draft.clientName || !draft.practiceDate) {
-        toast(I18N.t('ui.mandatoryFieldsMissing', 'Compila i campi obbligatori bloccanti prima di salvare la pratica.'));
+      const validation = validatePracticeDraft(draft);
+      if (!validation.valid) {
+        state._practiceValidationErrors = validation.errors;
+        const firstInvalid = validation.errors[0];
+        if (firstInvalid && firstInvalid.tab && firstInvalid.tab !== 'identity' && firstInvalid.tab !== state.practiceTab) {
+          state.practiceTab = firstInvalid.tab;
+          render();
+        } else {
+          applyValidationState(validation.errors);
+          if (firstInvalid) focusField(firstInvalid.field, firstInvalid.tab);
+        }
+        toast(I18N.t('ui.validationBlockedSave', 'Salvataggio bloccato: completa i controlli evidenziati.'));
         return;
       }
 
+      state._practiceValidationErrors = [];
+      clearValidationState();
+
       const schema = getPracticeSchema(draft.practiceType);
       const dynamicLabels = {};
-      const schemaFields = schema ? Object.values(schema.tabs).flat() : [];
+      const schemaFields = schema ? PracticeSchemas.getFields(draft.practiceType) : [];
       schemaFields.forEach((field) => {
-        if (field.type !== 'derived' && field.type !== 'select-derived') dynamicLabels[field.name] = I18N.t(field.labelKey, field.name);
+        if (field.type !== 'derived' && field.type !== 'select-derived') {
+          dynamicLabels[field.name] = I18N.t(field.labelKey, field.name);
+        }
       });
 
+      const existingRecord = draft.editingPracticeId ? state.practices.find((item) => item.id === draft.editingPracticeId) : null;
       const record = {
         id: draft.editingPracticeId || Utils.nextPracticeId(state.practices),
         reference: draft.generatedReference || buildCurrentPracticeReference(),
         clientId: draft.clientId || '',
         client: draft.clientName,
         clientName: draft.clientName,
+        linkedClientId: draft.clientId || '',
+        linkedClientName: draft.clientName,
         practiceType: draft.practiceType,
         practiceTypeLabel: practiceTypeLabel(draft.practiceType),
         schemaGroup: schema ? schema.group : '',
         category: draft.category,
         practiceDate: draft.practiceDate,
         status: draft.status || 'Operativa',
-        priority: 'Media',
+        priority: existingRecord?.priority || 'Media',
         importer: draft.dynamicData.importer || '',
         consignee: draft.dynamicData.consignee || '',
         portLoading: draft.dynamicData.portLoading || draft.dynamicData.airportDeparture || '',
@@ -433,10 +513,12 @@
         goodsDescription: draft.dynamicData.goodsDescription || '',
         booking: draft.dynamicData.booking || '',
         customsOffice: draft.dynamicData.customsOffice || draft.dynamicData.customsOperator || '',
-        eta: draft.dynamicData.arrivalDate || draft.practiceDate,
+        eta: draft.dynamicData.arrivalDate || draft.dynamicData.deliveryDate || draft.practiceDate,
         type: draft.practiceType.includes('export') ? 'Export' : draft.practiceType.includes('import') ? 'Import' : 'Magazzino',
-        port: draft.dynamicData.portDischarge || draft.dynamicData.airportDestination || draft.dynamicData.deliveryPlace || '',
+        port: draft.dynamicData.portDischarge || draft.dynamicData.airportDestination || draft.dynamicData.deliveryPlace || draft.dynamicData.deposit || '',
         notes: draft.dynamicData.internalNotes || '',
+        billingLinkStatus: existingRecord?.billingLinkStatus || I18N.t('ui.billingLinkPending', 'Da collegare'),
+        sourceModule: 'practices',
         dynamicData: { ...(draft.dynamicData || {}) },
         dynamicLabels
       };
@@ -474,134 +556,16 @@
     main.querySelectorAll('tbody tr[data-practice-id]').forEach((row) => {
       row.addEventListener('click', () => {
         loadPracticeIntoDraft(row.dataset.practiceId);
+        state._practiceValidationErrors = [];
         save();
         render();
       });
     });
 
     syncPracticeLock();
-  }
-
-  function bindSettingsEvents() {
-    const plan = document.getElementById('companyPlan');
-    const activeUser = document.getElementById('activeUserId');
-    const settingsModule = document.getElementById('settingsModuleKey');
-    const languageSelect = document.getElementById('languageSelect');
-    const numberingClientId = document.getElementById('numberingClientId');
-    const numberingPrefix = document.getElementById('numberingPrefix');
-    const numberingSeparator = document.getElementById('numberingSeparator');
-    const numberingNextNumber = document.getElementById('numberingNextNumber');
-    const numberingIncludeYear = document.getElementById('numberingIncludeYear');
-    const numberingPreview = document.getElementById('numberingPreview');
-    const saveNumberingRule = document.getElementById('saveNumberingRule');
-
-    plan?.addEventListener('change', (event) => {
-      Licensing.setCompanyPlan(state, event.target.value);
-      state.currentRoute = safeRoute(currentRoute());
-      save();
-      render();
-      toast(`${I18N.t('ui.companyPlan', 'Piano azienda')}: ${String(event.target.value).toUpperCase()}`);
-    });
-
-    activeUser?.addEventListener('change', (event) => {
-      Licensing.setActiveUser(state, event.target.value);
-      state.currentRoute = safeRoute(currentRoute());
-      save();
-      render();
-      toast(I18N.t('ui.activeUserUpdated', 'Utente attivo aggiornato'));
-    });
-
-    settingsModule?.addEventListener('change', (event) => {
-      state.settingsModuleKey = event.target.value;
-      save();
-      render();
-    });
-
-    languageSelect?.addEventListener('change', (event) => {
-      state.language = event.target.value;
-      I18N.setLanguage(state.language);
-      save();
-      render();
-      toast(I18N.t('ui.languageUpdated', 'Lingua aggiornata'));
-    });
-
-    function updateNumberingPreview() {
-      const client = getClientById(numberingClientId?.value);
-      if (!client || !numberingPreview) return;
-      const tempRule = {
-        ...client.numberingRule,
-        prefix: numberingPrefix?.value || '',
-        separator: numberingSeparator?.value || '-',
-        nextNumber: Number(numberingNextNumber?.value || 1),
-        includeYear: Boolean(numberingIncludeYear?.checked)
-      };
-      numberingPreview.value = Utils.buildPracticeReference(tempRule, new Date().toISOString().slice(0, 10));
+    if (Array.isArray(state._practiceValidationErrors) && state._practiceValidationErrors.length) {
+      applyValidationState(state._practiceValidationErrors);
     }
-
-    numberingClientId?.addEventListener('change', (event) => {
-      state.settingsClientId = event.target.value;
-      save();
-      render();
-    });
-
-    numberingPrefix?.addEventListener('input', updateNumberingPreview);
-    numberingSeparator?.addEventListener('input', updateNumberingPreview);
-    numberingNextNumber?.addEventListener('input', updateNumberingPreview);
-    numberingIncludeYear?.addEventListener('change', updateNumberingPreview);
-
-    saveNumberingRule?.addEventListener('click', () => {
-      const client = getClientById(numberingClientId?.value);
-      if (!client) return;
-      client.numberingRule.prefix = String(numberingPrefix?.value || '').trim().toUpperCase();
-      client.numberingRule.separator = String(numberingSeparator?.value || '-');
-      client.numberingRule.nextNumber = Math.max(1, Number(numberingNextNumber?.value || 1));
-      client.numberingRule.includeYear = Boolean(numberingIncludeYear?.checked);
-      state.settingsClientId = client.id;
-      save();
-      render();
-      toast(I18N.t('ui.numberingSaved', 'Regola numerazione cliente aggiornata'));
-    });
-
-    main.querySelectorAll('[data-toggle-company-module]').forEach((button) => {
-      button.addEventListener('click', () => {
-        Licensing.toggleCompanyModule(state, button.dataset.toggleCompanyModule);
-        state.currentRoute = safeRoute(currentRoute());
-        save();
-        render();
-        toast(I18N.t('ui.companyUpdated', 'Acquisti azienda aggiornati'));
-      });
-    });
-
-    main.querySelectorAll('[data-toggle-user-module]').forEach((button) => {
-      button.addEventListener('click', () => {
-        Licensing.toggleUserModule(state, button.dataset.toggleUserModule);
-        state.currentRoute = safeRoute(currentRoute());
-        save();
-        render();
-        toast(I18N.t('ui.userModuleUpdated', 'Permessi modulo utente aggiornati'));
-      });
-    });
-
-    const selectedModule = Modules.getModule(state.settingsModuleKey);
-    main.querySelectorAll('[data-toggle-company-submodule]').forEach((button) => {
-      button.addEventListener('click', () => {
-        Licensing.toggleCompanySubmodule(state, selectedModule, button.dataset.toggleCompanySubmodule);
-        state.currentRoute = safeRoute(currentRoute());
-        save();
-        render();
-        toast(I18N.t('ui.companySubmoduleUpdated', 'Permessi sottomodulo azienda aggiornati'));
-      });
-    });
-
-    main.querySelectorAll('[data-toggle-user-submodule]').forEach((button) => {
-      button.addEventListener('click', () => {
-        Licensing.toggleUserSubmodule(state, selectedModule, button.dataset.toggleUserSubmodule);
-        state.currentRoute = safeRoute(currentRoute());
-        save();
-        render();
-        toast(I18N.t('ui.userSubmoduleUpdated', 'Permessi sottomodulo utente aggiornati'));
-      });
-    });
   }
 
   function renderSidebar() {

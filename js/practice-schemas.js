@@ -1,10 +1,43 @@
 window.KedrixOnePracticeSchemas = (() => {
   'use strict';
 
+  const I18N = window.KedrixOneI18N;
+
   const incoterms2020 = ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP', 'FAS', 'FOB', 'CFR', 'CIF'];
 
+  const defaultPracticeConfig = {
+    incotermProfiles: {
+      sea: ['EXW', 'FCA', 'FOB', 'CFR', 'CIF', 'DAP', 'DPU', 'DDP'],
+      air: ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'],
+      road: ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'],
+      warehouse: ['EXW', 'FCA', 'DAP', 'DPU', 'DDP']
+    },
+    directories: {
+      seaPorts: ['Genova', 'La Spezia', 'Vado Ligure', 'Shanghai', 'Ningbo', 'Yantian', 'Rotterdam'],
+      airports: ['MXP Milano Malpensa', 'FCO Roma Fiumicino', 'CDG Paris Charles de Gaulle', 'PVG Shanghai Pudong', 'HKG Hong Kong'],
+      shippingCompanies: ['MSC', 'Maersk', 'CMA CGM', 'Hapag-Lloyd', 'ONE'],
+      airlines: ['Lufthansa Cargo', 'Air France KLM Martinair Cargo', 'Qatar Airways Cargo', 'Emirates SkyCargo'],
+      carriers: ['TERCOM', 'BRT', 'DHL Freight', 'DB Schenker', 'Lannutti'],
+      vehicleTypes: ['Bilico centinato', 'Motrice', 'Furgone', 'Container chassis', 'Cassonato'],
+      logisticsLocations: ['Fossano', 'Torino', 'Genova', 'Milano', 'Lione'],
+      deposits: ['Magazzino interno', 'Deposito doganale', 'Transit point', 'Cross-dock'],
+      warehouseLinks: ['Pratica import', 'Pratica export', 'Transito interno', 'Deposito temporaneo'],
+      customsOffices: ['Genova Porto', 'La Spezia', 'Torino', 'Milano 1', 'Vado Ligure']
+    }
+  };
+
+  const categoryMap = {
+    sea_import: ['FCL-FULL', 'LCL-GROUPAGE'],
+    sea_export: ['FCL-FULL', 'LCL-GROUPAGE'],
+    air_import: ['AIR-FULL', 'AIR-CONSOL'],
+    air_export: ['AIR-FULL', 'AIR-CONSOL'],
+    road_import: ['TERRA-FULL', 'GROUPAGE'],
+    road_export: ['TERRA-FULL', 'GROUPAGE'],
+    warehouse: ['MAGAZZINO', 'DEPOSITO DOGANALE', 'TRANSITO']
+  };
+
   const sharedNotes = [
-    { name: 'internalNotes', type: 'textarea', labelKey: 'ui.internalNotes', required: false }
+    { name: 'internalNotes', type: 'textarea', labelKey: 'ui.internalNotes', required: false, full: true }
   ];
 
   const schemas = {
@@ -12,34 +45,34 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'sea',
       tabs: {
         practice: [
-          { name: 'importer', type: 'text', labelKey: 'ui.importer' },
-          { name: 'clientContact', type: 'text', labelKey: 'ui.clientContact' },
+          { name: 'importer', type: 'text', labelKey: 'ui.importer', required: true },
+          { name: 'clientContact', type: 'text', labelKey: 'ui.clientContact', suggestionKey: 'logisticsLocations' },
           { name: 'clientAgency', type: 'text', labelKey: 'ui.agency' },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee' },
-          { name: 'company', type: 'text', labelKey: 'ui.shippingCompany' },
-          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading' },
-          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge' },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
+          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPorts' },
+          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPorts' },
           { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage' },
-          { name: 'arrivalDate', type: 'date', labelKey: 'ui.arrivalDate' },
-          { name: 'booking', type: 'text', labelKey: 'ui.booking' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice' },
-          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', options: incoterms2020 },
+          { name: 'arrivalDate', type: 'date', labelKey: 'ui.arrivalDate', required: true },
+          { name: 'booking', type: 'text', labelKey: 'ui.booking', required: true },
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices' },
+          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' },
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
         ],
         detail: [
           { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric' },
-          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription' },
+          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
           { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
-          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount' },
-          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight' },
+          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
+          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'netWeight', type: 'number', labelKey: 'ui.netWeight' },
           { name: 'teu', type: 'number', labelKey: 'ui.teu' },
           { name: 'cbm', type: 'number', labelKey: 'ui.cbm' },
           { name: 'vgm', type: 'text', labelKey: 'ui.vgm' },
-          { name: 'inspectionFlags', type: 'checkbox-group', labelKey: 'ui.verifications', options: ['ui.verifyMerce','ui.verifyDocumentale','ui.verifyScanner','ui.verifySanitario','ui.verifyMagazzino'] }
+          { name: 'inspectionFlags', type: 'checkbox-group', labelKey: 'ui.verifications', options: ['ui.verifyMerce', 'ui.verifyDocumentale', 'ui.verifyScanner', 'ui.verifySanitario', 'ui.verifyMagazzino'], full: true }
         ],
         notes: sharedNotes
       }
@@ -48,32 +81,32 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'sea',
       tabs: {
         practice: [
-          { name: 'shipper', type: 'text', labelKey: 'ui.shipper' },
+          { name: 'shipper', type: 'text', labelKey: 'ui.shipper', required: true },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee' },
-          { name: 'company', type: 'text', labelKey: 'ui.shippingCompany' },
-          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading' },
-          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge' },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
+          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPorts' },
+          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPorts' },
           { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage' },
-          { name: 'departureDate', type: 'date', labelKey: 'ui.departureDate' },
-          { name: 'booking', type: 'text', labelKey: 'ui.booking' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice' },
-          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', options: incoterms2020 },
+          { name: 'departureDate', type: 'date', labelKey: 'ui.departureDate', required: true },
+          { name: 'booking', type: 'text', labelKey: 'ui.booking', required: true },
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices' },
+          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' },
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
         ],
         detail: [
           { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric' },
-          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription' },
+          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
           { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
-          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount' },
-          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight' },
+          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
+          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'netWeight', type: 'number', labelKey: 'ui.netWeight' },
           { name: 'teu', type: 'number', labelKey: 'ui.teu' },
           { name: 'cbm', type: 'number', labelKey: 'ui.cbm' },
           { name: 'vgm', type: 'text', labelKey: 'ui.vgm' },
-          { name: 'inspectionFlags', type: 'checkbox-group', labelKey: 'ui.verifications', options: ['ui.verifyMerce','ui.verifyDocumentale','ui.verifyScanner','ui.verifySanitario','ui.verifyMagazzino'] }
+          { name: 'inspectionFlags', type: 'checkbox-group', labelKey: 'ui.verifications', options: ['ui.verifyMerce', 'ui.verifyDocumentale', 'ui.verifyScanner', 'ui.verifySanitario', 'ui.verifyMagazzino'], full: true }
         ],
         notes: sharedNotes
       }
@@ -82,30 +115,30 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'air',
       tabs: {
         practice: [
-          { name: 'importer', type: 'text', labelKey: 'ui.importer' },
+          { name: 'importer', type: 'text', labelKey: 'ui.importer', required: true },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee' },
-          { name: 'airline', type: 'text', labelKey: 'ui.airline' },
-          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture' },
-          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination' },
-          { name: 'mawb', type: 'text', labelKey: 'ui.mawb' },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'airline', type: 'text', labelKey: 'ui.airline', suggestionKey: 'airlines' },
+          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports' },
+          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports' },
+          { name: 'mawb', type: 'text', labelKey: 'ui.mawb', required: true },
           { name: 'hawb', type: 'text', labelKey: 'ui.hawb' },
-          { name: 'arrivalDate', type: 'date', labelKey: 'ui.arrivalDate' },
+          { name: 'arrivalDate', type: 'date', labelKey: 'ui.arrivalDate', required: true },
           { name: 'booking', type: 'text', labelKey: 'ui.booking' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator' },
-          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', options: incoterms2020 }
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator', required: true, suggestionKey: 'customsOffices' },
+          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
           { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
-          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription' },
-          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount' },
+          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
+          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
           { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
-          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight' },
+          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'chargeableWeight', type: 'number', labelKey: 'ui.chargeableWeight' },
           { name: 'volumeWeight', type: 'number', labelKey: 'ui.volumeWeight' },
           { name: 'cbm', type: 'number', labelKey: 'ui.cbm' },
           { name: 'originDest', type: 'text', labelKey: 'ui.originDestination' },
-          { name: 'warehouseFlag', type: 'checkbox-group', labelKey: 'ui.verifications', options: ['ui.verifyMerce','ui.verifyDocumentale','ui.verifyScanner','ui.verifySanitario'] }
+          { name: 'warehouseFlag', type: 'checkbox-group', labelKey: 'ui.verifications', options: ['ui.verifyMerce', 'ui.verifyDocumentale', 'ui.verifyScanner', 'ui.verifySanitario'], full: true }
         ],
         notes: sharedNotes
       }
@@ -114,25 +147,25 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'air',
       tabs: {
         practice: [
-          { name: 'shipper', type: 'text', labelKey: 'ui.shipper' },
+          { name: 'shipper', type: 'text', labelKey: 'ui.shipper', required: true },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee' },
-          { name: 'airline', type: 'text', labelKey: 'ui.airline' },
-          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture' },
-          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination' },
-          { name: 'mawb', type: 'text', labelKey: 'ui.mawb' },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'airline', type: 'text', labelKey: 'ui.airline', suggestionKey: 'airlines' },
+          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports' },
+          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports' },
+          { name: 'mawb', type: 'text', labelKey: 'ui.mawb', required: true },
           { name: 'hawb', type: 'text', labelKey: 'ui.hawb' },
-          { name: 'departureDate', type: 'date', labelKey: 'ui.departureDate' },
+          { name: 'departureDate', type: 'date', labelKey: 'ui.departureDate', required: true },
           { name: 'booking', type: 'text', labelKey: 'ui.booking' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator' },
-          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', options: incoterms2020 }
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator', required: true, suggestionKey: 'customsOffices' },
+          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
           { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
-          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription' },
-          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount' },
+          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
+          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
           { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
-          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight' },
+          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'chargeableWeight', type: 'number', labelKey: 'ui.chargeableWeight' },
           { name: 'volumeWeight', type: 'number', labelKey: 'ui.volumeWeight' },
           { name: 'cbm', type: 'number', labelKey: 'ui.cbm' },
@@ -145,26 +178,26 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'road',
       tabs: {
         practice: [
-          { name: 'shipper', type: 'text', labelKey: 'ui.sender' },
+          { name: 'shipper', type: 'text', labelKey: 'ui.sender', required: true },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee' },
-          { name: 'carrier', type: 'text', labelKey: 'ui.carrier' },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'carrier', type: 'text', labelKey: 'ui.carrier', required: true, suggestionKey: 'carriers' },
           { name: 'originDest', type: 'text', labelKey: 'ui.originDestination' },
-          { name: 'pickupDate', type: 'date', labelKey: 'ui.pickupDate' },
-          { name: 'deliveryDate', type: 'date', labelKey: 'ui.deliveryDate' },
-          { name: 'vehicleType', type: 'text', labelKey: 'ui.vehicleType' },
+          { name: 'pickupDate', type: 'date', labelKey: 'ui.pickupDate', required: true },
+          { name: 'deliveryDate', type: 'date', labelKey: 'ui.deliveryDate', required: true },
+          { name: 'vehicleType', type: 'text', labelKey: 'ui.vehicleType', required: true, suggestionKey: 'vehicleTypes' },
           { name: 'plateDriver', type: 'text', labelKey: 'ui.plateDriver' },
-          { name: 'pickupPlace', type: 'text', labelKey: 'ui.pickupPlace' },
-          { name: 'deliveryPlace', type: 'text', labelKey: 'ui.deliveryPlace' },
-          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', options: incoterms2020 }
+          { name: 'pickupPlace', type: 'text', labelKey: 'ui.pickupPlace', required: true, suggestionKey: 'logisticsLocations' },
+          { name: 'deliveryPlace', type: 'text', labelKey: 'ui.deliveryPlace', required: true, suggestionKey: 'logisticsLocations' },
+          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
           { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric' },
-          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription' },
-          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount' },
-          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight' },
+          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
+          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
+          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'netWeight', type: 'number', labelKey: 'ui.netWeight' },
           { name: 'cbm', type: 'number', labelKey: 'ui.cbm' },
           { name: 'linearMeters', type: 'number', labelKey: 'ui.linearMeters' },
@@ -177,26 +210,26 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'road',
       tabs: {
         practice: [
-          { name: 'shipper', type: 'text', labelKey: 'ui.sender' },
+          { name: 'shipper', type: 'text', labelKey: 'ui.sender', required: true },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee' },
-          { name: 'carrier', type: 'text', labelKey: 'ui.carrier' },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'carrier', type: 'text', labelKey: 'ui.carrier', required: true, suggestionKey: 'carriers' },
           { name: 'originDest', type: 'text', labelKey: 'ui.originDestination' },
-          { name: 'pickupDate', type: 'date', labelKey: 'ui.pickupDate' },
-          { name: 'deliveryDate', type: 'date', labelKey: 'ui.deliveryDate' },
-          { name: 'vehicleType', type: 'text', labelKey: 'ui.vehicleType' },
+          { name: 'pickupDate', type: 'date', labelKey: 'ui.pickupDate', required: true },
+          { name: 'deliveryDate', type: 'date', labelKey: 'ui.deliveryDate', required: true },
+          { name: 'vehicleType', type: 'text', labelKey: 'ui.vehicleType', required: true, suggestionKey: 'vehicleTypes' },
           { name: 'plateDriver', type: 'text', labelKey: 'ui.plateDriver' },
-          { name: 'pickupPlace', type: 'text', labelKey: 'ui.pickupPlace' },
-          { name: 'deliveryPlace', type: 'text', labelKey: 'ui.deliveryPlace' },
-          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', options: incoterms2020 }
+          { name: 'pickupPlace', type: 'text', labelKey: 'ui.pickupPlace', required: true, suggestionKey: 'logisticsLocations' },
+          { name: 'deliveryPlace', type: 'text', labelKey: 'ui.deliveryPlace', required: true, suggestionKey: 'logisticsLocations' },
+          { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
           { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric' },
-          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription' },
-          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount' },
-          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight' },
+          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
+          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
+          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'netWeight', type: 'number', labelKey: 'ui.netWeight' },
           { name: 'cbm', type: 'number', labelKey: 'ui.cbm' },
           { name: 'linearMeters', type: 'number', labelKey: 'ui.linearMeters' },
@@ -211,10 +244,10 @@ window.KedrixOnePracticeSchemas = (() => {
         practice: [
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
           { name: 'warehouseContact', type: 'text', labelKey: 'ui.clientContact' },
-          { name: 'originDest', type: 'text', labelKey: 'ui.originDestination' },
-          { name: 'lots', type: 'text', labelKey: 'ui.lots' },
-          { name: 'deposit', type: 'text', labelKey: 'ui.deposit' },
-          { name: 'linkedTo', type: 'text', labelKey: 'ui.linkedTo' },
+          { name: 'originDest', type: 'text', labelKey: 'ui.originDestination', required: true, suggestionKey: 'logisticsLocations' },
+          { name: 'lots', type: 'text', labelKey: 'ui.lots', required: true },
+          { name: 'deposit', type: 'text', labelKey: 'ui.deposit', required: true, suggestionKey: 'deposits' },
+          { name: 'linkedTo', type: 'text', labelKey: 'ui.linkedTo', suggestionKey: 'warehouseLinks' },
           { name: 'baseQuotation', type: 'text', labelKey: 'ui.baseQuotation' },
           { name: 'plateDriver', type: 'text', labelKey: 'ui.plateDriver' }
         ],
@@ -222,9 +255,9 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric' },
-          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription' },
-          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount' },
-          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight' },
+          { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
+          { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
+          { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'netWeight', type: 'number', labelKey: 'ui.netWeight' },
           { name: 'cbm', type: 'number', labelKey: 'ui.cbm' },
           { name: 'linearMeters', type: 'number', labelKey: 'ui.linearMeters' },
@@ -235,13 +268,164 @@ window.KedrixOnePracticeSchemas = (() => {
     }
   };
 
+  function getPracticeConfig(companyConfig) {
+    const config = companyConfig && typeof companyConfig === 'object' ? companyConfig.practiceConfig || {} : {};
+    return {
+      incotermProfiles: { ...defaultPracticeConfig.incotermProfiles, ...(config.incotermProfiles || {}) },
+      directories: { ...defaultPracticeConfig.directories, ...(config.directories || {}) }
+    };
+  }
+
   function getSchema(type) {
     return schemas[type] || null;
+  }
+
+  function getGroup(type) {
+    const schema = getSchema(type);
+    return schema ? schema.group : '';
+  }
+
+  function getCategoryOptions(type) {
+    return Array.isArray(categoryMap[type]) ? [...categoryMap[type]] : [];
+  }
+
+  function getIncotermOptions(type, companyConfig) {
+    const group = getGroup(type);
+    const config = getPracticeConfig(companyConfig);
+    const profile = config.incotermProfiles[group];
+    return Array.isArray(profile) && profile.length ? [...profile] : [...incoterms2020];
+  }
+
+  function getFieldOptions(type, field, companyConfig) {
+    if (!field) return [];
+    if (field.optionSource === 'incoterms' || field.name === 'incoterm') {
+      return getIncotermOptions(type, companyConfig);
+    }
+    if (Array.isArray(field.options) && field.options.length) return [...field.options];
+    if (field.suggestionKey) {
+      const config = getPracticeConfig(companyConfig);
+      const values = config.directories[field.suggestionKey];
+      return Array.isArray(values) ? [...values] : [];
+    }
+    return [];
+  }
+
+  function getFields(type) {
+    const schema = getSchema(type);
+    if (!schema) return [];
+    return Object.entries(schema.tabs).flatMap(([tabKey, tabFields]) => (tabFields || []).map((field) => ({ ...field, tab: tabKey })));
+  }
+
+  function getField(type, fieldName) {
+    return getFields(type).find((field) => field.name === fieldName) || null;
+  }
+
+  function fieldLabel(field) {
+    if (!field) return '';
+    return I18N.t(field.labelKey, field.name || '');
+  }
+
+  function isEmptyValue(value) {
+    if (Array.isArray(value)) return value.length === 0;
+    return String(value || '').trim() === '';
+  }
+
+  function buildError(fieldName, tab, type, messageKey, fallbackMessage, overrideLabel) {
+    const field = getField(type, fieldName);
+    return {
+      field: fieldName,
+      tab,
+      label: overrideLabel || fieldLabel(field) || fieldName,
+      message: I18N.t(messageKey, fallbackMessage)
+    };
+  }
+
+  function validateDraft(draft, companyConfig) {
+    const errors = [];
+    const type = draft && draft.practiceType ? draft.practiceType : '';
+    const dynamicData = (draft && draft.dynamicData) || {};
+
+    if (!type) {
+      errors.push({ field: 'practiceType', tab: 'identity', label: I18N.t('ui.practiceType', 'Tipo pratica'), message: I18N.t('ui.validationPracticeTypeRequired', 'Seleziona il tipo pratica.') });
+    }
+    if (isEmptyValue(draft && draft.clientName)) {
+      errors.push({ field: 'clientName', tab: 'identity', label: I18N.t('ui.clientEditable', 'Cliente'), message: I18N.t('ui.validationClientRequired', 'Compila il cliente.') });
+    }
+    if (isEmptyValue(draft && draft.practiceDate)) {
+      errors.push({ field: 'practiceDate', tab: 'identity', label: I18N.t('ui.practiceDate', 'Data pratica'), message: I18N.t('ui.validationPracticeDateRequired', 'Compila la data pratica.') });
+    }
+
+    if (!type) return { valid: errors.length === 0, errors };
+
+    const schema = getSchema(type);
+    if (!schema) {
+      errors.push({ field: 'practiceType', tab: 'identity', label: I18N.t('ui.practiceType', 'Tipo pratica'), message: I18N.t('ui.validationInvalidPracticeType', 'Tipologia pratica non riconosciuta.') });
+      return { valid: false, errors };
+    }
+
+    const allowedCategories = getCategoryOptions(type);
+    if (allowedCategories.length && isEmptyValue(draft && draft.category)) {
+      errors.push({ field: 'category', tab: 'identity', label: I18N.t('ui.categoryLabel', 'Categoria'), message: I18N.t('ui.validationCategoryRequired', 'Seleziona la categoria coerente con il tipo pratica.') });
+    }
+    if (!isEmptyValue(draft && draft.category) && allowedCategories.length && !allowedCategories.includes(draft.category)) {
+      errors.push({ field: 'category', tab: 'identity', label: I18N.t('ui.categoryLabel', 'Categoria'), message: I18N.t('ui.validationCategoryInvalid', 'Categoria non coerente con la tipologia selezionata.') });
+    }
+
+    getFields(type).forEach((field) => {
+      if (field.type === 'derived' || field.type === 'select-derived') return;
+      const value = dynamicData[field.name];
+
+      if (field.required && isEmptyValue(value)) {
+        errors.push(buildError(field.name, field.tab, type, 'ui.validationFieldRequired', `${fieldLabel(field)} obbligatorio.`));
+        return;
+      }
+
+      if (field.type === 'number' && !isEmptyValue(value)) {
+        const numericValue = Number(value);
+        if (Number.isNaN(numericValue) || numericValue < 0) {
+          errors.push(buildError(field.name, field.tab, type, 'ui.validationPositiveNumber', 'Inserisci un valore numerico valido e non negativo.'));
+        }
+      }
+
+      if (field.type === 'select' && !isEmptyValue(value)) {
+        const allowed = getFieldOptions(type, field, companyConfig);
+        if (allowed.length && !allowed.includes(value)) {
+          errors.push(buildError(field.name, field.tab, type, 'ui.validationSelectInvalid', 'Seleziona un valore previsto dalla configurazione.'));
+        }
+      }
+    });
+
+    if (type.startsWith('sea_') && draft.category === 'FCL-FULL' && isEmptyValue(dynamicData.containerCode)) {
+      errors.push(buildError('containerCode', 'detail', type, 'ui.validationContainerRequired', 'Il container è obbligatorio per le pratiche FCL.'));
+    }
+
+    if (type.startsWith('road_')) {
+      const pickupDate = dynamicData.pickupDate;
+      const deliveryDate = dynamicData.deliveryDate;
+      if (!isEmptyValue(pickupDate) && !isEmptyValue(deliveryDate) && deliveryDate < pickupDate) {
+        errors.push(buildError('deliveryDate', 'practice', type, 'ui.validationDeliveryAfterPickup', 'La consegna non può essere precedente alla presa.'));
+      }
+    }
+
+    if (type === 'warehouse' && isEmptyValue(dynamicData.deposit)) {
+      errors.push(buildError('deposit', 'practice', type, 'ui.validationDepositRequired', 'Seleziona il deposito di riferimento.'));
+    }
+
+    return { valid: errors.length === 0, errors };
   }
 
   return {
     incoterms2020,
     schemas,
-    getSchema
+    defaultPracticeConfig,
+    getPracticeConfig,
+    getSchema,
+    getGroup,
+    getFields,
+    getField,
+    getFieldOptions,
+    getCategoryOptions,
+    getIncotermOptions,
+    validateDraft
   };
 })();
