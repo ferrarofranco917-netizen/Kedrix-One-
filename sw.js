@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-step5b-full-v1';
+const CACHE = 'kedrix-one-step5b-fix1-v1';
 const FILES = [
   './',
   './index.html',

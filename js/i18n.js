@@ -382,18 +382,6 @@ window.KedrixOneI18N = (() => {
     return fallback;
   }
 
-  return {
-    dictionary,
-    setLanguage,
-    getLanguage,
-    t,
-    moduleLabel,
-    submoduleLabel,
-    moduleDescription,
-    submoduleDescription
-  };
-})();
-
 
 Object.assign(dictionary.it.ui, {
   practiceRealCore: 'Pratiche reali base',
@@ -612,3 +600,16 @@ Object.assign(dictionary.en.ui, {
   operationalFlow: 'Operational flow'
 });
 
+
+
+  return {
+    dictionary,
+    setLanguage,
+    getLanguage,
+    t,
+    moduleLabel,
+    submoduleLabel,
+    moduleDescription,
+    submoduleDescription
+  };
+})();
