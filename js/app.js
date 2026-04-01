@@ -34,17 +34,60 @@
     Storage.save(state);
   }
 
+  function resolveOptionText(source, fallback = '') {
+    if (source === null || source === undefined) return String(fallback || '').trim();
+    if (typeof source === 'string' || typeof source === 'number' || typeof source === 'boolean') {
+      return String(source).trim();
+    }
+    if (Array.isArray(source)) {
+      for (const item of source) {
+        const resolved = resolveOptionText(item, '');
+        if (resolved) return resolved;
+      }
+      return String(fallback || '').trim();
+    }
+    if (typeof source === 'object') {
+      const candidates = [
+        source.displayValue,
+        source.label,
+        source.value,
+        source.code,
+        source.city,
+        source.name,
+        source.id
+      ];
+      for (const candidate of candidates) {
+        const resolved = resolveOptionText(candidate, '');
+        if (resolved) return resolved;
+      }
+    }
+    return String(fallback || '').trim();
+  }
+
+  function sanitizeOptionEntryForRender(entry) {
+    if (entry === null || entry === undefined) return null;
+    const value = resolveOptionText(entry.value ?? entry, '');
+    if (!value) return null;
+    const label = resolveOptionText(entry.label, '') || resolveOptionText(entry.city, '') || resolveOptionText(entry.name, '') || value;
+    const code = resolveOptionText(entry.code, '');
+    const displayValue = resolveOptionText(entry.displayValue, '') || (label && code ? `${label} · ${code}` : label || value);
+    const aliases = Array.from(new Set([
+      value,
+      label,
+      displayValue,
+      code,
+      resolveOptionText(entry.city, ''),
+      ...(Array.isArray(entry.aliases) ? entry.aliases.map((alias) => resolveOptionText(alias, '')) : [])
+    ].map((item) => String(item || '').trim()).filter(Boolean)));
+    return { value, label, displayValue, aliases };
+  }
+
   function sanitizeLegacyPortSuggestions() {
     const directories = state.companyConfig?.practiceConfig?.directories;
-    if (!directories || !Array.isArray(directories.seaPortLocodes)) return;
-    if (typeof PracticeSchemas.getFieldOptionEntries !== 'function') return;
+    if (!directories || typeof PracticeSchemas.getFieldOptionEntries !== 'function') return;
     const normalized = PracticeSchemas.getFieldOptionEntries('sea_import', { suggestionKey: 'seaPortLocodes' }, state.companyConfig)
-      .map((entry) => ({
-        value: entry.value,
-        label: entry.label,
-        displayValue: entry.displayValue || entry.value,
-        aliases: Array.isArray(entry.aliases) ? entry.aliases : []
-      }));
+      .map((entry) => sanitizeOptionEntryForRender(entry))
+      .filter(Boolean);
     if (!normalized.length) return;
     directories.seaPortLocodes = normalized;
     save();
@@ -325,10 +368,15 @@
       const wrapClass = `field${field.full ? ' full' : ''}`;
       const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
       const fieldOptions = PracticeSchemas.getFieldOptions(type, field, state.companyConfig);
-      const fieldOptionEntries = typeof PracticeSchemas.getFieldOptionEntries === 'function'
+      const fieldOptionEntries = (typeof PracticeSchemas.getFieldOptionEntries === 'function'
         ? PracticeSchemas.getFieldOptionEntries(type, field, state.companyConfig)
-        : fieldOptions.map((option) => ({ value: String(option || ''), label: String(option || ''), aliases: [String(option || '')] }));
-      const currentValue = draft.dynamicData?.[field.name];
+        : fieldOptions.map((option) => ({ value: String(option || ''), label: String(option || ''), aliases: [String(option || '')] })))
+        .map((option) => sanitizeOptionEntryForRender(option))
+        .filter(Boolean);
+      const currentRawValue = draft.dynamicData?.[field.name];
+      const currentValue = typeof currentRawValue === 'object'
+        ? resolveOptionText(currentRawValue, '')
+        : (currentRawValue || '');
 
       if (field.type === 'derived') {
         return `<div ${wrapAttrs}><label>${label}</label><div class="derived-chip">${Utils.escapeHtml(draft.clientName || I18N.t('ui.clientRequired', 'Cliente'))}</div></div>`;
@@ -348,7 +396,12 @@
       }
 
       const datalistId = fieldOptionEntries.length && field.type !== 'date' && field.type !== 'number' ? `dyn_list_${field.name}` : '';
-      const datalistHtml = datalistId ? `<datalist id="${datalistId}">${fieldOptionEntries.map((option) => `<option value="${Utils.escapeHtml(option.displayValue || option.value)}" label="${Utils.escapeHtml(option.label || option.value)}"></option>`).join('')}</datalist>` : '';
+      const datalistHtml = datalistId
+        ? `<datalist id="${datalistId}">${fieldOptionEntries.map((option) => {
+          const displayText = Utils.escapeHtml(resolveOptionText(option.displayValue, '') || resolveOptionText(option.value, ''));
+          return `<option value="${displayText}">${displayText}</option>`;
+        }).join('')}</datalist>`
+        : '';
       const hintKey = field.name === 'portLoading' || field.name === 'portDischarge'
         ? 'ui.unlocodeHint'
         : 'ui.clientRuleHint';

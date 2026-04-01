@@ -344,33 +344,57 @@ window.KedrixOnePracticeSchemas = (() => {
   }
 
 
+  function pickOptionText(source, fallback = '') {
+    if (source === null || source === undefined) return String(fallback || '').trim();
+    if (typeof source === 'string' || typeof source === 'number' || typeof source === 'boolean') {
+      return String(source).trim();
+    }
+    if (Array.isArray(source)) {
+      for (const item of source) {
+        const resolved = pickOptionText(item, '');
+        if (resolved) return resolved;
+      }
+      return String(fallback || '').trim();
+    }
+    if (typeof source === 'object') {
+      const candidates = [
+        source.displayValue,
+        source.label,
+        source.value,
+        source.code,
+        source.city,
+        source.name,
+        source.id
+      ];
+      for (const candidate of candidates) {
+        const resolved = pickOptionText(candidate, '');
+        if (resolved) return resolved;
+      }
+    }
+    return String(fallback || '').trim();
+  }
+
   function normalizeOptionEntry(option) {
     if (option === null || option === undefined) return null;
-    if (typeof option === 'string') {
-      const value = option.trim();
+    if (typeof option === 'string' || typeof option === 'number' || typeof option === 'boolean') {
+      const value = String(option).trim();
       return value ? { value, label: value, displayValue: value, aliases: [value] } : null;
     }
     if (typeof option === 'object') {
-      const rawValue = option.value && typeof option.value === 'object'
-        ? (option.value.value || option.value.code || option.value.name || '')
-        : (option.value || option.code || option.name || '');
-      const value = String(rawValue).trim();
+      const value = pickOptionText(option.value, '') || pickOptionText(option.code, '') || pickOptionText(option.name, '');
       if (!value) return null;
-      const labelSource = option.label && typeof option.label === 'object'
-        ? (option.label.label || option.label.name || option.label.value || value)
-        : (option.label || option.city || option.name || value);
-      const label = String(labelSource).trim() || value;
-      const displaySource = option.displayValue && typeof option.displayValue === 'object'
-        ? (option.displayValue.value || option.displayValue.label || label)
-        : (option.displayValue || `${label} · ${option.code || value}`);
-      const displayValue = String(displaySource).trim() || value;
+      const label = pickOptionText(option.label, '') || pickOptionText(option.city, '') || pickOptionText(option.name, '') || value;
+      const code = pickOptionText(option.code, '');
+      const city = pickOptionText(option.city, '');
+      const displayValue = pickOptionText(option.displayValue, '') || (label && code ? `${label} · ${code}` : label || value);
+      const aliasSource = Array.isArray(option.aliases) ? option.aliases : [];
       const aliases = Array.from(new Set([
         value,
         label,
         displayValue,
-        option.code,
-        option.city,
-        ...(Array.isArray(option.aliases) ? option.aliases : [])
+        code,
+        city,
+        ...aliasSource.map((item) => pickOptionText(item, ''))
       ].map((item) => String(item || '').trim()).filter(Boolean)));
       return { value, label, displayValue, aliases };
     }
@@ -548,8 +572,10 @@ window.KedrixOnePracticeSchemas = (() => {
     getFields,
     getField,
     getFieldOptions,
+    getFieldOptionEntries,
     getCategoryOptions,
     getIncotermOptions,
+    normalizeSuggestedValue,
     validateDraft
   };
 })();
