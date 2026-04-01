@@ -178,6 +178,7 @@
     };
     state.practiceTab = 'practice';
     state._practiceValidationErrors = [];
+    state.practiceSearchPreviewId = '';
   }
 
   function syncClientMatch(clientName) {
@@ -443,6 +444,7 @@
 
     practiceSearchQuery?.addEventListener('input', (event) => {
       state.practiceSearchQuery = event.target.value || '';
+      state.practiceSearchPreviewId = '';
       save();
       rerenderPreservingInput('practiceSearchQuery', event.target.selectionStart, event.target.selectionEnd);
     });
@@ -587,10 +589,47 @@
 
     main.querySelectorAll('[data-practice-id]').forEach((node) => {
       node.addEventListener('click', () => {
-        loadPracticeIntoDraft(node.dataset.practiceId);
+        const practiceId = node.dataset.practiceId;
+        const openedFromSearch = node.classList.contains('practice-search-result');
+        loadPracticeIntoDraft(practiceId);
         state._practiceValidationErrors = [];
+        state.practiceSearchPreviewId = openedFromSearch ? practiceId : '';
         save();
         render();
+
+        window.requestAnimationFrame(() => {
+          const tableRow = main.querySelector(`tr[data-practice-id="${practiceId}"]`);
+
+          if (openedFromSearch) {
+            const previewCard = document.getElementById('practiceSearchPreview');
+            const activeResult = main.querySelector(`.practice-search-result[data-practice-id="${practiceId}"]`);
+            if (previewCard) {
+              previewCard.classList.add('flash-focus');
+              previewCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              window.setTimeout(() => previewCard.classList.remove('flash-focus'), 1600);
+            }
+            if (activeResult) {
+              activeResult.classList.add('flash-focus');
+              window.setTimeout(() => activeResult.classList.remove('flash-focus'), 1600);
+            }
+            if (tableRow) {
+              tableRow.classList.add('flash-row');
+              window.setTimeout(() => tableRow.classList.remove('flash-row'), 1600);
+            }
+            return;
+          }
+
+          const detailSection = document.getElementById('practiceDetailSection');
+          if (detailSection) {
+            detailSection.classList.add('flash-focus');
+            detailSection.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            window.setTimeout(() => detailSection.classList.remove('flash-focus'), 1600);
+          }
+          if (tableRow) {
+            tableRow.classList.add('flash-row');
+            window.setTimeout(() => tableRow.classList.remove('flash-row'), 1600);
+          }
+        });
       });
     });
 

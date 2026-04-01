@@ -150,6 +150,17 @@ window.KedrixOneTemplates = (() => {
     const categoryOptions = draft.practiceType ? PracticeSchemas.getCategoryOptions(draft.practiceType) : [];
     const searchQuery = state.practiceSearchQuery || '';
     const statusOptions = ['Tutti', 'In attesa documenti', 'Operativa', 'Sdoganamento', 'Chiusa'];
+    const activeSearchPreviewId = state.practiceSearchPreviewId || '';
+    const activeSearchPreview = searchQuery && activeSearchPreviewId && searchResults.some((result) => result.practiceId === activeSearchPreviewId)
+      ? (state.practices || []).find((practice) => practice.id === activeSearchPreviewId) || null
+      : null;
+    const activeSearchPreviewResult = activeSearchPreview ? searchResults.find((result) => result.practiceId === activeSearchPreviewId) || null : null;
+    const activeSearchPreviewEntries = activeSearchPreview
+      ? Object.entries(activeSearchPreview.dynamicData || {}).filter(([, value]) => {
+          if (Array.isArray(value)) return value.length;
+          return String(value || '').trim();
+        }).slice(0, 8)
+      : [];
 
     return `
       <section class="hero">
@@ -290,9 +301,34 @@ window.KedrixOneTemplates = (() => {
           </div>
 
           ${searchQuery ? `
+            ${activeSearchPreview ? `
+              <article class="panel inset-panel search-preview-card" id="practiceSearchPreview">
+                <div class="panel-head search-preview-head">
+                  <div>
+                    <div class="summary-kicker">${U.escapeHtml(T.t('ui.searchPreviewKicker', 'Anteprima risultato selezionato'))}</div>
+                    <h4 class="panel-title">${U.escapeHtml(activeSearchPreview.clientName || activeSearchPreview.client || '—')}</h4>
+                    <p class="panel-subtitle">${U.escapeHtml(T.t('ui.searchPreviewHint', 'Preview immediata: la pratica è già caricata in modifica anche nel form principale.'))}</p>
+                  </div>
+                  <div class="search-preview-badges">
+                    <span class="badge info">${U.escapeHtml(activeSearchPreview.practiceTypeLabel || activeSearchPreview.practiceType || '—')}</span>
+                    <span class="badge ${activeSearchPreview.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(activeSearchPreview.status || '—')}</span>
+                  </div>
+                </div>
+                <div class="search-preview-grid">
+                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</div><div>${U.escapeHtml(activeSearchPreview.reference || '—')}</div></div>
+                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</div><div>${U.escapeHtml(activeSearchPreview.clientName || activeSearchPreview.client || '—')}</div></div>
+                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))}</div><div>${U.escapeHtml(activeSearchPreview.category || '—')}</div></div>
+                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))}</div><div>${U.escapeHtml(activeSearchPreview.practiceDate || activeSearchPreview.eta || '—')}</div></div>
+                  ${activeSearchPreviewEntries.map(([key, value]) => `<div class="detail-row"><div class="detail-label">${U.escapeHtml(activeSearchPreview.dynamicLabels?.[key] || key)}</div><div>${U.escapeHtml(Array.isArray(value) ? value.join(', ') : (value || '—'))}</div></div>`).join('')}
+                </div>
+                ${activeSearchPreviewResult && activeSearchPreviewResult.matches?.length ? `
+                  <div class="practice-search-match-list">
+                    ${activeSearchPreviewResult.matches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(match.label)}:</strong> ${U.escapeHtml(match.value)}</span>`).join('')}
+                  </div>` : ''}
+              </article>` : ''}
             <div class="practice-search-results">
               ${searchResults.length ? searchResults.slice(0, 8).map((result) => `
-                <button class="practice-search-result" type="button" data-practice-id="${U.escapeHtml(result.practiceId)}">
+                <button class="practice-search-result ${activeSearchPreviewId === result.practiceId ? 'is-active' : ''}" type="button" data-practice-id="${U.escapeHtml(result.practiceId)}">
                   <div class="practice-search-result-head">
                     <div>
                       <div class="summary-kicker">${U.escapeHtml(result.reference)}</div>
@@ -315,7 +351,7 @@ window.KedrixOneTemplates = (() => {
         </div>
       </section>
 
-      <section class="table-panel">
+      <section class="table-panel" id="practiceListSection">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceList', 'Elenco pratiche'))}</h3>
@@ -366,7 +402,7 @@ window.KedrixOneTemplates = (() => {
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="practiceDetailSection">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceDetail', 'Dettaglio pratica'))}</h3>
