@@ -13,6 +13,8 @@
 
   const state = Storage.load(() => Data.initialState());
 
+  sanitizeLegacyPortSuggestions();
+
   const main = document.getElementById('mainContent');
   const title = document.getElementById('pageTitle');
   const toastRegion = document.getElementById('toastRegion');
@@ -30,6 +32,22 @@
 
   function save() {
     Storage.save(state);
+  }
+
+  function sanitizeLegacyPortSuggestions() {
+    const directories = state.companyConfig?.practiceConfig?.directories;
+    if (!directories || !Array.isArray(directories.seaPortLocodes)) return;
+    if (typeof PracticeSchemas.getFieldOptionEntries !== 'function') return;
+    const normalized = PracticeSchemas.getFieldOptionEntries('sea_import', { suggestionKey: 'seaPortLocodes' }, state.companyConfig)
+      .map((entry) => ({
+        value: entry.value,
+        label: entry.label,
+        displayValue: entry.displayValue || entry.value,
+        aliases: Array.isArray(entry.aliases) ? entry.aliases : []
+      }));
+    if (!normalized.length) return;
+    directories.seaPortLocodes = normalized;
+    save();
   }
 
   function toast(text) {
@@ -330,9 +348,15 @@
       }
 
       const datalistId = fieldOptionEntries.length && field.type !== 'date' && field.type !== 'number' ? `dyn_list_${field.name}` : '';
-      const datalistHtml = datalistId ? `<datalist id="${datalistId}">${fieldOptionEntries.map((option) => `<option value="${Utils.escapeHtml(option.value)}" label="${Utils.escapeHtml(option.label || option.value)}"></option>`).join('')}</datalist>` : '';
-      const hintHtml = fieldOptionEntries.length && datalistId ? `<div class="field-hint">${Utils.escapeHtml(I18N.t('ui.clientRuleHint', 'Seleziona un valore coerente con la configurazione operativa.'))}</div>` : '';
-      return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><input id="dyn_${field.name}" name="${field.name}" value="${Utils.escapeHtml(currentValue || '')}" type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" ${field.type === 'number' ? 'step="0.01" min="0"' : ''} ${datalistId ? `list="${datalistId}"` : ''} />${datalistHtml}${hintHtml}</div>`;
+      const datalistHtml = datalistId ? `<datalist id="${datalistId}">${fieldOptionEntries.map((option) => `<option value="${Utils.escapeHtml(option.displayValue || option.value)}" label="${Utils.escapeHtml(option.label || option.value)}"></option>`).join('')}</datalist>` : '';
+      const hintKey = field.name === 'portLoading' || field.name === 'portDischarge'
+        ? 'ui.unlocodeHint'
+        : 'ui.clientRuleHint';
+      const hintFallback = field.name === 'portLoading' || field.name === 'portDischarge'
+        ? 'Scrivi il porto o il codice UN/LOCODE. Esempio: Genova → ITGOA.'
+        : 'Seleziona un valore coerente con la configurazione operativa.';
+      const hintHtml = fieldOptionEntries.length && datalistId ? `<div class="field-hint">${Utils.escapeHtml(I18N.t(hintKey, hintFallback))}</div>` : '';
+      return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><input id="dyn_${field.name}" name="${field.name}" value="${Utils.escapeHtml(currentValue || '')}" type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" ${field.type === 'number' ? 'step="0.01" min="0"' : ''} ${datalistId ? `list="${datalistId}"` : ''} autocomplete="off" />${datalistHtml}${hintHtml}</div>`;
     }).join('') + `</div>`;
   }
 

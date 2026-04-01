@@ -21,16 +21,17 @@ window.KedrixOnePracticeSchemas = (() => {
       vehicleTypes: ['Bilico centinato', 'Motrice', 'Furgone', 'Container chassis', 'Cassonato'],
       logisticsLocations: ['Fossano', 'Torino', 'Genova', 'Milano', 'Lione'],
       seaPortLocodes: [
-        { value: 'ITGOA - Genova', label: 'Genova', aliases: ['Genova', 'ITGOA'] },
-        { value: 'ITSPE - La Spezia', label: 'La Spezia', aliases: ['La Spezia', 'ITSPE'] },
-        { value: 'ITTRS - Trieste', label: 'Trieste', aliases: ['Trieste', 'ITTRS'] },
-        { value: 'ITLIV - Livorno', label: 'Livorno', aliases: ['Livorno', 'ITLIV'] },
-        { value: 'NLRTM - Rotterdam', label: 'Rotterdam', aliases: ['Rotterdam', 'NLRTM'] },
-        { value: 'CNSHA - Shanghai', label: 'Shanghai', aliases: ['Shanghai', 'CNSHA'] },
-        { value: 'CNNGB - Ningbo', label: 'Ningbo', aliases: ['Ningbo', 'CNNGB'] },
-        { value: 'CNYTN - Yantian', label: 'Yantian', aliases: ['Yantian', 'CNYTN'] },
-        { value: 'SGSIN - Singapore', label: 'Singapore', aliases: ['Singapore', 'SGSIN'] },
-        { value: 'FRLEH - Le Havre', label: 'Le Havre', aliases: ['Le Havre', 'FRLEH'] }
+        { value: 'ITGOA - Genova', label: 'Genova', code: 'ITGOA', city: 'Genova', displayValue: 'Genova · ITGOA', aliases: ['Genova', 'ITGOA', 'GOA'] },
+        { value: 'ITVDL - Vado Ligure', label: 'Vado Ligure', code: 'ITVDL', city: 'Vado Ligure', displayValue: 'Vado Ligure · ITVDL', aliases: ['Vado Ligure', 'ITVDL', 'Vado'] },
+        { value: 'ITSPE - La Spezia', label: 'La Spezia', code: 'ITSPE', city: 'La Spezia', displayValue: 'La Spezia · ITSPE', aliases: ['La Spezia', 'ITSPE', 'SPE'] },
+        { value: 'ITTRS - Trieste', label: 'Trieste', code: 'ITTRS', city: 'Trieste', displayValue: 'Trieste · ITTRS', aliases: ['Trieste', 'ITTRS', 'TRS'] },
+        { value: 'ITLIV - Livorno', label: 'Livorno', code: 'ITLIV', city: 'Livorno', displayValue: 'Livorno · ITLIV', aliases: ['Livorno', 'ITLIV', 'LIV'] },
+        { value: 'NLRTM - Rotterdam', label: 'Rotterdam', code: 'NLRTM', city: 'Rotterdam', displayValue: 'Rotterdam · NLRTM', aliases: ['Rotterdam', 'NLRTM', 'RTM'] },
+        { value: 'CNSHA - Shanghai', label: 'Shanghai', code: 'CNSHA', city: 'Shanghai', displayValue: 'Shanghai · CNSHA', aliases: ['Shanghai', 'CNSHA', 'SHA'] },
+        { value: 'CNNGB - Ningbo', label: 'Ningbo', code: 'CNNGB', city: 'Ningbo', displayValue: 'Ningbo · CNNGB', aliases: ['Ningbo', 'CNNGB', 'NGB'] },
+        { value: 'CNYTN - Yantian', label: 'Yantian', code: 'CNYTN', city: 'Yantian', displayValue: 'Yantian · CNYTN', aliases: ['Yantian', 'CNYTN', 'YTN'] },
+        { value: 'SGSIN - Singapore', label: 'Singapore', code: 'SGSIN', city: 'Singapore', displayValue: 'Singapore · SGSIN', aliases: ['Singapore', 'SGSIN', 'SIN'] },
+        { value: 'FRLEH - Le Havre', label: 'Le Havre', code: 'FRLEH', city: 'Le Havre', displayValue: 'Le Havre · FRLEH', aliases: ['Le Havre', 'FRLEH', 'LEH'] }
       ],
       seaTerminals: ["PSA Genova Pra\'", 'SECH Genova', 'VTE Voltri', 'Terminal del Golfo La Spezia', 'Vado Gateway'],
       originDirectories: ['ITALIA', 'CINA', 'TURCHIA', 'USA', 'FRANCIA', 'GERMANIA'],
@@ -347,18 +348,31 @@ window.KedrixOnePracticeSchemas = (() => {
     if (option === null || option === undefined) return null;
     if (typeof option === 'string') {
       const value = option.trim();
-      return value ? { value, label: value, aliases: [value] } : null;
+      return value ? { value, label: value, displayValue: value, aliases: [value] } : null;
     }
     if (typeof option === 'object') {
-      const value = String(option.value || option.code || option.name || '').trim();
+      const rawValue = option.value && typeof option.value === 'object'
+        ? (option.value.value || option.value.code || option.value.name || '')
+        : (option.value || option.code || option.name || '');
+      const value = String(rawValue).trim();
       if (!value) return null;
-      const label = String(option.label || option.name || value).trim() || value;
+      const labelSource = option.label && typeof option.label === 'object'
+        ? (option.label.label || option.label.name || option.label.value || value)
+        : (option.label || option.city || option.name || value);
+      const label = String(labelSource).trim() || value;
+      const displaySource = option.displayValue && typeof option.displayValue === 'object'
+        ? (option.displayValue.value || option.displayValue.label || label)
+        : (option.displayValue || `${label} · ${option.code || value}`);
+      const displayValue = String(displaySource).trim() || value;
       const aliases = Array.from(new Set([
         value,
         label,
+        displayValue,
+        option.code,
+        option.city,
         ...(Array.isArray(option.aliases) ? option.aliases : [])
       ].map((item) => String(item || '').trim()).filter(Boolean)));
-      return { value, label, aliases };
+      return { value, label, displayValue, aliases };
     }
     return null;
   }
