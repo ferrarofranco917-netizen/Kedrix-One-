@@ -13,6 +13,8 @@
   const PracticeVerification = window.KedrixOnePracticeVerification;
   const PracticeDraftValidator = window.KedrixOnePracticeDraftValidator;
   const PracticeFormRenderer = window.KedrixOnePracticeFormRenderer;
+  const PracticeOpenEdit = window.KedrixOnePracticeOpenEdit;
+  const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
 
   const state = Storage.load(() => Data.initialState());
 
@@ -29,9 +31,9 @@
   const saveBackupButton = document.getElementById('saveBackupButton');
   const newPracticeButton = document.getElementById('newPracticeButton');
 
-  let runtimePracticeSearchIndex = SearchIndex && typeof SearchIndex.buildIndex === 'function'
-    ? SearchIndex.buildIndex(state.practices)
-    : [];
+  let runtimePracticeSearchIndex = PracticeSearchUI && typeof PracticeSearchUI.buildIndex === 'function'
+    ? PracticeSearchUI.buildIndex(state.practices)
+    : (SearchIndex && typeof SearchIndex.buildIndex === 'function' ? SearchIndex.buildIndex(state.practices) : []);
 
   function save() {
     Storage.save(state);
@@ -124,12 +126,21 @@
   }
 
   function rebuildPracticeSearchIndex() {
+    if (PracticeSearchUI && typeof PracticeSearchUI.rebuildIndex === 'function') {
+      runtimePracticeSearchIndex = PracticeSearchUI.rebuildIndex(state.practices, runtimePracticeSearchIndex);
+      return runtimePracticeSearchIndex;
+    }
     if (!SearchIndex || typeof SearchIndex.updateIndex !== 'function') return [];
     runtimePracticeSearchIndex = SearchIndex.updateIndex(state.practices, runtimePracticeSearchIndex);
     return runtimePracticeSearchIndex;
   }
 
   function practiceSearchResults() {
+    if (PracticeSearchUI && typeof PracticeSearchUI.searchResults === 'function') {
+      return PracticeSearchUI.searchResults(state.practiceSearchQuery, state.practices, runtimePracticeSearchIndex, (nextIndex) => {
+        runtimePracticeSearchIndex = nextIndex;
+      });
+    }
     const query = String(state.practiceSearchQuery || '').trim();
     if (!query || !SearchIndex || typeof SearchIndex.search !== 'function') return [];
     return SearchIndex.search(query, rebuildPracticeSearchIndex());
@@ -242,64 +253,31 @@
     }
   }
 
-  function focusPracticeEditor(source = 'manual', practiceId = '') {
-    const run = () => {
-      const editorSection = document.getElementById('practiceEditorSection') || document.getElementById('practiceForm');
-      const editBanner = document.getElementById('practiceEditBanner');
-      const verificationBanner = document.getElementById('practiceVerificationBanner');
-      const primaryField = document.getElementById('clientName')
-        || document.querySelector('#practiceDynamicFields input, #practiceDynamicFields select, #practiceDynamicFields textarea')
-        || document.getElementById('practiceType');
-
-      [editorSection, editBanner, verificationBanner].filter(Boolean).forEach((node) => {
-        node.classList.add('flash-focus');
-        window.setTimeout(() => node.classList.remove('flash-focus'), 1600);
-      });
-
-      if (editorSection) {
-        const topbar = document.querySelector('.topbar');
-        const topOffset = (topbar ? topbar.offsetHeight : 0) + 18;
-        const targetTop = Math.max(0, window.pageYOffset + editorSection.getBoundingClientRect().top - topOffset);
-        window.scrollTo({ top: targetTop, behavior: 'smooth' });
-        window.setTimeout(() => window.scrollTo({ top: targetTop, behavior: 'smooth' }), 220);
-      }
-
-      if (primaryField && typeof primaryField.focus === 'function') {
-        primaryField.focus({ preventScroll: true });
-      }
-
-      const tableRow = practiceId ? main.querySelector(`tr[data-practice-id="${practiceId}"]`) : null;
-      if (tableRow) {
-        tableRow.classList.add('flash-row');
-        window.setTimeout(() => tableRow.classList.remove('flash-row'), 1600);
-      }
-
-      if (source === 'search') {
-        const previewCard = document.getElementById('practiceSearchPreview');
-        const activeResult = practiceId ? main.querySelector(`.practice-search-result[data-practice-id="${practiceId}"]`) : null;
-        [previewCard, activeResult].filter(Boolean).forEach((node) => {
-          node.classList.add('flash-focus');
-          window.setTimeout(() => node.classList.remove('flash-focus'), 1600);
-        });
-      }
-    };
-
-    window.requestAnimationFrame(() => {
-      run();
-      window.requestAnimationFrame(run);
-    });
-  }
-
   function openPracticeForEditing(practiceId, options = {}) {
+    if (PracticeOpenEdit && typeof PracticeOpenEdit.openForEditing === 'function') {
+      PracticeOpenEdit.openForEditing(practiceId, {
+        source: options.source || 'manual',
+        state,
+        main,
+        save,
+        render,
+        loadPracticeIntoDraft
+      });
+      return;
+    }
     if (!practiceId) return;
-    const source = options.source || 'manual';
     loadPracticeIntoDraft(practiceId);
     state._practiceValidationErrors = [];
-    state.practiceSearchPreviewId = source === 'search' ? practiceId : '';
-    state.practiceOpenSource = source;
+    state.practiceSearchPreviewId = options.source === 'search' ? practiceId : '';
+    state.practiceOpenSource = options.source || 'manual';
     save();
     render();
-    focusPracticeEditor(source, practiceId);
+  }
+
+  function focusPracticeEditor(source = 'manual', practiceId = '') {
+    if (PracticeOpenEdit && typeof PracticeOpenEdit.focusEditor === 'function') {
+      PracticeOpenEdit.focusEditor({ main, source, practiceId });
+    }
   }
 
   function practiceTypeLabel(value) {
@@ -641,12 +619,22 @@
       });
     }
 
-    practiceSearchQuery?.addEventListener('input', (event) => {
-      state.practiceSearchQuery = event.target.value || '';
-      state.practiceSearchPreviewId = '';
-      save();
-      rerenderPreservingInput('practiceSearchQuery', event.target.selectionStart, event.target.selectionEnd);
-    });
+    if (PracticeSearchUI && typeof PracticeSearchUI.bindQueryInput === 'function') {
+      PracticeSearchUI.bindQueryInput({
+        input: practiceSearchQuery,
+        state,
+        save,
+        rerenderPreservingInput,
+        clearPreviewOnInput: true
+      });
+    } else {
+      practiceSearchQuery?.addEventListener('input', (event) => {
+        state.practiceSearchQuery = event.target.value || '';
+        state.practiceSearchPreviewId = '';
+        save();
+        rerenderPreservingInput('practiceSearchQuery', event.target.selectionStart, event.target.selectionEnd);
+      });
+    }
 
     filter?.addEventListener('input', (event) => {
       state.filterText = event.target.value || '';
@@ -809,21 +797,25 @@
       focusPracticeEditor('save', record.id);
     });
 
-    main.querySelectorAll('[data-practice-id]').forEach((node) => {
-      node.addEventListener('click', () => {
-        const practiceId = node.dataset.practiceId;
-        const source = node.classList.contains('practice-search-result') ? 'search' : 'list';
-        openPracticeForEditing(practiceId, { source });
+    if (PracticeOpenEdit && typeof PracticeOpenEdit.bindOpenTriggers === 'function') {
+      PracticeOpenEdit.bindOpenTriggers({ main, openPracticeForEditing });
+    } else {
+      main.querySelectorAll('[data-practice-id]').forEach((node) => {
+        node.addEventListener('click', () => {
+          const practiceId = node.dataset.practiceId;
+          const source = node.classList.contains('practice-search-result') ? 'search' : 'list';
+          openPracticeForEditing(practiceId, { source });
+        });
       });
-    });
 
-    main.querySelectorAll('[data-open-practice-id]').forEach((node) => {
-      node.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const practiceId = node.dataset.openPracticeId;
-        openPracticeForEditing(practiceId, { source: 'search' });
+      main.querySelectorAll('[data-open-practice-id]').forEach((node) => {
+        node.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const practiceId = node.dataset.openPracticeId;
+          openPracticeForEditing(practiceId, { source: 'search' });
+        });
       });
-    });
+    }
 
     syncPracticeLock();
     if (Array.isArray(state._practiceValidationErrors) && state._practiceValidationErrors.length) {

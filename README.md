@@ -71,3 +71,10 @@ Da questo step ogni nuova feature autonoma deve uscire in file dedicati. Base in
 - `js/practices/verification.js` → banner/stati verifica Pratiche
 
 Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo dedicato.
+
+
+## STEP 5C.5F — Search / open / edit modularization
+- `js/practices/open-edit.js` introdotto per gestire apertura pratica, scroll/focus editor e binding dei trigger di apertura.
+- `js/search/practice-search-ui.js` introdotto per gestire query input e runtime UI della ricerca pratiche.
+- `index.html` aggiornato per caricare i nuovi moduli prima di `app.js`.
+- `js/app.js` alleggerito: la logica autonoma search/open/edit non viene più stratificata nel file principale.
