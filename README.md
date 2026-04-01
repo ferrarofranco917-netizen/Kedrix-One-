@@ -1,29 +1,14 @@
-# Kedrix One — STEP 4A FULL
+# Kedrix One — STEP 4B FULL
 
-Pacchetto completo di replace totale basato sul repo aggiornato.
+Pacchetto completo di replace totale basato sul repo STEP 4A approvato.
 
 ## Contenuto
-- sidebar dinamica enterprise
-- moduli e sottomoduli completi STEP 4A
-- routing hash-based per moduli e sottomoduli
-- dashboard, pratiche e anagrafiche base mantenute
-- struttura repo coerente per GitHub Pages root deploy
-
-## Struttura
-- index.html
-- style.css
-- manifest.json
-- sw.js
-- favicon.ico
-- /brand
-- /js
-  - storage.js
-  - data.js
-  - utils.js
-  - wisemind.js
-  - module-registry.js
-  - templates.js
-  - app.js
+- licensing engine base
+- piano azienda (base / pro / enterprise)
+- moduli acquistati a livello azienda
+- assegnazione moduli a livello utente
+- sidebar dinamica basata sul profilo attivo
+- dashboard, pratiche, anagrafiche e routing STEP 4A mantenuti
 
 ## Deploy
 GitHub Pages:
