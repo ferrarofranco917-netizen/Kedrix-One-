@@ -1,16 +1,17 @@
-# Kedrix One — STEP 4C FULL
+# Kedrix One — STEP 4D FULL
 
-Pacchetto completo di replace totale basato sul repo STEP 4B approvato.
+Pacchetto completo di replace totale basato sul repo STEP 4C approvato.
 
 ## Contenuto
-- licensing esteso ai sottomoduli
-- attivazione/disattivazione modulo per azienda
-- attivazione/disattivazione modulo per utente
-- attivazione/disattivazione sottomodulo per azienda
-- attivazione/disattivazione sottomodulo per utente
-- sidebar filtrata anche sui sottomoduli
-- blocco route se sottomodulo disabilitato
-- dashboard, pratiche, anagrafiche e routing mantenuti
+- naming centralizzato founder-controlled
+- piattaforma IT / EN
+- lingua selezionabile da utente
+- moduli e sottomoduli con etichette centralizzate
+- routing, licensing moduli e licensing sottomoduli mantenuti
+- dashboard, pratiche, anagrafiche e impostazioni aggiornati
+
+## Nuovo file
+- /js/i18n.js
 
 ## Deploy
 GitHub Pages:

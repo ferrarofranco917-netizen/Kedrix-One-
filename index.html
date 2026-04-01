@@ -16,9 +16,9 @@
       <div class="sidebar-brand">
         <img src="./brand/kedrix-one-mark.svg" alt="Kedrix One" class="brand-logo" />
         <div>
-          <div class="brand-company">Kedrix</div>
-          <div class="brand-product">Kedrix One</div>
-          <div class="brand-subtitle">Operational Workspace</div>
+          <div id="brandCompany" class="brand-company">Kedrix</div>
+          <div id="brandProduct" class="brand-product">Kedrix One</div>
+          <div id="brandSubtitle" class="brand-subtitle">Operational Workspace</div>
         </div>
       </div>
 
@@ -28,13 +28,13 @@
     <main class="workspace">
       <header class="topbar">
         <div>
-          <div class="eyebrow">Kedrix One</div>
+          <div id="pageEyebrow" class="eyebrow">Kedrix One</div>
           <h1 id="pageTitle" class="page-title">Dashboard</h1>
         </div>
 
         <div class="topbar-actions">
-          <button class="btn secondary" type="button" data-action="save-backup">Salva backup locale</button>
-          <button class="btn" type="button" data-route-action="practices">Nuova pratica</button>
+          <button id="saveBackupButton" class="btn secondary" type="button" data-action="save-backup">Salva backup locale</button>
+          <button id="newPracticeButton" class="btn" type="button" data-route-action="practices">Nuova pratica</button>
         </div>
       </header>
 
@@ -48,6 +48,7 @@
   <script src="./js/data.js"></script>
   <script src="./js/utils.js"></script>
   <script src="./js/wisemind.js"></script>
+  <script src="./js/i18n.js"></script>
   <script src="./js/module-registry.js"></script>
   <script src="./js/licensing.js"></script>
   <script src="./js/templates.js"></script>

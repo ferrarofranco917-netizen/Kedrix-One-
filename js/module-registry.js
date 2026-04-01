@@ -2,6 +2,7 @@ window.KedrixOneModules = (() => {
   'use strict';
 
   const U = window.KedrixOneUtils;
+  const I = window.KedrixOneI18N;
 
   const BLUEPRINT = [
     {
@@ -410,21 +411,15 @@ window.KedrixOneModules = (() => {
   });
 
   function list() {
-    return MODULES.map((module) => ({
-      ...module,
-      submodules: module.submodules.map((submodule) => ({ ...submodule }))
-    }));
+    return MODULES.map((module) => localizeModule(module));
   }
 
   function getModule(moduleKey) {
-    return MODULE_MAP[moduleKey] ? {
-      ...MODULE_MAP[moduleKey],
-      submodules: MODULE_MAP[moduleKey].submodules.map((submodule) => ({ ...submodule }))
-    } : null;
+    return MODULE_MAP[moduleKey] ? localizeModule(MODULE_MAP[moduleKey]) : null;
   }
 
   function getRouteMeta(route) {
-    return ROUTE_MAP[route] ? { ...ROUTE_MAP[route] } : null;
+    return ROUTE_MAP[route] ? localizeRouteMeta(ROUTE_MAP[route]) : null;
   }
 
   function getModuleKeyFromRoute(route) {
@@ -460,7 +455,50 @@ window.KedrixOneModules = (() => {
     };
   }
 
-  return {
+  
+  function localizeModule(module) {
+    const label = I.moduleLabel(module.key, module.label);
+    const description = I.moduleDescription(module.key, module.description);
+    return {
+      ...module,
+      label,
+      description,
+      submodules: module.submodules.map((submodule) => ({
+        ...submodule,
+        label: I.submoduleLabel(submodule.route, submodule.label),
+        parentLabel: label,
+        description: I.submoduleDescription(submodule.route, submodule.description)
+      }))
+    };
+  }
+
+  function localizeRouteMeta(meta) {
+    if (!meta) return null;
+    if (meta.type === 'module') {
+      const moduleLabel = I.moduleLabel(meta.moduleKey, meta.moduleLabel);
+      const description = I.moduleDescription(meta.moduleKey, meta.description);
+      return {
+        ...meta,
+        moduleLabel,
+        title: moduleLabel,
+        fullTitle: moduleLabel,
+        description
+      };
+    }
+    const moduleLabel = I.moduleLabel(meta.moduleKey, meta.moduleLabel);
+    const submoduleLabel = I.submoduleLabel(meta.route, meta.submoduleLabel);
+    const description = I.submoduleDescription(meta.route, meta.description);
+    return {
+      ...meta,
+      moduleLabel,
+      submoduleLabel,
+      title: submoduleLabel,
+      fullTitle: `${moduleLabel} / ${submoduleLabel}`,
+      description
+    };
+  }
+
+return {
     list,
     getModule,
     getRouteMeta,

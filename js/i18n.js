@@ -1,0 +1,395 @@
+window.KedrixOneI18N = (() => {
+  'use strict';
+
+  const dictionary = {
+    it: {
+      brand: {
+        company: 'Kedrix',
+        product: 'Kedrix One',
+        subtitle: 'Operational Workspace',
+        eyebrow: 'Kedrix One'
+      },
+      ui: {
+        saveBackup: 'Salva backup locale',
+        newPractice: 'Nuova pratica',
+        settingsTitle: 'Impostazioni / Moduli',
+        language: 'Lingua',
+        companyPlan: 'Piano azienda',
+        activeUser: 'Utente attivo',
+        focusModule: 'Modulo da configurare',
+        quickConfig: 'Configurazione rapida',
+        company: 'Azienda',
+        plan: 'Piano',
+        visibleModules: 'Moduli visibili',
+        visibleSubmodules: 'Sottomoduli visibili',
+        hidden: 'nascosti',
+        hiddenSingle: 'nascosto',
+        visible: 'Visibile',
+        hiddenLabel: 'Nascosto',
+        companyMatrix: 'Matrice moduli',
+        submoduleMatrix: 'Matrice sottomoduli',
+        companyAction: 'Azienda',
+        userAction: 'Utente',
+        result: 'Esito',
+        tier: 'Tier',
+        module: 'Modulo',
+        submodule: 'Sottomodulo',
+        routeActive: 'Route attiva',
+        category: 'Categoria',
+        nextImplementation: 'Prossima implementazione',
+        licensingReadiness: 'Licensing readiness',
+        parentModule: 'Modulo padre',
+        status: 'Stato',
+        placeholder: 'placeholder',
+        enabled: 'on',
+        disabled: 'off',
+        includedInPlan: 'Incluso nel piano',
+        notPurchased: 'Non acquistato',
+        parentOff: 'Modulo padre OFF',
+        buyModule: 'Acquista modulo',
+        removePurchase: 'Rimuovi acquisto',
+        enableForUser: 'Abilita per utente',
+        removeUserExtra: 'Rimuovi extra utente',
+        blockForUser: 'Blocca per utente',
+        reenableUser: 'Riabilita utente',
+        buySubmodule: 'Acquista sottomodulo',
+        removeSubPurchase: 'Rimuovi acquisto',
+        disableForCompany: 'Disattiva per azienda',
+        reenableForCompany: 'Riattiva per azienda',
+        companyUpdated: 'Acquisti azienda aggiornati',
+        userModuleUpdated: 'Permessi modulo utente aggiornati',
+        userSubmoduleUpdated: 'Permessi sottomodulo utente aggiornati',
+        companySubmoduleUpdated: 'Permessi sottomodulo azienda aggiornati',
+        activeUserUpdated: 'Utente attivo aggiornato',
+        backupUpdated: 'Backup locale aggiornato',
+        demoReset: 'Dati demo ripristinati',
+        languageUpdated: 'Lingua aggiornata',
+        currentUserContext: 'Contesto applicativo corrente.',
+        moduleFamiliesPlanned: 'Famiglie previste',
+        baseContacts: 'Base contatti',
+        nextStep: 'STEP successivo',
+        currentBase: 'Base attuale',
+        plannedFamilies: 'Famiglie previste',
+        noSelection: 'Nessuna pratica selezionata.',
+        search: 'Ricerca',
+        statusFilter: 'Filtro stato',
+        resetDemo: 'Reset demo',
+        practiceList: 'Elenco pratiche',
+        newPracticePanel: 'Nuova pratica',
+        savePractice: 'Salva pratica',
+        practiceDetail: 'Dettaglio pratica',
+        searchAndFilter: 'Ricerca e filtro senza regressioni grafiche.',
+        immediateRender: 'Salvataggio locale e rendering immediato.',
+        selectPractice: 'Seleziona una pratica dalla tabella.',
+        clickRow: 'Clicca una riga per selezionare il dettaglio.',
+        id: 'ID',
+        reference: 'Rif.',
+        client: 'Cliente',
+        type: 'Tipo',
+        port: 'Porto',
+        eta: 'ETA',
+        priority: 'Priorità',
+        notes: 'Note',
+        notesOperational: 'Note operative',
+        routeReady: 'Punto di aggancio già attivo per componenti, dati e permessi dei prossimi step.',
+        relatedSubmodules: 'Altri sottomoduli correlati',
+        enterpriseNavigation: 'Navigazione enterprise coerente all\'interno dello stesso modulo.',
+        objectiveSubmodule: 'Obiettivo di questo sottomodulo',
+        noCriticality: 'Nessuna criticità',
+        noActiveAlerts: 'Nessun alert attivo.',
+        activeUserPanel: 'Utente attivo',
+        wisemind: 'WiseMind',
+        operationalSignals: 'Segnali operativi iniziali senza popup di sistema.',
+        modulePrepared: 'Modulo predisposto',
+        noExplicitSubmodules: 'Nessun sottomodulo esplicito definito nello step corrente.',
+        stepReady: 'ready',
+        granular: 'granulare',
+        companyModulesHint: 'Azienda acquista, utente restringe o amplia la visibilità finale.',
+        submoduleGranularityHint: 'Granularità richiesta: modulo attivo ma singole funzioni visibili o nascoste per azienda e per utente.',
+        currentCustomer: 'Cliente demo corrente',
+        totalModules: 'Moduli totali',
+        totalSubmodules: 'Sottomoduli',
+        granPermissions: 'Permessi granulari predisposti',
+        totalVisibleSubmodules: 'Sottomoduli visibili',
+        activeModulesHint: 'Architettura enterprise attiva',
+        hiddenSubmodulesHint: 'disattivati nel profilo corrente',
+        moduleBusinessModel: 'Modello business',
+        nextFocus: 'Prossimo focus',
+        moduleSettingsDescription: 'Ora Kedrix One gestisce anche l’attivazione e la disattivazione dei sottomoduli. Puoi concedere “Pratiche” a un utente ma nascondere singole sottofunzioni operative.',
+        dashboardDescription: 'Ora il licensing lavora anche a livello di sottomodulo: puoi dare a un utente il modulo pratiche ma nascondere singole funzioni operative o documentali.',
+        licensingControlPanel: 'Licensing control panel',
+        founderNamingNote: 'Le etichette IT/EN sono centralizzate e modificabili solo dal founder.',
+        pricingHint: 'Base adatta a modulo premium + sottomodulo premium + profilo utente differenziato.',
+        nextFocusHint: 'Naming flessibile, IT/EN, poi raffinazione funzionale dei moduli.',
+        noDeadLinks: 'routing completo'
+      },
+      modules: {
+        dashboard: 'Dashboard',
+        practices: 'Pratiche',
+        quotations: 'Quotazioni',
+        transports: 'Trasporti',
+        warehouse: 'Magazzino',
+        crm: 'CRM',
+        'master-data': 'Anagrafiche',
+        documents: 'Documenti',
+        tracking: 'Tracking',
+        bi: 'Report / BI',
+        customs: 'Dogana',
+        administration: 'Amministrazione / Contabile',
+        groupware: 'Groupware',
+        workflow: 'Workflow',
+        admin: 'Admin',
+        settings: 'Impostazioni'
+      },
+      submodules: {}
+    },
+    en: {
+      brand: {
+        company: 'Kedrix',
+        product: 'Kedrix One',
+        subtitle: 'Operational Workspace',
+        eyebrow: 'Kedrix One'
+      },
+      ui: {
+        saveBackup: 'Save local backup',
+        newPractice: 'New practice',
+        settingsTitle: 'Settings / Modules',
+        language: 'Language',
+        companyPlan: 'Company plan',
+        activeUser: 'Active user',
+        focusModule: 'Focus module',
+        quickConfig: 'Quick configuration',
+        company: 'Company',
+        plan: 'Plan',
+        visibleModules: 'Visible modules',
+        visibleSubmodules: 'Visible submodules',
+        hidden: 'hidden',
+        hiddenSingle: 'hidden',
+        visible: 'Visible',
+        hiddenLabel: 'Hidden',
+        companyMatrix: 'Module matrix',
+        submoduleMatrix: 'Submodule matrix',
+        companyAction: 'Company',
+        userAction: 'User',
+        result: 'Result',
+        tier: 'Tier',
+        module: 'Module',
+        submodule: 'Submodule',
+        routeActive: 'Active route',
+        category: 'Category',
+        nextImplementation: 'Next implementation',
+        licensingReadiness: 'Licensing readiness',
+        parentModule: 'Parent module',
+        status: 'Status',
+        placeholder: 'placeholder',
+        enabled: 'on',
+        disabled: 'off',
+        includedInPlan: 'Included in plan',
+        notPurchased: 'Not purchased',
+        parentOff: 'Parent module OFF',
+        buyModule: 'Buy module',
+        removePurchase: 'Remove purchase',
+        enableForUser: 'Enable for user',
+        removeUserExtra: 'Remove user extra',
+        blockForUser: 'Block for user',
+        reenableUser: 'Re-enable user',
+        buySubmodule: 'Buy submodule',
+        removeSubPurchase: 'Remove purchase',
+        disableForCompany: 'Disable for company',
+        reenableForCompany: 'Re-enable for company',
+        companyUpdated: 'Company purchases updated',
+        userModuleUpdated: 'User module permissions updated',
+        userSubmoduleUpdated: 'User submodule permissions updated',
+        companySubmoduleUpdated: 'Company submodule permissions updated',
+        activeUserUpdated: 'Active user updated',
+        backupUpdated: 'Local backup updated',
+        demoReset: 'Demo data restored',
+        languageUpdated: 'Language updated',
+        currentUserContext: 'Current application context.',
+        moduleFamiliesPlanned: 'Planned families',
+        baseContacts: 'Base contacts',
+        nextStep: 'Next step',
+        currentBase: 'Current base',
+        plannedFamilies: 'Planned families',
+        noSelection: 'No practice selected.',
+        search: 'Search',
+        statusFilter: 'Status filter',
+        resetDemo: 'Reset demo',
+        practiceList: 'Practice list',
+        newPracticePanel: 'New practice',
+        savePractice: 'Save practice',
+        practiceDetail: 'Practice details',
+        searchAndFilter: 'Search and filter without graphical regressions.',
+        immediateRender: 'Local save and instant render.',
+        selectPractice: 'Select a practice from the table.',
+        clickRow: 'Click a row to select details.',
+        id: 'ID',
+        reference: 'Ref.',
+        client: 'Client',
+        type: 'Type',
+        port: 'Port',
+        eta: 'ETA',
+        priority: 'Priority',
+        notes: 'Notes',
+        notesOperational: 'Operational notes',
+        routeReady: 'Already connected point for components, data and permissions of the next steps.',
+        relatedSubmodules: 'Related submodules',
+        enterpriseNavigation: 'Consistent enterprise navigation inside the same module.',
+        objectiveSubmodule: 'Goal of this submodule',
+        noCriticality: 'No critical issues',
+        noActiveAlerts: 'No active alerts.',
+        activeUserPanel: 'Active user',
+        wisemind: 'WiseMind',
+        operationalSignals: 'Initial operational signals without system popups.',
+        modulePrepared: 'Prepared module',
+        noExplicitSubmodules: 'No explicit submodule defined in the current step.',
+        stepReady: 'ready',
+        granular: 'granular',
+        companyModulesHint: 'Company buys, user restricts or expands final visibility.',
+        submoduleGranularityHint: 'Required granularity: module enabled but single functions visible or hidden for company and user.',
+        currentCustomer: 'Current demo customer',
+        totalModules: 'Total modules',
+        totalSubmodules: 'Submodules',
+        granPermissions: 'Granular permissions ready',
+        totalVisibleSubmodules: 'Visible submodules',
+        activeModulesHint: 'Enterprise architecture active',
+        hiddenSubmodulesHint: 'disabled in current profile',
+        moduleBusinessModel: 'Business model',
+        nextFocus: 'Next focus',
+        moduleSettingsDescription: 'Kedrix One now manages submodule enable/disable too. You can grant “Practices” to a user while hiding individual operational subfunctions.',
+        dashboardDescription: 'Licensing now works at submodule level too: you can assign the practices module to a user but hide specific operational or document functions.',
+        licensingControlPanel: 'Licensing control panel',
+        founderNamingNote: 'IT/EN labels are centralized and editable only by the founder.',
+        pricingHint: 'Suitable base for premium module + premium submodule + differentiated user profile.',
+        nextFocusHint: 'Flexible naming, IT/EN, then deeper functional refinement of modules.',
+        noDeadLinks: 'full routing'
+      },
+      modules: {
+        dashboard: 'Dashboard',
+        practices: 'Practices',
+        quotations: 'Quotations',
+        transports: 'Transport',
+        warehouse: 'Warehouse',
+        crm: 'CRM',
+        'master-data': 'Master Data',
+        documents: 'Documents',
+        tracking: 'Tracking',
+        bi: 'Reports / BI',
+        customs: 'Customs',
+        administration: 'Administration / Accounting',
+        groupware: 'Groupware',
+        workflow: 'Workflow',
+        admin: 'Admin',
+        settings: 'Settings'
+      },
+      submodules: {}
+    }
+  };
+
+  const SUBMODULE_MAP = {
+    'practices/istruzioni-di-sdoganamento': { it: 'Istruzioni di sdoganamento', en: 'Customs instructions' },
+    'practices/buono-consegna-merce-aerea': { it: 'Buono consegna merce aerea', en: 'Air cargo delivery slip' },
+    'practices/booking-d-imbarco': { it: 'Booking d’imbarco', en: 'Boarding booking' },
+    'practices/notifica-arrivo-merce': { it: 'Notifica arrivo merce', en: 'Goods arrival notice' },
+    'practices/notifica-partenza-merce': { it: 'Notifica partenza merce', en: 'Goods departure notice' },
+    'practices/rimessa-documenti': { it: 'Rimessa documenti', en: 'Document remittance' },
+    'practices/buono-di-consegna': { it: 'Buono di consegna', en: 'Delivery slip' },
+    'practices/delivery-order': { it: 'Delivery order', en: 'Delivery order' },
+    'practices/richiesta-fondi': { it: 'Richiesta fondi', en: 'Funds request' },
+    'practices/elenco-pratiche': { it: 'Elenco pratiche', en: 'Practice list' },
+    'practices/pratiche-v2': { it: 'Pratiche v2', en: 'Practices v2' },
+    'practices/lettere-viaggi-partenze': { it: 'Lettere viaggi partenze', en: 'Trip departure letters' },
+    'practices/avvisi-spedizione': { it: 'Avvisi spedizione', en: 'Shipping notices' },
+    'practices/conferma-prenotazione-ritiro': { it: 'Conferma prenotazione ritiro', en: 'Pickup booking confirmation' },
+    'practices/viaggi-nave': { it: 'Viaggi nave', en: 'Vessel trips' },
+
+    'transports/cmr': { it: 'CMR', en: 'CMR' },
+    'transports/buono-di-ritiro': { it: 'Buono di ritiro', en: 'Pickup voucher' },
+    'transports/lettera-di-vettura': { it: 'Lettera di vettura', en: 'Waybill' },
+    'transports/giornaliera': { it: 'Giornaliera', en: 'Daily sheet' },
+    'transports/lettere-di-vettura-v2': { it: 'Lettere di vettura v2', en: 'Waybills v2' },
+    'transports/scheda-di-trasporto': { it: 'Scheda di trasporto', en: 'Transport sheet' },
+    'transports/stampa-giornaliera': { it: 'Stampa giornaliera', en: 'Daily print' },
+    'transports/posizionamento-mezzi': { it: 'Posizionamento mezzi', en: 'Vehicle positioning' },
+    'transports/riepilogo-percorsi': { it: 'Riepilogo percorsi', en: 'Route summary' },
+    'transports/viaggi': { it: 'Viaggi', en: 'Trips' },
+    'transports/ordini': { it: 'Ordini', en: 'Orders' },
+    'transports/tipologia-tariffe': { it: 'Tipologia tariffe', en: 'Rate types' },
+    'transports/trasferte-e-assenze': { it: 'Trasferte e assenze', en: 'Trips and absences' },
+    'transports/buoni-di-consegna-ddt': { it: 'Buoni di consegna DDT', en: 'DDT delivery notes' },
+    'transports/scadenziario-mezzi': { it: 'Scadenziario mezzi', en: 'Vehicle schedule' },
+
+    'crm/agenda-crm': { it: 'Agenda CRM', en: 'CRM agenda' },
+    'crm/tipologia-operazioni': { it: 'Tipologia operazioni', en: 'Operation types' },
+    'crm/mappa-crm': { it: 'Mappa CRM', en: 'CRM map' },
+    'crm/nominativi': { it: 'Nominativi', en: 'Contacts' },
+    'crm/campagne': { it: 'Campagne', en: 'Campaigns' },
+    'crm/gerarchia-agenti': { it: 'Gerarchia agenti', en: 'Agent hierarchy' },
+    'crm/interessi': { it: 'Interessi', en: 'Interests' },
+    'crm/figure': { it: 'Figure', en: 'Profiles' },
+    'crm/indicatori': { it: 'Indicatori', en: 'Indicators' },
+
+    'tracking/container-tracking': { it: 'Container tracking', en: 'Container tracking' },
+    'tracking/vessel-tracking': { it: 'Vessel tracking', en: 'Vessel tracking' },
+    'tracking/air-cargo-tracking': { it: 'Air cargo tracking', en: 'Air cargo tracking' },
+    'tracking/carrier-links': { it: 'Carrier links', en: 'Carrier links' },
+    'tracking/marinetraffic-integration-future': { it: 'MarineTraffic integration (future)', en: 'MarineTraffic integration (future)' },
+    'tracking/tracking-events': { it: 'Tracking events', en: 'Tracking events' },
+    'tracking/exception-alerts': { it: 'Exception alerts', en: 'Exception alerts' }
+  };
+
+  dictionary.it.submodules = Object.fromEntries(Object.entries(SUBMODULE_MAP).map(([k, v]) => [k, v.it]));
+  dictionary.en.submodules = Object.fromEntries(Object.entries(SUBMODULE_MAP).map(([k, v]) => [k, v.en]));
+
+  let currentLanguage = 'it';
+
+  function setLanguage(language) {
+    currentLanguage = ['it', 'en'].includes(language) ? language : 'it';
+    document.documentElement.lang = currentLanguage;
+  }
+
+  function getLanguage() {
+    return currentLanguage;
+  }
+
+  function getPathValue(path, fallback = '') {
+    const parts = String(path || '').split('.');
+    let node = dictionary[currentLanguage];
+    for (const part of parts) {
+      if (!node || typeof node !== 'object' || !(part in node)) return fallback;
+      node = node[part];
+    }
+    return typeof node === 'string' ? node : fallback;
+  }
+
+  function t(path, fallback = '') {
+    return getPathValue(path, fallback);
+  }
+
+  function moduleLabel(moduleKey, fallback = '') {
+    return t(`modules.${moduleKey}`, fallback);
+  }
+
+  function submoduleLabel(route, fallback = '') {
+    return t(`submodules.${route}`, fallback);
+  }
+
+  function moduleDescription(moduleKey, fallback = '') {
+    return fallback;
+  }
+
+  function submoduleDescription(route, fallback = '') {
+    return fallback;
+  }
+
+  return {
+    dictionary,
+    setLanguage,
+    getLanguage,
+    t,
+    moduleLabel,
+    submoduleLabel,
+    moduleDescription,
+    submoduleDescription
+  };
+})();

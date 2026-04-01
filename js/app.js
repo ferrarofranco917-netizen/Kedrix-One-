@@ -7,6 +7,7 @@
   const Modules = window.KedrixOneModules;
   const Licensing = window.KedrixOneLicensing;
   const Templates = window.KedrixOneTemplates;
+  const I18N = window.KedrixOneI18N;
 
   const state = Storage.load(() => Data.initialState());
 
@@ -14,6 +15,12 @@
   const title = document.getElementById('pageTitle');
   const toastRegion = document.getElementById('toastRegion');
   const sidebarNav = document.getElementById('sidebarNav');
+  const brandCompany = document.getElementById('brandCompany');
+  const brandProduct = document.getElementById('brandProduct');
+  const brandSubtitle = document.getElementById('brandSubtitle');
+  const pageEyebrow = document.getElementById('pageEyebrow');
+  const saveBackupButton = document.getElementById('saveBackupButton');
+  const newPracticeButton = document.getElementById('newPracticeButton');
 
   function save() {
     Storage.save(state);
@@ -25,6 +32,17 @@
     el.textContent = text;
     toastRegion.appendChild(el);
     setTimeout(() => el.remove(), 2500);
+  }
+
+  function updateStaticLabels() {
+    document.documentElement.lang = I18N.getLanguage();
+    document.title = I18N.t('brand.product', 'Kedrix One');
+    if (brandCompany) brandCompany.textContent = I18N.t('brand.company', 'Kedrix');
+    if (brandProduct) brandProduct.textContent = I18N.t('brand.product', 'Kedrix One');
+    if (brandSubtitle) brandSubtitle.textContent = I18N.t('brand.subtitle', 'Operational Workspace');
+    if (pageEyebrow) pageEyebrow.textContent = I18N.t('brand.eyebrow', 'Kedrix One');
+    if (saveBackupButton) saveBackupButton.textContent = I18N.t('ui.saveBackup', 'Salva backup locale');
+    if (newPracticeButton) newPracticeButton.textContent = I18N.t('ui.newPractice', 'Nuova pratica');
   }
 
   function filteredPractices() {
@@ -144,7 +162,7 @@
       };
 
       if (!practice.reference || !practice.client || !practice.port || !practice.eta) {
-        toast('Compila i campi obbligatori.');
+        toast(I18N.t('ui.search', 'Compila i campi obbligatori.'));
         return;
       }
 
@@ -159,7 +177,7 @@
 
       save();
       render();
-      toast('Pratica salvata');
+      toast(I18N.getLanguage() === 'en' ? 'Practice saved' : 'Pratica salvata');
     });
 
     main.querySelectorAll('tbody tr[data-practice-id]').forEach((row) => {
@@ -175,13 +193,14 @@
     const plan = document.getElementById('companyPlan');
     const activeUser = document.getElementById('activeUserId');
     const settingsModule = document.getElementById('settingsModuleKey');
+    const languageSelect = document.getElementById('languageSelect');
 
     plan?.addEventListener('change', (event) => {
       Licensing.setCompanyPlan(state, event.target.value);
       state.currentRoute = safeRoute(currentRoute());
       save();
       render();
-      toast(`Piano azienda impostato su ${String(event.target.value).toUpperCase()}`);
+      toast(`${I18N.t('ui.companyPlan', 'Piano azienda')}: ${String(event.target.value).toUpperCase()}`);
     });
 
     activeUser?.addEventListener('change', (event) => {
@@ -189,7 +208,7 @@
       state.currentRoute = safeRoute(currentRoute());
       save();
       render();
-      toast('Utente attivo aggiornato');
+      toast(I18N.t('ui.activeUserUpdated', 'Utente attivo aggiornato'));
     });
 
     settingsModule?.addEventListener('change', (event) => {
@@ -198,13 +217,21 @@
       render();
     });
 
+    languageSelect?.addEventListener('change', (event) => {
+      state.language = event.target.value;
+      I18N.setLanguage(state.language);
+      save();
+      render();
+      toast(I18N.t('ui.languageUpdated', 'Lingua aggiornata'));
+    });
+
     main.querySelectorAll('[data-toggle-company-module]').forEach((button) => {
       button.addEventListener('click', () => {
         Licensing.toggleCompanyModule(state, button.dataset.toggleCompanyModule);
         state.currentRoute = safeRoute(currentRoute());
         save();
         render();
-        toast('Acquisti azienda aggiornati');
+        toast(I18N.t('ui.companyUpdated', 'Acquisti azienda aggiornati'));
       });
     });
 
@@ -214,7 +241,7 @@
         state.currentRoute = safeRoute(currentRoute());
         save();
         render();
-        toast('Permessi modulo utente aggiornati');
+        toast(I18N.t('ui.userModuleUpdated', 'Permessi modulo utente aggiornati'));
       });
     });
 
@@ -225,7 +252,7 @@
         state.currentRoute = safeRoute(currentRoute());
         save();
         render();
-        toast('Permessi sottomodulo azienda aggiornati');
+        toast(I18N.t('ui.companySubmoduleUpdated', 'Permessi sottomodulo azienda aggiornati'));
       });
     });
 
@@ -235,7 +262,7 @@
         state.currentRoute = safeRoute(currentRoute());
         save();
         render();
-        toast('Permessi sottomodulo utente aggiornati');
+        toast(I18N.t('ui.userSubmoduleUpdated', 'Permessi sottomodulo utente aggiornati'));
       });
     });
   }
@@ -283,6 +310,7 @@
   }
 
   function render() {
+    updateStaticLabels();
     renderSidebar();
     renderMain();
   }
@@ -311,7 +339,7 @@
 
     if (action.dataset.action === 'save-backup') {
       save();
-      toast('Backup locale aggiornato');
+      toast(I18N.t('ui.backupUpdated', 'Backup locale aggiornato'));
     }
 
     if (action.dataset.action === 'reset-demo') {
@@ -321,7 +349,7 @@
       ensureCurrentModuleExpanded();
       save();
       render();
-      toast('Dati demo ripristinati');
+      toast(I18N.t('ui.demoReset', 'Dati demo ripristinati'));
     }
   });
 
@@ -334,6 +362,7 @@
     render();
   });
 
+  I18N.setLanguage(state.language || 'it');
   state.currentRoute = safeRoute(window.location.hash || state.currentRoute);
   ensureCurrentModuleExpanded();
   save();

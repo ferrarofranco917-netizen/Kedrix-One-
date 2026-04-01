@@ -9,6 +9,7 @@ window.KedrixOneData = (() => {
       statusFilter: 'Tutti',
       expandedModules: ['practices', 'master-data', 'documents', 'tracking'],
       settingsModuleKey: 'practices',
+      language: 'it',
       companyConfig: {
         id: 'CMP-001',
         name: 'Kedrix Demo Logistics',

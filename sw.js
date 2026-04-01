@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-step4c-full-v1';
+const CACHE = 'kedrix-one-step4d-full-v1';
 const FILES = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const FILES = [
   './js/data.js',
   './js/utils.js',
   './js/wisemind.js',
+  './js/i18n.js',
   './js/module-registry.js',
   './js/licensing.js',
   './js/templates.js',
