@@ -444,6 +444,65 @@ img {
   gap: 8px;
 }
 
+.edit-session-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.14), rgba(255, 255, 255, 0.03));
+}
+
+.edit-session-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.edit-session-subtitle {
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.edit-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.verification-sticky-banner {
+  position: sticky;
+  top: 10px;
+  z-index: 12;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  background: linear-gradient(180deg, rgba(250, 204, 21, 0.16), rgba(255, 255, 255, 0.03));
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.26);
+}
+
+.verification-banner-kicker {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: rgba(250, 204, 21, 0.92);
+}
+
+.verification-banner-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.verification-banner-hint {
+  font-size: 12px;
+  color: var(--text2);
+}
+
 .search-preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -467,6 +526,26 @@ img {
   gap: 10px 16px;
   color: var(--text2);
   font-size: 13px;
+}
+
+.search-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.search-edit-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .practice-search-match-list {
@@ -1043,7 +1122,8 @@ img {
     grid-template-columns: 1fr;
   }
 
-  .search-preview-head {
+  .search-preview-head,
+  .edit-session-banner {
     flex-direction: column;
   }
 }

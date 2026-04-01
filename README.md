@@ -25,3 +25,9 @@ Consolidamento reale del modulo Pratiche con hardening retrocompatibile e prepar
 
 ## Istruzione
 Sostituisci integralmente il contenuto del repo con questo pacchetto oppure applica solo i file sopra indicati.
+
+
+## STEP 5C.2 — Apertura pratica da search + banner verifica
+- I risultati del motore ricerca pratiche aprono ora la pratica direttamente nel form principale in modalità modifica, con scroll/focus automatico.
+- È stato aggiunto un banner sticky di verifica operativa quando la pratica ha controlli attivi (documentale, scanner, doganale, ecc.).
+- Regola architetturale formalizzata: ogni risultato trovato da motori ricerca/documenti dovrà essere sempre apribile ed editabile dal relativo modulo di competenza.

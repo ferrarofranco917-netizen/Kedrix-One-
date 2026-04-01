@@ -1,0 +1,11 @@
+STEP 5C.2 — Apertura pratica da search + banner verifica
+
+Contenuto patch:
+- Apertura pratica da motore ricerca con ingresso certo in modifica.
+- Scroll automatico al form editor, focus e highlight visivo.
+- Banner di sessione modifica per rendere evidente che la pratica è aperta.
+- Banner sticky 'IN VERIFICA' con tipi attivi: documentale, scanner, doganale, ecc.
+- Demo data aggiornata per mostrare il banner sulla pratica Aprica.
+
+Regola ufficiale estesa:
+- Ogni ricerca e ogni documento trovato dovrà essere apribile nel modulo sorgente e, dove consentito dal workflow, direttamente modificabile/integrabile.
