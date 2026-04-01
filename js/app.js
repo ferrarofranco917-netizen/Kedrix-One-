@@ -9,6 +9,7 @@
   const Templates = window.KedrixOneTemplates;
   const I18N = window.KedrixOneI18N;
   const PracticeSchemas = window.KedrixOnePracticeSchemas;
+  const SearchIndex = window.KedrixOneSearchIndex;
 
   const state = Storage.load(() => Data.initialState());
 
@@ -22,6 +23,10 @@
   const pageEyebrow = document.getElementById('pageEyebrow');
   const saveBackupButton = document.getElementById('saveBackupButton');
   const newPracticeButton = document.getElementById('newPracticeButton');
+
+  let runtimePracticeSearchIndex = SearchIndex && typeof SearchIndex.buildIndex === 'function'
+    ? SearchIndex.buildIndex(state.practices)
+    : [];
 
   function save() {
     Storage.save(state);
@@ -50,13 +55,25 @@
     const query = Utils.normalize(state.filterText);
     return state.practices.filter((practice) => {
       const okStatus = state.statusFilter === 'Tutti' || practice.status === state.statusFilter;
-      const okQuery = !query || [practice.reference, practice.client, practice.port, practice.id, practice.practiceType, practice.containerCode, practice.goodsDescription].some((value) => Utils.normalize(value).includes(query));
+      const okQuery = !query || [practice.reference, practice.client, practice.port, practice.id, practice.practiceType, practice.containerCode, practice.booking, practice.customsOffice, practice.goodsDescription].some((value) => Utils.normalize(value).includes(query));
       return okStatus && okQuery;
     });
   }
 
   function selectedPractice() {
     return state.practices.find((practice) => practice.id === state.selectedPracticeId) || null;
+  }
+
+  function rebuildPracticeSearchIndex() {
+    if (!SearchIndex || typeof SearchIndex.updateIndex !== 'function') return [];
+    runtimePracticeSearchIndex = SearchIndex.updateIndex(state.practices, runtimePracticeSearchIndex);
+    return runtimePracticeSearchIndex;
+  }
+
+  function practiceSearchResults() {
+    const query = String(state.practiceSearchQuery || '').trim();
+    if (!query || !SearchIndex || typeof SearchIndex.search !== 'function') return [];
+    return SearchIndex.search(query, rebuildPracticeSearchIndex());
   }
 
   function getClientById(clientId) {
@@ -273,6 +290,7 @@
     const draft = ensureDraftPractice();
     const form = document.getElementById('practiceForm');
     const filter = document.getElementById('filterText');
+    const practiceSearchQuery = document.getElementById('practiceSearchQuery');
     const status = document.getElementById('statusFilter');
     const practiceType = document.getElementById('practiceType');
     const clientName = document.getElementById('clientName');
@@ -423,6 +441,12 @@
       });
     }
 
+    practiceSearchQuery?.addEventListener('input', (event) => {
+      state.practiceSearchQuery = event.target.value || '';
+      save();
+      render();
+    });
+
     filter?.addEventListener('input', (event) => {
       state.filterText = event.target.value || '';
       save();
@@ -561,9 +585,9 @@
       render();
     });
 
-    main.querySelectorAll('tbody tr[data-practice-id]').forEach((row) => {
-      row.addEventListener('click', () => {
-        loadPracticeIntoDraft(row.dataset.practiceId);
+    main.querySelectorAll('[data-practice-id]').forEach((node) => {
+      node.addEventListener('click', () => {
+        loadPracticeIntoDraft(node.dataset.practiceId);
         state._practiceValidationErrors = [];
         save();
         render();
@@ -594,7 +618,7 @@
     }
 
     if (route === 'practices' || route === 'practices/elenco-pratiche') {
-      main.innerHTML = Templates.practices(state, selectedPractice(), filteredPractices());
+      main.innerHTML = Templates.practices(state, selectedPractice(), filteredPractices(), practiceSearchResults());
       bindPracticeEvents();
       return;
     }

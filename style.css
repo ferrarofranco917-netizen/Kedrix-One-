@@ -337,9 +337,11 @@ img {
   border: 1px solid rgba(199, 82, 82, 0.35);
   background: rgba(199, 82, 82, 0.08);
 }
+
 .validation-summary[hidden] {
   display: none !important;
 }
+
 .validation-summary-title {
   font-size: 14px;
   font-weight: 700;
@@ -363,6 +365,119 @@ img {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.practice-search-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.practice-search-grid {
+  align-items: end;
+}
+
+.practice-search-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.search-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text2);
+  font-size: 12px;
+}
+
+.practice-search-results {
+  display: grid;
+  gap: 12px;
+}
+
+.practice-search-result {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  text-align: left;
+}
+
+.practice-search-result:hover,
+.practice-search-result:focus-visible {
+  border-color: rgba(78, 143, 159, 0.28);
+  background: rgba(78, 143, 159, 0.08);
+  outline: none;
+}
+
+.practice-search-result-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.practice-search-result-title {
+  font-size: 18px;
+}
+
+.practice-search-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.practice-search-match-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.match-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(78, 143, 159, 0.22);
+  background: rgba(78, 143, 159, 0.10);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.empty-state-inline {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--line);
+  color: var(--text2);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 280px) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.table-toolbar-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 46px;
+  color: var(--text2);
+  font-size: 13px;
 }
 
 .helper-pill {
@@ -510,10 +625,12 @@ img {
   }
 
   .two-col,
-  .practice-layout {
+  .practice-layout,
+  .table-toolbar {
     grid-template-columns: 1fr;
   }
 }
+
 
 @media (max-width: 760px) {
   .app-shell {
@@ -542,7 +659,16 @@ img {
   .page-title {
     font-size: 22px;
   }
+
+  .practice-search-result-head {
+    flex-direction: column;
+  }
+
+  .table-toolbar-summary {
+    justify-content: flex-start;
+  }
 }
+
 .sidebar {
   overflow-y: auto;
   max-height: 100vh;

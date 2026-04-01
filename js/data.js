@@ -6,6 +6,7 @@ window.KedrixOneData = (() => {
       currentRoute: 'dashboard',
       selectedPracticeId: 'PR-2026-001',
       filterText: '',
+      practiceSearchQuery: '',
       statusFilter: 'Tutti',
       expandedModules: ['practices', 'master-data', 'documents', 'tracking'],
       settingsModuleKey: 'practices',

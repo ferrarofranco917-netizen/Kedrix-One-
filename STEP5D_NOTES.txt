@@ -1,0 +1,30 @@
+KEDRIX ONE — STEP 5D SEARCH ENGINE BASE
+
+Applicato con patch modulari e senza refactor distruttivo.
+
+Modifiche principali:
+- nuovo file js/search-index.js
+- funzioni introdotte: buildIndex(), updateIndex(), search(query)
+- indicizzazione trasversale su:
+  - numero pratica / ID
+  - cliente
+  - container
+  - booking
+  - BL / HBL / MBL
+  - AWB / MAWB / HAWB
+  - CMR
+  - riferimenti operativi utili presenti in dynamicData
+- nuova UI nel modulo Pratiche con barra ricerca dedicata e risultati strutturati
+- click sul risultato = riapertura pratica in modifica
+- toolbar elenco pratiche con filtro rapido + filtro stato
+- aggiornamento index.html + sw.js per caricare e cachare il nuovo modulo search-index.js
+- incluso fix visibilità validation-summary[hidden]
+
+File toccati:
+- index.html
+- js/app.js
+- js/data.js
+- js/search-index.js
+- js/templates.js
+- style.css
+- sw.js

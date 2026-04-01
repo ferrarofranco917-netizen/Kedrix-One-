@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-step5b-fix2-v1';
+const CACHE = 'kedrix-one-step5d-search-v1';
 const FILES = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const FILES = [
   './js/module-registry.js',
   './js/licensing.js',
   './js/templates.js',
+  './js/search-index.js',
   './js/app.js'
 ];
 

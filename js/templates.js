@@ -126,7 +126,7 @@ window.KedrixOneTemplates = (() => {
     `;
   }
 
-  function practices(state, selected, filtered) {
+  function practices(state, selected, filtered, searchResults = []) {
     const PracticeSchemas = window.KedrixOnePracticeSchemas;
     const clients = state.clients || [];
     const draft = state.draftPractice || {};
@@ -148,10 +148,12 @@ window.KedrixOneTemplates = (() => {
     const currentTab = tabs.find((tab) => tab.key === currentTabKey) || tabs[0];
     const selectedType = practiceTypes.find((item) => item.value === draft.practiceType) || null;
     const categoryOptions = draft.practiceType ? PracticeSchemas.getCategoryOptions(draft.practiceType) : [];
+    const searchQuery = state.practiceSearchQuery || '';
+    const statusOptions = ['Tutti', 'In attesa documenti', 'Operativa', 'Sdoganamento', 'Chiusa'];
 
     return `
       <section class="hero">
-        <div class="hero-meta">STEP 5C · ${U.escapeHtml(T.t('ui.practiceConsolidationReady', 'Consolidamento pratiche operativo'))}</div>
+        <div class="hero-meta">STEP 5D · ${U.escapeHtml(T.t('ui.practiceSearchEngineReady', 'Pratiche consolidate + motore ricerca trasversale'))}</div>
         <h2>${U.escapeHtml(T.moduleLabel('practices', 'Pratiche'))}</h2>
         <p>${U.escapeHtml(T.t('ui.step5cIntro', ''))}</p>
       </section>
@@ -262,6 +264,55 @@ window.KedrixOneTemplates = (() => {
             </div>
           </div>
         </form>
+
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceSearchEngineTitle', 'Motore ricerca pratiche'))}</h3>
+            <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceSearchEngineHint', 'Indicizzazione trasversale su numero pratica, cliente, container, booking, BL/AWB/CMR e riferimenti operativi.'))}</p>
+          </div>
+        </div>
+
+        <div class="practice-search-stack">
+          <div class="form-grid three practice-search-grid">
+            <div class="field full">
+              <label for="practiceSearchQuery">${U.escapeHtml(T.t('ui.searchLabel', 'Ricerca'))}</label>
+              <input id="practiceSearchQuery" name="practiceSearchQuery" type="search" value="${U.escapeHtml(searchQuery)}" placeholder="${U.escapeHtml(T.t('ui.practiceSearchPlaceholder', 'Cerca per cliente, numero pratica, container, booking, BL, MAWB, HAWB, CMR...'))}" autocomplete="off" />
+              <div class="field-hint">${U.escapeHtml(T.t('ui.practiceSearchLiveHint', 'Ricerca live ordinata per rilevanza operativa.'))}</div>
+            </div>
+          </div>
+
+          <div class="practice-search-meta-row">
+            <div class="search-meta-pill">${U.escapeHtml(T.t('ui.indexedFieldsHint', 'Campi indicizzati'))}: ${U.escapeHtml(T.t('ui.indexedFieldsList', 'pratiche · cliente · container · booking · BL/AWB/CMR'))}</div>
+            <div class="search-meta-pill">${searchQuery ? `${searchResults.length} ${U.escapeHtml(T.t('ui.searchResults', 'risultati'))}` : U.escapeHtml(T.t('ui.searchReady', 'Ricerca pronta'))}</div>
+          </div>
+
+          ${searchQuery ? `
+            <div class="practice-search-results">
+              ${searchResults.length ? searchResults.slice(0, 8).map((result) => `
+                <button class="practice-search-result" type="button" data-practice-id="${U.escapeHtml(result.practiceId)}">
+                  <div class="practice-search-result-head">
+                    <div>
+                      <div class="summary-kicker">${U.escapeHtml(result.reference)}</div>
+                      <div class="panel-title practice-search-result-title">${U.escapeHtml(result.clientName)}</div>
+                    </div>
+                    <span class="badge info">${U.escapeHtml(result.practiceTypeLabel || '—')}</span>
+                  </div>
+                  <div class="practice-search-result-meta">
+                    <span>${U.escapeHtml(T.t('ui.status', 'Stato'))}: ${U.escapeHtml(result.status || '—')}</span>
+                    <span>${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))}: ${U.escapeHtml(result.category || '—')}</span>
+                    <span>${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))}: ${U.escapeHtml(result.practiceDate || '—')}</span>
+                  </div>
+                  <div class="practice-search-match-list">
+                    ${result.matches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(match.label)}:</strong> ${U.escapeHtml(match.value)}</span>`).join('')}
+                  </div>
+                </button>`).join('') : `
+                <div class="empty-state-inline">${U.escapeHtml(T.t('ui.noSearchResults', 'Nessun risultato coerente con la ricerca inserita.'))}</div>`}
+            </div>` : `
+            <div class="empty-state-inline">${U.escapeHtml(T.t('ui.searchPrompt', 'Digita almeno un riferimento operativo per interrogare l’indice trasversale.'))}</div>`}
+        </div>
       </section>
 
       <section class="table-panel">
@@ -270,6 +321,19 @@ window.KedrixOneTemplates = (() => {
             <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceList', 'Elenco pratiche'))}</h3>
             <p class="panel-subtitle">${U.escapeHtml(T.t('ui.reopenHint', 'Clicca una riga per riaprire la pratica in modifica.'))}</p>
           </div>
+        </div>
+        <div class="table-toolbar">
+          <div class="field">
+            <label for="filterText">${U.escapeHtml(T.t('ui.quickFilter', 'Filtro rapido elenco'))}</label>
+            <input id="filterText" name="filterText" type="search" value="${U.escapeHtml(state.filterText || '')}" placeholder="${U.escapeHtml(T.t('ui.quickFilterPlaceholder', 'Cliente, numero pratica, porto, merce...'))}" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="statusFilter">${U.escapeHtml(T.t('ui.statusFilter', 'Filtro stato'))}</label>
+            <select id="statusFilter" name="statusFilter">
+              ${statusOptions.map((option) => `<option value="${U.escapeHtml(option)}" ${state.statusFilter === option ? 'selected' : ''}>${U.escapeHtml(option)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="table-toolbar-summary">${filtered.length} ${U.escapeHtml(T.t('ui.visiblePractices', 'pratiche visibili'))}</div>
         </div>
         <div class="table-wrap">
           <table class="table">
