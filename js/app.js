@@ -307,6 +307,9 @@
       const wrapClass = `field${field.full ? ' full' : ''}`;
       const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
       const fieldOptions = PracticeSchemas.getFieldOptions(type, field, state.companyConfig);
+      const fieldOptionEntries = typeof PracticeSchemas.getFieldOptionEntries === 'function'
+        ? PracticeSchemas.getFieldOptionEntries(type, field, state.companyConfig)
+        : fieldOptions.map((option) => ({ value: String(option || ''), label: String(option || ''), aliases: [String(option || '')] }));
       const currentValue = draft.dynamicData?.[field.name];
 
       if (field.type === 'derived') {
@@ -319,16 +322,16 @@
         return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><textarea id="dyn_${field.name}" name="${field.name}" rows="4">${Utils.escapeHtml(currentValue || '')}</textarea></div>`;
       }
       if (field.type === 'select') {
-        return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><select id="dyn_${field.name}" name="${field.name}"><option value="">—</option>${fieldOptions.map((option) => `<option value="${Utils.escapeHtml(option)}" ${currentValue === option ? 'selected' : ''}>${Utils.escapeHtml(option)}</option>`).join('')}</select></div>`;
+        return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><select id="dyn_${field.name}" name="${field.name}"><option value="">—</option>${fieldOptionEntries.map((option) => `<option value="${Utils.escapeHtml(option.value)}" ${currentValue === option.value ? 'selected' : ''}>${Utils.escapeHtml(option.label || option.value)}</option>`).join('')}</select></div>`;
       }
       if (field.type === 'checkbox-group') {
         const currentValues = Array.isArray(currentValue) ? currentValue : [];
         return `<div ${wrapAttrs}><label>${label}</label><div class="checkbox-group">${(field.options || []).map((option) => `<label class="checkbox-chip"><input type="checkbox" name="${field.name}" value="${Utils.escapeHtml(option)}" ${currentValues.includes(option) ? 'checked' : ''} /> ${Utils.escapeHtml(I18N.t(option, option))}</label>`).join('')}</div></div>`;
       }
 
-      const datalistId = fieldOptions.length && field.type !== 'date' && field.type !== 'number' ? `dyn_list_${field.name}` : '';
-      const datalistHtml = datalistId ? `<datalist id="${datalistId}">${fieldOptions.map((option) => `<option value="${Utils.escapeHtml(option)}"></option>`).join('')}</datalist>` : '';
-      const hintHtml = fieldOptions.length && datalistId ? `<div class="field-hint">${Utils.escapeHtml(I18N.t('ui.clientRuleHint', 'Seleziona un valore coerente con la configurazione operativa.'))}</div>` : '';
+      const datalistId = fieldOptionEntries.length && field.type !== 'date' && field.type !== 'number' ? `dyn_list_${field.name}` : '';
+      const datalistHtml = datalistId ? `<datalist id="${datalistId}">${fieldOptionEntries.map((option) => `<option value="${Utils.escapeHtml(option.value)}" label="${Utils.escapeHtml(option.label || option.value)}"></option>`).join('')}</datalist>` : '';
+      const hintHtml = fieldOptionEntries.length && datalistId ? `<div class="field-hint">${Utils.escapeHtml(I18N.t('ui.clientRuleHint', 'Seleziona un valore coerente con la configurazione operativa.'))}</div>` : '';
       return `<div ${wrapAttrs}><label for="dyn_${field.name}">${label}</label><input id="dyn_${field.name}" name="${field.name}" value="${Utils.escapeHtml(currentValue || '')}" type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" ${field.type === 'number' ? 'step="0.01" min="0"' : ''} ${datalistId ? `list="${datalistId}"` : ''} />${datalistHtml}${hintHtml}</div>`;
     }).join('') + `</div>`;
   }
@@ -617,18 +620,25 @@
       dynamicFields.querySelectorAll('input, select, textarea').forEach((node) => {
         if (node.dataset.boundDraft === '1') return;
         node.dataset.boundDraft = '1';
-        const handler = () => {
+        const persistNodeValue = (normalize = false) => {
           if (node.type === 'checkbox') {
             draft.dynamicData[node.name] = Array.from(dynamicFields.querySelectorAll(`[name="${node.name}"]:checked`)).map((item) => item.value);
           } else {
-            draft.dynamicData[node.name] = node.value;
+            let nextValue = node.value;
+            if (normalize && draft.practiceType && typeof PracticeSchemas.getField === 'function' && typeof PracticeSchemas.normalizeSuggestedValue === 'function') {
+              const field = PracticeSchemas.getField(draft.practiceType, node.name);
+              nextValue = PracticeSchemas.normalizeSuggestedValue(draft.practiceType, field, nextValue, state.companyConfig);
+              if (nextValue !== node.value) node.value = nextValue;
+            }
+            draft.dynamicData[node.name] = nextValue;
           }
           save();
           updateVerificationBannerState(draft);
           refreshValidationState();
         };
-        node.addEventListener('input', handler);
-        node.addEventListener('change', handler);
+        node.addEventListener('input', () => persistNodeValue(false));
+        node.addEventListener('change', () => persistNodeValue(true));
+        node.addEventListener('blur', () => persistNodeValue(true));
       });
     }
 

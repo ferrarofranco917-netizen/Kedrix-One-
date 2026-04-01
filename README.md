@@ -47,3 +47,8 @@ Sostituisci integralmente il contenuto del repo con questo pacchetto oppure appl
 
 ## STEP 5C.4B
 - Hardening etichette schema mare: resi espliciti i campi Valuta nolo e Valuta cambio nave per evitare ambiguità visiva e omissioni in review.
+
+
+## STEP 5C.5A — Mare contact + UN/LOCODE
+- `Rif. / Contatto` non usa più l'elenco città: resta un campo libero per riferimento cliente o nominativo contatto.
+- `Porto imbarco` e `Porto sbarco` usano ora suggerimenti UN/LOCODE con normalizzazione city -> code (es. Genova -> ITGOA - Genova).

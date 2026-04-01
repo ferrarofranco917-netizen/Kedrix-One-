@@ -20,6 +20,18 @@ window.KedrixOnePracticeSchemas = (() => {
       carriers: ['TERCOM', 'BRT', 'DHL Freight', 'DB Schenker', 'Lannutti'],
       vehicleTypes: ['Bilico centinato', 'Motrice', 'Furgone', 'Container chassis', 'Cassonato'],
       logisticsLocations: ['Fossano', 'Torino', 'Genova', 'Milano', 'Lione'],
+      seaPortLocodes: [
+        { value: 'ITGOA - Genova', label: 'Genova', aliases: ['Genova', 'ITGOA'] },
+        { value: 'ITSPE - La Spezia', label: 'La Spezia', aliases: ['La Spezia', 'ITSPE'] },
+        { value: 'ITTRS - Trieste', label: 'Trieste', aliases: ['Trieste', 'ITTRS'] },
+        { value: 'ITLIV - Livorno', label: 'Livorno', aliases: ['Livorno', 'ITLIV'] },
+        { value: 'NLRTM - Rotterdam', label: 'Rotterdam', aliases: ['Rotterdam', 'NLRTM'] },
+        { value: 'CNSHA - Shanghai', label: 'Shanghai', aliases: ['Shanghai', 'CNSHA'] },
+        { value: 'CNNGB - Ningbo', label: 'Ningbo', aliases: ['Ningbo', 'CNNGB'] },
+        { value: 'CNYTN - Yantian', label: 'Yantian', aliases: ['Yantian', 'CNYTN'] },
+        { value: 'SGSIN - Singapore', label: 'Singapore', aliases: ['Singapore', 'SGSIN'] },
+        { value: 'FRLEH - Le Havre', label: 'Le Havre', aliases: ['Le Havre', 'FRLEH'] }
+      ],
       seaTerminals: ["PSA Genova Pra\'", 'SECH Genova', 'VTE Voltri', 'Terminal del Golfo La Spezia', 'Vado Gateway'],
       originDirectories: ['ITALIA', 'CINA', 'TURCHIA', 'USA', 'FRANCIA', 'GERMANIA'],
       destinationDirectories: ['ITALIA', 'CINA', 'TURCHIA', 'USA', 'FRANCIA', 'GERMANIA'],
@@ -50,13 +62,13 @@ window.KedrixOnePracticeSchemas = (() => {
       tabs: {
         practice: [
           { name: 'importer', type: 'text', labelKey: 'ui.importer', required: true },
-          { name: 'clientContact', type: 'text', labelKey: 'ui.clientContact', suggestionKey: 'logisticsLocations' },
+          { name: 'clientContact', type: 'text', labelKey: 'ui.clientContact' },
           { name: 'clientAgency', type: 'text', labelKey: 'ui.agency' },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
           { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
           { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
-          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPorts' },
-          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPorts' },
+          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPortLocodes' },
+          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPortLocodes' },
           { name: 'originRef', type: 'text', labelKey: 'ui.originRef', suggestionKey: 'originDirectories' },
           { name: 'destinationRef', type: 'text', labelKey: 'ui.destinationRef', suggestionKey: 'destinationDirectories' },
           { name: 'vesselExchangeRate', type: 'number', labelKey: 'ui.vesselExchangeRate' },
@@ -102,8 +114,8 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
           { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
           { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
-          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPorts' },
-          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPorts' },
+          { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPortLocodes' },
+          { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPortLocodes' },
           { name: 'originRef', type: 'text', labelKey: 'ui.originRef', suggestionKey: 'originDirectories' },
           { name: 'destinationRef', type: 'text', labelKey: 'ui.destinationRef', suggestionKey: 'destinationDirectories' },
           { name: 'vesselExchangeRate', type: 'number', labelKey: 'ui.vesselExchangeRate' },
@@ -330,6 +342,27 @@ window.KedrixOnePracticeSchemas = (() => {
     return Array.isArray(profile) && profile.length ? [...profile] : [...incoterms2020];
   }
 
+
+  function normalizeOptionEntry(option) {
+    if (option === null || option === undefined) return null;
+    if (typeof option === 'string') {
+      const value = option.trim();
+      return value ? { value, label: value, aliases: [value] } : null;
+    }
+    if (typeof option === 'object') {
+      const value = String(option.value || option.code || option.name || '').trim();
+      if (!value) return null;
+      const label = String(option.label || option.name || value).trim() || value;
+      const aliases = Array.from(new Set([
+        value,
+        label,
+        ...(Array.isArray(option.aliases) ? option.aliases : [])
+      ].map((item) => String(item || '').trim()).filter(Boolean)));
+      return { value, label, aliases };
+    }
+    return null;
+  }
+
   function getFieldOptions(type, field, companyConfig) {
     if (!field) return [];
     if (field.optionSource === 'incoterms' || field.name === 'incoterm') {
@@ -342,6 +375,12 @@ window.KedrixOnePracticeSchemas = (() => {
       return Array.isArray(values) ? [...values] : [];
     }
     return [];
+  }
+
+  function getFieldOptionEntries(type, field, companyConfig) {
+    return getFieldOptions(type, field, companyConfig)
+      .map((option) => normalizeOptionEntry(option))
+      .filter(Boolean);
   }
 
   function getFields(type) {
@@ -357,6 +396,16 @@ window.KedrixOnePracticeSchemas = (() => {
   function fieldLabel(field) {
     if (!field) return '';
     return I18N.t(field.labelKey, field.name || '');
+  }
+
+  function normalizeSuggestedValue(type, field, rawValue, companyConfig) {
+    const clean = String(rawValue || '').trim();
+    if (!clean || !field || !field.suggestionKey) return clean;
+    const upper = clean.toUpperCase();
+    const match = getFieldOptionEntries(type, field, companyConfig).find((entry) =>
+      (entry.aliases || []).some((alias) => String(alias || '').trim().toUpperCase() === upper)
+    );
+    return match ? match.value : clean;
   }
 
   function isEmptyValue(value) {
