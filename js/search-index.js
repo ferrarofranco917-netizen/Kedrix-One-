@@ -45,10 +45,14 @@ window.KedrixOneSearchIndex = (() => {
     consignee: 'Destinatario',
     importer: 'Importatore',
     shipper: 'Speditore',
-    customsOffice: 'Dogana'
+    customsOffice: 'Dogana',
+    baseQuotation: 'Quotazione',
+    policyNumber: 'Polizza',
+    originRef: 'Origine',
+    destinationRef: 'Destinazione'
   };
 
-  const DYNAMIC_FIELD_REGEX = /(booking|container|bl|bill|lading|awb|mawb|hawb|cmr|client|consignee|shipper|importer|port|terminal|airport|deposit|pickup|delivery|customs|reference|lot|vehicle|carrier|movement)/i;
+  const DYNAMIC_FIELD_REGEX = /(booking|container|bl|bill|lading|awb|mawb|hawb|cmr|client|consignee|shipper|importer|port|terminal|airport|deposit|pickup|delivery|customs|reference|quotation|policy|origin|destination|lot|vehicle|carrier|movement)/i;
 
   function normalize(value) {
     return Utils && typeof Utils.normalize === 'function'

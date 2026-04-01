@@ -36,3 +36,14 @@ Sostituisci integralmente il contenuto del repo con questo pacchetto oppure appl
 ## STEP 5C.3 — Search open hard-fix + banner verifica live
 - apertura da search con scroll forzato al form editor
 - banner IN VERIFICA sempre renderizzato e aggiornato live su stato/flag
+
+
+## STEP 5C.4A — Sea field safe extension
+- Added only missing sea import/export fields after duplicate audit.
+- Introduced currencies directory plus origin/destination directories.
+- Added safe fields: origin/destination, vessel exchange + currency, sea freight + currency, policy number/originals/copies, base quotation reference.
+- Already existing fields were intentionally skipped to avoid regressions and duplicates.
+
+
+## STEP 5C.4B
+- Hardening etichette schema mare: resi espliciti i campi Valuta nolo e Valuta cambio nave per evitare ambiguità visiva e omissioni in review.

@@ -21,6 +21,9 @@ window.KedrixOnePracticeSchemas = (() => {
       vehicleTypes: ['Bilico centinato', 'Motrice', 'Furgone', 'Container chassis', 'Cassonato'],
       logisticsLocations: ['Fossano', 'Torino', 'Genova', 'Milano', 'Lione'],
       seaTerminals: ["PSA Genova Pra\'", 'SECH Genova', 'VTE Voltri', 'Terminal del Golfo La Spezia', 'Vado Gateway'],
+      originDirectories: ['ITALIA', 'CINA', 'TURCHIA', 'USA', 'FRANCIA', 'GERMANIA'],
+      destinationDirectories: ['ITALIA', 'CINA', 'TURCHIA', 'USA', 'FRANCIA', 'GERMANIA'],
+      currencies: ['EUR', 'USD', 'GBP', 'CHF', 'CNY', 'JPY'],
       deposits: ['Magazzino interno', 'Deposito doganale', 'Transit point', 'Cross-dock'],
       warehouseLinks: ['Pratica import', 'Pratica export', 'Transito interno', 'Deposito temporaneo'],
       customsOffices: ['Genova Porto', 'La Spezia', 'Torino', 'Milano 1', 'Vado Ligure']
@@ -54,13 +57,23 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
           { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPorts' },
           { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPorts' },
+          { name: 'originRef', type: 'text', labelKey: 'ui.originRef', suggestionKey: 'originDirectories' },
+          { name: 'destinationRef', type: 'text', labelKey: 'ui.destinationRef', suggestionKey: 'destinationDirectories' },
+          { name: 'vesselExchangeRate', type: 'number', labelKey: 'ui.vesselExchangeRate' },
+          { name: 'vesselExchangeCurrency', type: 'select', labelKey: 'ui.vesselExchangeCurrency', suggestionKey: 'currencies' },
           { name: 'terminal', type: 'text', labelKey: 'ui.terminal', suggestionKey: 'seaTerminals' },
           { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage' },
           { name: 'arrivalDate', type: 'date', labelKey: 'ui.arrivalDate', required: true },
+          { name: 'freightAmount', type: 'number', labelKey: 'ui.freightAmount' },
+          { name: 'freightCurrency', type: 'select', labelKey: 'ui.freightCurrency', suggestionKey: 'currencies' },
           { name: 'booking', type: 'text', labelKey: 'ui.booking', required: true },
+          { name: 'policyNumber', type: 'text', labelKey: 'ui.policyNumber' },
+          { name: 'policyOriginals', type: 'number', labelKey: 'ui.policyOriginals' },
+          { name: 'policyCopies', type: 'number', labelKey: 'ui.policyCopies' },
           { name: 'mbl', type: 'text', labelKey: 'ui.mbl' },
           { name: 'hbl', type: 'text', labelKey: 'ui.hbl' },
           { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices' },
+          { name: 'baseQuotation', type: 'text', labelKey: 'ui.baseQuotation' },
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' },
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
         ],
@@ -91,13 +104,23 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
           { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPorts' },
           { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPorts' },
+          { name: 'originRef', type: 'text', labelKey: 'ui.originRef', suggestionKey: 'originDirectories' },
+          { name: 'destinationRef', type: 'text', labelKey: 'ui.destinationRef', suggestionKey: 'destinationDirectories' },
+          { name: 'vesselExchangeRate', type: 'number', labelKey: 'ui.vesselExchangeRate' },
+          { name: 'vesselExchangeCurrency', type: 'select', labelKey: 'ui.vesselExchangeCurrency', suggestionKey: 'currencies' },
           { name: 'terminal', type: 'text', labelKey: 'ui.terminal', suggestionKey: 'seaTerminals' },
           { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage' },
           { name: 'departureDate', type: 'date', labelKey: 'ui.departureDate', required: true },
+          { name: 'freightAmount', type: 'number', labelKey: 'ui.freightAmount' },
+          { name: 'freightCurrency', type: 'select', labelKey: 'ui.freightCurrency', suggestionKey: 'currencies' },
           { name: 'booking', type: 'text', labelKey: 'ui.booking', required: true },
+          { name: 'policyNumber', type: 'text', labelKey: 'ui.policyNumber' },
+          { name: 'policyOriginals', type: 'number', labelKey: 'ui.policyOriginals' },
+          { name: 'policyCopies', type: 'number', labelKey: 'ui.policyCopies' },
           { name: 'mbl', type: 'text', labelKey: 'ui.mbl' },
           { name: 'hbl', type: 'text', labelKey: 'ui.hbl' },
           { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices' },
+          { name: 'baseQuotation', type: 'text', labelKey: 'ui.baseQuotation' },
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' },
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
         ],
@@ -415,6 +438,12 @@ window.KedrixOnePracticeSchemas = (() => {
       }
       if (draft.category === 'LCL-GROUPAGE' && isEmptyValue(dynamicData.hbl)) {
         errors.push(buildError('hbl', 'practice', type, 'ui.validationHblRequired', "Compila l'House BL per le pratiche LCL / groupage."));
+      }
+      if (!isEmptyValue(dynamicData.freightAmount) && isEmptyValue(dynamicData.freightCurrency)) {
+        errors.push(buildError('freightCurrency', 'practice', type, 'ui.validationFreightCurrencyRequired', 'Se indichi il nolo, seleziona anche la valuta.'));
+      }
+      if (!isEmptyValue(dynamicData.vesselExchangeRate) && isEmptyValue(dynamicData.vesselExchangeCurrency)) {
+        errors.push(buildError('vesselExchangeCurrency', 'practice', type, 'ui.validationExchangeCurrencyRequired', 'Se indichi il cambio nave, seleziona anche la valuta.'));
       }
     }
 
