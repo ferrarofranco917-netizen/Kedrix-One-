@@ -2,6 +2,7 @@ window.KedrixOnePracticeAttachments = (() => {
   'use strict';
 
   const DB_NAME = 'kedrix-one-practice-attachments';
+  const DocumentCategories = window.KedrixOneDocumentCategories;
   const DB_VERSION = 1;
   const STORE_NAME = 'attachments';
 
@@ -182,13 +183,9 @@ window.KedrixOnePracticeAttachments = (() => {
               ${typeOptions.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
             </select>
           </div>
-          <div class="field full attachments-upload-field">
-            <label for="practiceAttachmentInput">${escapeHtml(t('ui.attachmentUploadLabel', 'Carica allegati'))}</label>
-            <div class="attachments-upload-actions">
-              <button class="btn" type="button" id="practiceAttachmentTrigger">${escapeHtml(t('ui.attachmentUploadButton', 'Carica allegati'))}</button>
-              <span class="attachments-upload-selected" id="practiceAttachmentSelectedHint">${escapeHtml(t('ui.attachmentUploadReadyHint', 'Seleziona uno o più file da collegare alla pratica.'))}</span>
-            </div>
-            <input id="practiceAttachmentInput" type="file" multiple class="visually-hidden-file-input" />
+          <div class="field full">
+            <label for="practiceAttachmentInput">${escapeHtml(t('ui.attachmentUploadLabel', 'Importa file'))}</label>
+            <input id="practiceAttachmentInput" type="file" multiple />
             <div class="field-hint">${escapeHtml(t('ui.attachmentUploadHint', 'PDF, immagini, fogli Excel o altri documenti. Per demo/staging evita file troppo pesanti.'))}</div>
           </div>
         </div>
@@ -337,21 +334,10 @@ window.KedrixOnePracticeAttachments = (() => {
     if (!root) return;
     const fileInput = root.querySelector('#practiceAttachmentInput');
     const typeSelect = root.querySelector('#practiceAttachmentType');
-    const trigger = root.querySelector('#practiceAttachmentTrigger');
-    const selectedHint = root.querySelector('#practiceAttachmentSelectedHint');
-
-    trigger?.addEventListener('click', () => {
-      fileInput?.click();
-    });
 
     fileInput?.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
-      if (selectedHint) {
-        selectedHint.textContent = files.length === 1
-          ? (files[0]?.name || (i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentUploadSingleSelected', '1 file selezionato') : '1 file selezionato'))
-          : `${files.length} ${(i18n && typeof i18n.t === 'function' ? i18n.t('ui.filesSelectedLabel', 'file selezionati') : 'file selezionati')}`;
-      }
       try {
         await addFiles({
           state,
@@ -366,11 +352,6 @@ window.KedrixOnePracticeAttachments = (() => {
         if (typeof toast === 'function') toast(error?.message || 'Errore import allegato');
       } finally {
         event.target.value = '';
-        if (selectedHint) {
-          selectedHint.textContent = i18n && typeof i18n.t === 'function'
-            ? i18n.t('ui.attachmentUploadReadyHint', 'Seleziona uno o più file da collegare alla pratica.')
-            : 'Seleziona uno o più file da collegare alla pratica.';
-        }
       }
     });
 
