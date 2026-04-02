@@ -42,13 +42,13 @@ window.KedrixOnePracticeFormLayout = (() => {
         titleKey: 'ui.sectionGoods',
         titleFallback: 'Merce',
         descriptionKey: 'ui.sectionGoodsHint',
-        descriptionFallback: 'Descrizione, codici merce e colli.'
+        descriptionFallback: 'Descrizione merce, codici articolo/TARIC e colli guidati.'
       },
       measures: {
         titleKey: 'ui.sectionMeasures',
         titleFallback: 'Pesi / Volumi',
         descriptionKey: 'ui.sectionMeasuresHint',
-        descriptionFallback: 'Peso lordo, netto, volume e unità di misura operative.'
+        descriptionFallback: 'Peso lordo, netto, volume e unità di misura operative con controllo coerenza.'
       },
       transportUnits: {
         titleKey: 'ui.sectionTransportUnits',

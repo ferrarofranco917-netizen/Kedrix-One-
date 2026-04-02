@@ -5,6 +5,7 @@ window.KedrixOnePracticeSchemas = (() => {
   const PortData = window.KedrixOnePortData || {};
   const CustomsData = window.KedrixOneCustomsData || {};
   const TaricData = window.KedrixOneTaricData || {};
+  const GoodsMasterData = window.KedrixOneGoodsMasterData || {};
 
   const incoterms2020 = ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP', 'FAS', 'FOB', 'CFR', 'CIF'];
 
@@ -31,7 +32,9 @@ window.KedrixOnePracticeSchemas = (() => {
       deposits: ['Magazzino interno', 'Deposito doganale', 'Transit point', 'Cross-dock'],
       warehouseLinks: ['Pratica import', 'Pratica export', 'Transito interno', 'Deposito temporaneo'],
       customsOffices: Array.isArray(CustomsData.defaultCustomsOffices) ? CustomsData.defaultCustomsOffices.map((entry) => ({ ...entry })) : [],
-      taricCodes: Array.isArray(TaricData.defaultTaricCodes) ? TaricData.defaultTaricCodes.map((entry) => ({ ...entry })) : []
+      taricCodes: Array.isArray(TaricData.defaultTaricCodes) ? TaricData.defaultTaricCodes.map((entry) => ({ ...entry })) : [],
+      articleCodes: Array.isArray(GoodsMasterData.defaultArticleCodes) ? GoodsMasterData.defaultArticleCodes.map((entry) => ({ ...entry })) : [],
+      packageTypes: Array.isArray(GoodsMasterData.defaultPackageTypes) ? GoodsMasterData.defaultPackageTypes.map((entry) => ({ ...entry })) : []
     }
   };
 
@@ -82,11 +85,11 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
         ],
         detail: [
-          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
+          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode', suggestionKey: 'articleCodes', hintKey: 'ui.articleCodeHint', hintFallback: 'Seleziona un codice articolo suggerito coerente con la merce.' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric', suggestionKey: 'taricCodes', hintKey: 'ui.taricHint', hintFallback: 'Digita 2, 4, 6 o 8 cifre della voce doganale per ottenere suggerimenti TARIC/CN.' },
           { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
-          { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
+          { name: 'packageType', type: 'text', labelKey: 'ui.packageType', suggestionKey: 'packageTypes', hintKey: 'ui.packageTypeHint', hintFallback: 'Seleziona il tipo colli dalla lista suggerita.' },
           { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
           { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'netWeight', type: 'number', labelKey: 'ui.netWeight' },
@@ -128,11 +131,11 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
         ],
         detail: [
-          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
+          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode', suggestionKey: 'articleCodes', hintKey: 'ui.articleCodeHint', hintFallback: 'Seleziona un codice articolo suggerito coerente con la merce.' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric', suggestionKey: 'taricCodes', hintKey: 'ui.taricHint', hintFallback: 'Digita 2, 4, 6 o 8 cifre della voce doganale per ottenere suggerimenti TARIC/CN.' },
           { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
-          { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
+          { name: 'packageType', type: 'text', labelKey: 'ui.packageType', suggestionKey: 'packageTypes', hintKey: 'ui.packageTypeHint', hintFallback: 'Seleziona il tipo colli dalla lista suggerita.' },
           { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
           { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'netWeight', type: 'number', labelKey: 'ui.netWeight' },
@@ -162,11 +165,11 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
-          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
+          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode', suggestionKey: 'articleCodes', hintKey: 'ui.articleCodeHint', hintFallback: 'Seleziona un codice articolo suggerito coerente con la merce.' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric', suggestionKey: 'taricCodes', hintKey: 'ui.taricHint', hintFallback: 'Digita 2, 4, 6 o 8 cifre della voce doganale per ottenere suggerimenti TARIC/CN.' },
           { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
           { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
-          { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
+          { name: 'packageType', type: 'text', labelKey: 'ui.packageType', suggestionKey: 'packageTypes', hintKey: 'ui.packageTypeHint', hintFallback: 'Seleziona il tipo colli dalla lista suggerita.' },
           { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'chargeableWeight', type: 'number', labelKey: 'ui.chargeableWeight' },
           { name: 'volumeWeight', type: 'number', labelKey: 'ui.volumeWeight' },
@@ -195,11 +198,11 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
-          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
+          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode', suggestionKey: 'articleCodes', hintKey: 'ui.articleCodeHint', hintFallback: 'Seleziona un codice articolo suggerito coerente con la merce.' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric', suggestionKey: 'taricCodes', hintKey: 'ui.taricHint', hintFallback: 'Digita 2, 4, 6 o 8 cifre della voce doganale per ottenere suggerimenti TARIC/CN.' },
           { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
           { name: 'packageCount', type: 'number', labelKey: 'ui.packageCount', required: true },
-          { name: 'packageType', type: 'text', labelKey: 'ui.packageType' },
+          { name: 'packageType', type: 'text', labelKey: 'ui.packageType', suggestionKey: 'packageTypes', hintKey: 'ui.packageTypeHint', hintFallback: 'Seleziona il tipo colli dalla lista suggerita.' },
           { name: 'grossWeight', type: 'number', labelKey: 'ui.grossWeight', required: true },
           { name: 'chargeableWeight', type: 'number', labelKey: 'ui.chargeableWeight' },
           { name: 'volumeWeight', type: 'number', labelKey: 'ui.volumeWeight' },
@@ -228,7 +231,7 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
-          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
+          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode', suggestionKey: 'articleCodes', hintKey: 'ui.articleCodeHint', hintFallback: 'Seleziona un codice articolo suggerito coerente con la merce.' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric', suggestionKey: 'taricCodes', hintKey: 'ui.taricHint', hintFallback: 'Digita 2, 4, 6 o 8 cifre della voce doganale per ottenere suggerimenti TARIC/CN.' },
           { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
@@ -261,7 +264,7 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
-          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
+          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode', suggestionKey: 'articleCodes', hintKey: 'ui.articleCodeHint', hintFallback: 'Seleziona un codice articolo suggerito coerente con la merce.' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric', suggestionKey: 'taricCodes', hintKey: 'ui.taricHint', hintFallback: 'Digita 2, 4, 6 o 8 cifre della voce doganale per ottenere suggerimenti TARIC/CN.' },
           { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },
@@ -291,7 +294,7 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'plateDriver', type: 'text', labelKey: 'ui.plateDriver' }
         ],
         detail: [
-          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode' },
+          { name: 'articleCode', type: 'text', labelKey: 'ui.articleCode', suggestionKey: 'articleCodes', hintKey: 'ui.articleCodeHint', hintFallback: 'Seleziona un codice articolo suggerito coerente con la merce.' },
           { name: 'containerCode', type: 'text', labelKey: 'ui.containerCode' },
           { name: 'taric', type: 'text', labelKey: 'ui.taric', suggestionKey: 'taricCodes', hintKey: 'ui.taricHint', hintFallback: 'Digita 2, 4, 6 o 8 cifre della voce doganale per ottenere suggerimenti TARIC/CN.' },
           { name: 'goodsDescription', type: 'textarea', labelKey: 'ui.goodsDescription', required: true, full: true },

@@ -168,3 +168,10 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 ## STEP 5C.10 HF1 — Nuova pratica + booking opzionale
 - `Nuova pratica` ora resetta sempre il draft e apre il form pulito anche se l'utente è già dentro `Pratiche`.
 - `Booking` non è più obbligatorio negli schemi mare import/export.
+
+
+## STEP 5C.11 — Dettaglio: controlli peso e UX dati merce
+- nuovo modulo `js/practices/weight-integrity.js`
+- controllo live e pre-save: il peso netto non può superare il peso lordo
+- dataset ponte per `articleCode` e `packageType` con suggerimenti operativi
+- dettaglio merce più guidato senza introdurre monoliti

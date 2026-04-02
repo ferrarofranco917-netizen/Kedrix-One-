@@ -18,6 +18,7 @@
   const PracticePersistence = window.KedrixOnePracticePersistence;
   const PracticeSavePipeline = window.KedrixOnePracticeSavePipeline;
   const PracticeContainerIntegrity = window.KedrixOnePracticeContainerIntegrity;
+  const PracticeWeightIntegrity = window.KedrixOnePracticeWeightIntegrity;
   const PracticeDuplicate = window.KedrixOnePracticeDuplicate;
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
@@ -29,6 +30,9 @@
 
   if (PracticeContainerIntegrity && typeof PracticeContainerIntegrity.registerPreSaveHook === 'function') {
     PracticeContainerIntegrity.registerPreSaveHook(PracticeSavePipeline, I18N);
+  }
+  if (PracticeWeightIntegrity && typeof PracticeWeightIntegrity.registerPreSaveHook === 'function') {
+    PracticeWeightIntegrity.registerPreSaveHook(PracticeSavePipeline, I18N);
   }
 
   const main = document.getElementById('mainContent');
@@ -657,6 +661,15 @@
       });
     }
 
+    function refreshWeightIntegrityState() {
+      if (!dynamicFields || !PracticeWeightIntegrity || typeof PracticeWeightIntegrity.applyFieldState !== 'function') return;
+      PracticeWeightIntegrity.applyFieldState({
+        root: dynamicFields,
+        draft,
+        i18n: I18N
+      });
+    }
+
     function renderDynamicPanels() {
       if (!dynamicFields) return;
       dynamicFields.innerHTML = renderDynamicFieldsHTML(draft.practiceType || '', state.practiceTab || 'practice', draft);
@@ -664,6 +677,7 @@
       updateVerificationBannerState(draft);
       refreshValidationState();
       refreshContainerIntegrityState();
+      refreshWeightIntegrityState();
     }
 
     function syncPracticeLock() {
@@ -746,6 +760,7 @@
             save();
             refreshValidationState();
             refreshContainerIntegrityState();
+            refreshWeightIntegrityState();
           },
           updateVerificationBannerState
         });
@@ -773,6 +788,7 @@
           updateVerificationBannerState(draft);
           refreshValidationState();
           refreshContainerIntegrityState();
+          refreshWeightIntegrityState();
         };
         node.addEventListener('input', () => persistNodeValue(false));
         node.addEventListener('change', () => persistNodeValue(true));
