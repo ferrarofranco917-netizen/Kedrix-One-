@@ -103,16 +103,27 @@ window.KedrixOnePracticeFormRenderer = (() => {
           return `<option value="${displayText}">${displayText}</option>`;
         }).join('')}</datalist>`
         : '';
+      const isSeaPortField = field.name === 'portLoading' || field.name === 'portDischarge';
+      const isAirportField = field.name === 'airportDeparture' || field.name === 'airportDestination';
+      const isCustomsField = field.name === 'customsOffice';
       const hintKey = field.hintKey === false
         ? false
-        : (field.hintKey || (field.name === 'portLoading' || field.name === 'portDischarge'
+        : (field.hintKey || (isSeaPortField
           ? 'ui.unlocodeHint'
-          : 'ui.directorySuggestionHint'));
+          : isAirportField
+            ? 'ui.airportCodeHint'
+            : isCustomsField
+              ? 'ui.customsCodeHint'
+              : 'ui.directorySuggestionHint'));
       const hintFallback = field.hintKey === false
         ? ''
-        : (field.hintFallback || (field.name === 'portLoading' || field.name === 'portDischarge'
+        : (field.hintFallback || (isSeaPortField
           ? 'Scrivi il porto o il codice UN/LOCODE. Esempio: Genova → ITGOA.'
-          : 'Seleziona un valore suggerito coerente con la configurazione operativa.'));
+          : isAirportField
+            ? 'Scrivi l’aeroporto o il codice operativo. Esempio: Malpensa → ITMXP.'
+            : isCustomsField
+              ? 'Scrivi la dogana o il codice ADM. Esempio: Alessandria → IT313000.'
+              : 'Seleziona un valore suggerito coerente con la configurazione operativa.'));
       const hintHtml = fieldOptionEntries.length && datalistId && hintKey
         ? `<div class="field-hint">${Utils.escapeHtml(I18N.t(hintKey, hintFallback))}</div>`
         : '';

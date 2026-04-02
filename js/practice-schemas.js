@@ -3,6 +3,7 @@ window.KedrixOnePracticeSchemas = (() => {
 
   const I18N = window.KedrixOneI18N;
   const PortData = window.KedrixOnePortData || {};
+  const CustomsData = window.KedrixOneCustomsData || {};
 
   const incoterms2020 = ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP', 'FAS', 'FOB', 'CFR', 'CIF'];
 
@@ -15,7 +16,7 @@ window.KedrixOnePracticeSchemas = (() => {
     },
     directories: {
       seaPorts: ['Genova', 'La Spezia', 'Vado Ligure', 'Shanghai', 'Ningbo', 'Yantian', 'Rotterdam'],
-      airports: ['MXP Milano Malpensa', 'FCO Roma Fiumicino', 'CDG Paris Charles de Gaulle', 'PVG Shanghai Pudong', 'HKG Hong Kong'],
+      airports: Array.isArray(PortData.defaultAirports) ? PortData.defaultAirports.map((entry) => ({ ...entry })) : [],
       shippingCompanies: ['MSC', 'Maersk', 'CMA CGM', 'Hapag-Lloyd', 'ONE'],
       airlines: ['Lufthansa Cargo', 'Air France KLM Martinair Cargo', 'Qatar Airways Cargo', 'Emirates SkyCargo'],
       carriers: ['TERCOM', 'BRT', 'DHL Freight', 'DB Schenker', 'Lannutti'],
@@ -28,7 +29,7 @@ window.KedrixOnePracticeSchemas = (() => {
       currencies: ['EUR', 'USD', 'GBP', 'CHF', 'CNY', 'JPY'],
       deposits: ['Magazzino interno', 'Deposito doganale', 'Transit point', 'Cross-dock'],
       warehouseLinks: ['Pratica import', 'Pratica export', 'Transito interno', 'Deposito temporaneo'],
-      customsOffices: ['Genova Porto', 'La Spezia', 'Torino', 'Milano 1', 'Vado Ligure']
+      customsOffices: Array.isArray(CustomsData.defaultCustomsOffices) ? CustomsData.defaultCustomsOffices.map((entry) => ({ ...entry })) : []
     }
   };
 
@@ -73,7 +74,7 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'policyOriginals', type: 'number', labelKey: 'ui.policyOriginals' },
           { name: 'policyCopies', type: 'number', labelKey: 'ui.policyCopies' },
           { name: 'hbl', type: 'text', labelKey: 'ui.hbl' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices' },
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices', hintKey: 'ui.customsCodeHint', hintFallback: 'Scrivi la dogana o il codice ADM. Esempio: Alessandria → IT313000.' },
           { name: 'baseQuotation', type: 'text', labelKey: 'ui.baseQuotation' },
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' },
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
@@ -119,7 +120,7 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'policyOriginals', type: 'number', labelKey: 'ui.policyOriginals' },
           { name: 'policyCopies', type: 'number', labelKey: 'ui.policyCopies' },
           { name: 'hbl', type: 'text', labelKey: 'ui.hbl' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices' },
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', required: true, suggestionKey: 'customsOffices', hintKey: 'ui.customsCodeHint', hintFallback: 'Scrivi la dogana o il codice ADM. Esempio: Alessandria → IT313000.' },
           { name: 'baseQuotation', type: 'text', labelKey: 'ui.baseQuotation' },
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' },
           { name: 'category', type: 'select-derived', labelKey: 'ui.categoryLabel' }
@@ -149,13 +150,13 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
           { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
           { name: 'airline', type: 'text', labelKey: 'ui.airline', suggestionKey: 'airlines' },
-          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports' },
-          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports' },
+          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
+          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
           { name: 'mawb', type: 'text', labelKey: 'ui.mawb', required: true },
           { name: 'hawb', type: 'text', labelKey: 'ui.hawb' },
           { name: 'arrivalDate', type: 'date', labelKey: 'ui.arrivalDate', required: true },
           { name: 'booking', type: 'text', labelKey: 'ui.booking' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator', required: true, suggestionKey: 'customsOffices' },
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator', required: true, suggestionKey: 'customsOffices', hintKey: 'ui.customsCodeHint', hintFallback: 'Scrivi la dogana o il codice ADM. Esempio: Alessandria → IT313000.' },
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [
@@ -181,13 +182,13 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
           { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
           { name: 'airline', type: 'text', labelKey: 'ui.airline', suggestionKey: 'airlines' },
-          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports' },
-          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports' },
+          { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
+          { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
           { name: 'mawb', type: 'text', labelKey: 'ui.mawb', required: true },
           { name: 'hawb', type: 'text', labelKey: 'ui.hawb' },
           { name: 'departureDate', type: 'date', labelKey: 'ui.departureDate', required: true },
           { name: 'booking', type: 'text', labelKey: 'ui.booking' },
-          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator', required: true, suggestionKey: 'customsOffices' },
+          { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOperator', required: true, suggestionKey: 'customsOffices', hintKey: 'ui.customsCodeHint', hintFallback: 'Scrivi la dogana o il codice ADM. Esempio: Alessandria → IT313000.' },
           { name: 'incoterm', type: 'select', labelKey: 'ui.incoterm', required: true, optionSource: 'incoterms' }
         ],
         detail: [

@@ -20,6 +20,7 @@
   const PracticeDuplicate = window.KedrixOnePracticeDuplicate;
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
+  const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
 
   const state = Storage.load(() => Data.initialState());
 
@@ -199,7 +200,10 @@
   }
 
 
-  function normalizeSeaPortField(practiceType, fieldName, rawValue) {
+  function normalizeSuggestedField(practiceType, fieldName, rawValue) {
+    if (ReferenceNormalizer && typeof ReferenceNormalizer.normalizeFieldValue === 'function') {
+      return ReferenceNormalizer.normalizeFieldValue(practiceType, fieldName, rawValue, state.companyConfig);
+    }
     if (!rawValue || !PracticeSchemas || typeof PracticeSchemas.getField !== 'function' || typeof PracticeSchemas.normalizeSuggestedValue !== 'function') {
       return rawValue || '';
     }
@@ -207,10 +211,16 @@
     return PracticeSchemas.normalizeSuggestedValue(practiceType, field, rawValue, state.companyConfig);
   }
 
+  function normalizeSeaPortField(practiceType, fieldName, rawValue) {
+    return normalizeSuggestedField(practiceType, fieldName, rawValue);
+  }
+
   function normalizePracticeRecordsState() {
     let changed = false;
     state.practices = (state.practices || []).map((practice) => {
-      const dynamicData = extractPracticeDynamicData(practice);
+      const dynamicData = ReferenceNormalizer && typeof ReferenceNormalizer.normalizeDynamicData === 'function'
+        ? ReferenceNormalizer.normalizeDynamicData(practice.practiceType, extractPracticeDynamicData(practice), state.companyConfig)
+        : extractPracticeDynamicData(practice);
       const dynamicLabels = {
         ...buildDynamicLabelsForType(practice.practiceType),
         ...(practice.dynamicLabels || {})
@@ -218,13 +228,15 @@
 
       const normalizedPortLoading = String(practice.practiceType || '').startsWith('sea_')
         ? normalizeSeaPortField(practice.practiceType, 'portLoading', dynamicData.portLoading || practice.portLoading || '')
-        : (practice.portLoading || dynamicData.portLoading || '');
+        : (practice.portLoading || dynamicData.portLoading || dynamicData.airportDeparture || '');
       const normalizedPortDischarge = String(practice.practiceType || '').startsWith('sea_')
         ? normalizeSeaPortField(practice.practiceType, 'portDischarge', dynamicData.portDischarge || practice.portDischarge || '')
-        : (practice.portDischarge || dynamicData.portDischarge || '');
+        : (practice.portDischarge || dynamicData.portDischarge || dynamicData.airportDestination || '');
+      const normalizedCustomsOffice = normalizeSuggestedField(practice.practiceType, 'customsOffice', dynamicData.customsOffice || practice.customsOffice || '');
 
-      if (normalizedPortLoading) dynamicData.portLoading = normalizedPortLoading;
-      if (normalizedPortDischarge) dynamicData.portDischarge = normalizedPortDischarge;
+      if (normalizedPortLoading && String(practice.practiceType || '').startsWith('sea_')) dynamicData.portLoading = normalizedPortLoading;
+      if (normalizedPortDischarge && String(practice.practiceType || '').startsWith('sea_')) dynamicData.portDischarge = normalizedPortDischarge;
+      if (normalizedCustomsOffice) dynamicData.customsOffice = normalizedCustomsOffice;
 
       const next = {
         ...practice,
@@ -245,7 +257,7 @@
         transporter: practice.transporter || dynamicData.transporter || '',
         airline: practice.airline || dynamicData.airline || '',
         deposit: practice.deposit || dynamicData.deposit || '',
-        customsOffice: practice.customsOffice || dynamicData.customsOffice || '',
+        customsOffice: normalizedCustomsOffice || practice.customsOffice || dynamicData.customsOffice || '',
         customsSection: '',
         baseQuotation: practice.baseQuotation || dynamicData.baseQuotation || '',
         policyNumber: dynamicData.policyNumber || practice.policyNumber || practice.mbl || '',
@@ -814,6 +826,7 @@
           getPracticeSchema,
           buildDynamicLabelsForType,
           normalizeSeaPortField,
+          companyConfig: state.companyConfig,
           practiceTypeLabel,
           buildCurrentPracticeReference,
           nextPracticeId: Utils.nextPracticeId,

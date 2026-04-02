@@ -1,6 +1,12 @@
 window.KedrixOneData = (() => {
   'use strict';
 
+  const PortData = window.KedrixOnePortData || {};
+  const CustomsData = window.KedrixOneCustomsData || {};
+  const defaultSeaPortLocodes = Array.isArray(PortData.defaultSeaPortLocodes) ? PortData.defaultSeaPortLocodes.map((entry) => ({ ...entry })) : [];
+  const defaultAirports = Array.isArray(PortData.defaultAirports) ? PortData.defaultAirports.map((entry) => ({ ...entry })) : [];
+  const defaultCustomsOffices = Array.isArray(CustomsData.defaultCustomsOffices) ? CustomsData.defaultCustomsOffices.map((entry) => ({ ...entry })) : [];
+
   function initialState() {
     return {
       currentRoute: 'dashboard',
@@ -52,19 +58,20 @@ window.KedrixOneData = (() => {
           },
           directories: {
             seaPorts: ['Genova', 'La Spezia', 'Vado Ligure', 'Shanghai', 'Ningbo', 'Yantian'],
-            airports: ['MXP Milano Malpensa', 'FCO Roma Fiumicino', 'CDG Paris Charles de Gaulle', 'PVG Shanghai Pudong'],
+            airports: defaultAirports,
             shippingCompanies: ['MSC', 'Maersk', 'CMA CGM', 'Hapag-Lloyd'],
             airlines: ['Lufthansa Cargo', 'Air France KLM Martinair Cargo', 'Qatar Airways Cargo'],
             carriers: ['TERCOM', 'BRT', 'DHL Freight', 'DB Schenker'],
             vehicleTypes: ['Bilico centinato', 'Motrice', 'Furgone', 'Container chassis'],
             logisticsLocations: ['Fossano', 'Torino', 'Genova', 'Milano', 'Lione'],
+            seaPortLocodes: defaultSeaPortLocodes,
             seaTerminals: ["PSA Genova Pra\'", 'SECH Genova', 'VTE Voltri', 'Terminal del Golfo La Spezia'],
             originDirectories: ['ITALIA', 'CINA', 'TURCHIA', 'USA', 'FRANCIA', 'GERMANIA'],
             destinationDirectories: ['ITALIA', 'CINA', 'TURCHIA', 'USA', 'FRANCIA', 'GERMANIA'],
             currencies: ['EUR', 'USD', 'GBP', 'CHF', 'CNY', 'JPY'],
             deposits: ['Magazzino interno', 'Deposito doganale', 'Transit point'],
             warehouseLinks: ['Pratica import', 'Pratica export', 'Transito interno'],
-            customsOffices: ['Genova Porto', 'La Spezia', 'Torino', 'Milano 1']
+            customsOffices: defaultCustomsOffices
           }
         }
       },
@@ -174,14 +181,14 @@ window.KedrixOneData = (() => {
           priority: 'Alta',
           importer: 'Michelin Italia',
           consignee: 'Michelin Italia',
-          portLoading: 'CNSHA - Shanghai',
+          portLoading: 'CNSHG - Shanghai Port',
           portDischarge: 'ITGOA - Genova',
           containerCode: 'MSCU1234567',
           packageCount: '18',
           grossWeight: '22100',
           goodsDescription: 'Pneumatici automotive',
           booking: 'BK-SEA-0901',
-          customsOffice: 'Genova Porto',
+          customsOffice: '261101 - Passo Nuovo (Genova 1)',
           eta: '2026-04-01',
           type: 'Import',
           port: 'Genova',
@@ -192,7 +199,7 @@ window.KedrixOneData = (() => {
             importer: 'Michelin Italia',
             consignee: 'Michelin Italia',
             company: 'MSC',
-            portLoading: 'CNSHA - Shanghai',
+            portLoading: 'CNSHG - Shanghai Port',
             portDischarge: 'ITGOA - Genova',
             originRef: 'CINA',
             destinationRef: 'ITALIA',
@@ -207,7 +214,7 @@ window.KedrixOneData = (() => {
             policyOriginals: '3',
             policyCopies: '2',
             mbl: 'MSCU-MBL-7781',
-            customsOffice: 'Genova Porto',
+            customsOffice: '261101 - Passo Nuovo (Genova 1)',
             customsSection: 'Import',
             baseQuotation: 'Q-2026-041',
             invoiceAmount: '15420',
@@ -254,7 +261,7 @@ window.KedrixOneData = (() => {
           grossWeight: '8200',
           goodsDescription: 'Pet food palletizzato',
           booking: 'BK-RD-4412',
-          customsOffice: 'Torino',
+          customsOffice: 'IT314000 - Torino',
           eta: '2026-04-03',
           type: 'Export',
           port: 'Fossano',
@@ -299,14 +306,14 @@ window.KedrixOneData = (() => {
           priority: 'Alta',
           importer: 'Aprica S.p.A.',
           consignee: 'Aprica S.p.A.',
-          portLoading: 'CNNGB - Ningbo',
+          portLoading: 'CNNBG - Ningbo Port',
           portDischarge: 'ITSPE - La Spezia',
           containerCode: 'OOLU7654321',
           packageCount: '6',
           grossWeight: '4300',
           goodsDescription: 'Materiale tecnico',
           booking: 'BK-SEA-8812',
-          customsOffice: 'La Spezia',
+          customsOffice: '068100 - La Spezia operativa',
           eta: '2026-03-31',
           type: 'Import',
           port: 'La Spezia',
@@ -316,12 +323,12 @@ window.KedrixOneData = (() => {
             importer: 'Aprica S.p.A.',
             consignee: 'Aprica S.p.A.',
             company: 'Maersk',
-            portLoading: 'CNNGB - Ningbo',
+            portLoading: 'CNNBG - Ningbo Port',
             portDischarge: 'ITSPE - La Spezia',
             arrivalDate: '2026-03-31',
             booking: 'BK-SEA-8812',
             hbl: 'HBL-APR-9902',
-            customsOffice: 'La Spezia',
+            customsOffice: '068100 - La Spezia operativa',
             customsSection: 'Import',
             foreignInvoice: 'APR-EXT-9902',
             additionalReference: 'APR-RIF-PO-71',

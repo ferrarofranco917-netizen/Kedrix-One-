@@ -2,6 +2,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
   'use strict';
 
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
+  const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
 
   const preSaveHooks = [];
 
@@ -51,16 +52,20 @@ window.KedrixOnePracticeSavePipeline = (() => {
     };
   }
 
-  function prepareNormalizedDraft(draft, normalizeSeaPortField) {
+  function prepareNormalizedDraft(draft, normalizeSeaPortField, companyConfig) {
+    if (ReferenceNormalizer && typeof ReferenceNormalizer.normalizeDraftReferences === 'function') {
+      ReferenceNormalizer.normalizeDraftReferences(draft, companyConfig);
+    }
+
     const normalizedSeaPortLoading = draft.practiceType && draft.practiceType.startsWith('sea_')
       ? normalizeSeaPortField(draft.practiceType, 'portLoading', draft.dynamicData.portLoading || '')
-      : (draft.dynamicData.portLoading || '');
+      : (draft.dynamicData.portLoading || draft.dynamicData.airportDeparture || '');
     const normalizedSeaPortDischarge = draft.practiceType && draft.practiceType.startsWith('sea_')
       ? normalizeSeaPortField(draft.practiceType, 'portDischarge', draft.dynamicData.portDischarge || '')
-      : (draft.dynamicData.portDischarge || '');
+      : (draft.dynamicData.portDischarge || draft.dynamicData.airportDestination || '');
 
-    if (normalizedSeaPortLoading) draft.dynamicData.portLoading = normalizedSeaPortLoading;
-    if (normalizedSeaPortDischarge) draft.dynamicData.portDischarge = normalizedSeaPortDischarge;
+    if (normalizedSeaPortLoading && draft.practiceType && draft.practiceType.startsWith('sea_')) draft.dynamicData.portLoading = normalizedSeaPortLoading;
+    if (normalizedSeaPortDischarge && draft.practiceType && draft.practiceType.startsWith('sea_')) draft.dynamicData.portDischarge = normalizedSeaPortDischarge;
 
     return {
       normalizedSeaPortLoading,
@@ -75,6 +80,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
       getPracticeSchema,
       buildDynamicLabelsForType,
       normalizeSeaPortField,
+      companyConfig,
       practiceTypeLabel,
       buildCurrentPracticeReference,
       nextPracticeId
@@ -86,7 +92,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
     if (SeaSchemaCleanup && typeof SeaSchemaCleanup.normalizeDraft === 'function') {
       SeaSchemaCleanup.normalizeDraft(draft);
     }
-    const { normalizedSeaPortLoading, normalizedSeaPortDischarge } = prepareNormalizedDraft(draft, normalizeSeaPortField || (() => ''));
+    const { normalizedSeaPortLoading, normalizedSeaPortDischarge } = prepareNormalizedDraft(draft, normalizeSeaPortField || (() => ''), companyConfig);
     const policyNumber = draft.dynamicData.policyNumber || draft.dynamicData.mbl || '';
     const customsOffice = draft.dynamicData.customsOffice || draft.dynamicData.customsOperator || '';
 
@@ -246,6 +252,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
       getPracticeSchema,
       buildDynamicLabelsForType,
       normalizeSeaPortField,
+      companyConfig,
       practiceTypeLabel,
       buildCurrentPracticeReference,
       nextPracticeId,
@@ -268,6 +275,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
       getPracticeSchema,
       buildDynamicLabelsForType,
       normalizeSeaPortField,
+      companyConfig,
       practiceTypeLabel,
       buildCurrentPracticeReference,
       nextPracticeId

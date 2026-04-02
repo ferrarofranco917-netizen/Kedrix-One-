@@ -113,3 +113,11 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 - aggiunto campo `Valuta fattura` accanto a `Importo Fattura`
 
 - removed the misplaced `Incoterms 2020` hint from sea/air suggestion fields (company, ports, origin/destination, customs, terminal) and replaced it with neutral directory guidance
+
+
+## STEP 5C.9 — Dataset ufficiali porti + dogane
+- dataset porti spostato su base strutturata con valori canonici, alias e display coerente per la normalizzazione operativa
+- introdotto dataset dedicato `js/data/customs.js` per `Dogana / sezione`, con codici ADM e principali sezioni operative
+- introdotto dataset aeroporti strutturato per i flussi aerei
+- introdotto modulo `js/practices/reference-normalizer.js` per normalizzare porti/aeroporti/dogane in save/open/edit senza sporcare `app.js`
+- hint operativi dedicati per UN/LOCODE, aeroporti e codici ADM
