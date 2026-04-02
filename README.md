@@ -145,3 +145,8 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 - titolo banner mantenuto: `Attenzione unità sottoposta a verifica`
 - riga dettaglio resa più diretta: `Tipo: Scanner · Magazzino · Documentale`
 - allineamento applicato anche agli alert dashboard
+
+
+## STEP 5C.9C HF1 — Fix verificationHint banner
+- Fix regressione in `templates.js` che causava `ReferenceError: verificationHint is not defined` al render di Pratiche.
+- Ripristinata la costruzione dell'hint del banner verifica usando `KedrixOnePracticeVerification.formatTypesHint()`.

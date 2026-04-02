@@ -165,6 +165,9 @@ window.KedrixOneTemplates = (() => {
     const verificationLabels = PracticeVerification && typeof PracticeVerification.collectLabels === 'function'
       ? PracticeVerification.collectLabels(draft)
       : [];
+    const verificationHint = PracticeVerification && typeof PracticeVerification.formatTypesHint === 'function'
+      ? PracticeVerification.formatTypesHint(verificationLabels)
+      : (verificationLabels.length ? `${T.t('ui.customsVerificationTypePrefix', 'Tipo:')} ${verificationLabels.join(' · ')}` : T.t('ui.verificationBannerHint', 'Verifiche doganali attive sulla unità.'));
     const isEditing = Boolean(draft.editingPracticeId);
     const duplicateSource = state.practiceDuplicateSource || null;
     const editSourceLabel = state.practiceOpenSource === 'search'
