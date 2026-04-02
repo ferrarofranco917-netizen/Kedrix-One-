@@ -15,6 +15,7 @@ window.KedrixOneData = (() => {
       practiceSearchQuery: '',
       documentSearchQuery: '',
       documentPreviewPracticeId: '',
+      documentPreviewAttachmentId: '',
       statusFilter: 'Tutti',
       expandedModules: ['practices', 'master-data', 'documents', 'tracking'],
       settingsModuleKey: 'practices',
@@ -53,6 +54,22 @@ window.KedrixOneData = (() => {
           'practices/richiesta-fondi',
           'practices/delivery-order'
         ],
+        documents: {
+          documentTypeOptions: [
+            { value: 'generic', label: 'Allegato operativo' },
+            { value: 'clientInstructions', label: 'Istruzioni cliente' },
+            { value: 'invoice', label: 'Invoice' },
+            { value: 'packingList', label: 'Packing list' },
+            { value: 'signedMandate', label: 'Mandato firmato' },
+            { value: 'booking', label: 'Booking' },
+            { value: 'policy', label: 'Polizza / BL / AWB' },
+            { value: 'customsDocs', label: 'Documenti doganali' },
+            { value: 'deliveryOrder', label: 'Delivery order' },
+            { value: 'fundRequest', label: 'Richiesta fondi' },
+            { value: 'quotation', label: 'Quotazione' },
+            { value: 'other', label: 'Altro' }
+          ]
+        },
         practiceConfig: {
           incotermProfiles: {
             sea: ['EXW', 'FCA', 'FOB', 'CFR', 'CIF', 'DAP', 'DPU', 'DDP'],

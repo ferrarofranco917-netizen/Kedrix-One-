@@ -3,6 +3,7 @@ window.KedrixOneDocumentEngine = (() => {
 
   const Utils = window.KedrixOneUtils;
   const Attachments = window.KedrixOnePracticeAttachments;
+  const DocumentCategories = window.KedrixOneDocumentCategories;
 
   const PRACTICE_FIELD_DEFS = [
     { key: 'reference', label: 'Numero pratica', getter: (practice) => practice.reference },
@@ -23,9 +24,12 @@ window.KedrixOneDocumentEngine = (() => {
       : String(value || '').trim().toUpperCase();
   }
 
-  function getTypeOptions(i18n) {
+  function getTypeOptions(state, i18n) {
+    if (DocumentCategories && typeof DocumentCategories.getOptions === 'function') {
+      return DocumentCategories.getOptions(state || { companyConfig: {} }, i18n);
+    }
     return Attachments && typeof Attachments.getDocumentTypeOptions === 'function'
-      ? Attachments.getDocumentTypeOptions(i18n)
+      ? Attachments.getDocumentTypeOptions(state, i18n)
       : [
           { value: 'generic', label: 'Allegato operativo' },
           { value: 'clientInstructions', label: 'Istruzioni cliente' },
@@ -39,8 +43,8 @@ window.KedrixOneDocumentEngine = (() => {
         ];
   }
 
-  function getTypeLabel(documentType, i18n) {
-    const options = getTypeOptions(i18n);
+  function getTypeLabel(documentType, state, i18n) {
+    const options = getTypeOptions(state, i18n);
     const matched = options.find((option) => option.value === documentType);
     return matched ? matched.label : documentType || '—';
   }
@@ -83,7 +87,7 @@ window.KedrixOneDocumentEngine = (() => {
           mimeType: item.mimeType || 'application/octet-stream',
           size: Number(item.size || 0),
           documentType: String(item.documentType || 'generic'),
-          documentTypeLabel: getTypeLabel(item.documentType || 'generic', i18n),
+          documentTypeLabel: getTypeLabel(item.documentType || 'generic', state, i18n),
           importedAt: item.importedAt || '',
           practice
         });

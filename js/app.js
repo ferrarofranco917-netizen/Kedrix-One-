@@ -21,6 +21,8 @@
   const PracticeWeightIntegrity = window.KedrixOnePracticeWeightIntegrity;
   const PracticeAttachments = window.KedrixOnePracticeAttachments;
   const DocumentEngine = window.KedrixOneDocumentEngine;
+  const DocumentCategories = window.KedrixOneDocumentCategories;
+  const DocumentPreview = window.KedrixOneDocumentPreview;
   const AppFeedback = window.KedrixOneAppFeedback;
   const PracticeDuplicate = window.KedrixOnePracticeDuplicate;
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
@@ -30,6 +32,9 @@
   const state = Storage.load(() => Data.initialState());
   if (PracticeAttachments && typeof PracticeAttachments.normalizeAttachmentIndex === 'function') {
     PracticeAttachments.normalizeAttachmentIndex(state);
+  }
+  if (DocumentCategories && typeof DocumentCategories.ensureStateOptions === 'function') {
+    DocumentCategories.ensureStateOptions(state, I18N);
   }
 
   sanitizeLegacyPortSuggestions();
@@ -1077,12 +1082,72 @@
   }
 
 
+
+function currentDocumentBundles() {
+  if (!DocumentEngine || typeof DocumentEngine.buildBundles !== 'function') return [];
+  return DocumentEngine.buildBundles(state, I18N);
+}
+
+function currentDocumentResults() {
+  return documentSearchResults();
+}
+
+function activeDocumentBundle() {
+  const query = String(state.documentSearchQuery || '').trim();
+  const bundles = currentDocumentBundles();
+  const results = query ? currentDocumentResults() : bundles;
+  const activeKey = state.documentPreviewPracticeId || results[0]?.practiceId || results[0]?.bundleKey || bundles[0]?.practiceId || bundles[0]?.bundleKey || '';
+  return results.find((item) => (item.practiceId || item.bundleKey) === activeKey)
+    || bundles.find((item) => (item.practiceId || item.bundleKey) === activeKey)
+    || null;
+}
+
+function ensureDocumentPreviewSelection() {
+  const bundle = activeDocumentBundle();
+  const docs = bundle ? ((bundle.matchedDocumentsCount ? bundle.matchedDocuments : bundle.documents) || []) : [];
+  if (!bundle) {
+    if (state.documentPreviewPracticeId || state.documentPreviewAttachmentId) {
+      state.documentPreviewPracticeId = '';
+      state.documentPreviewAttachmentId = '';
+      save();
+    }
+    return;
+  }
+  const activeKey = bundle.practiceId || bundle.bundleKey || '';
+  const validAttachment = docs.some((item) => item.id === state.documentPreviewAttachmentId);
+  let changed = false;
+  if (state.documentPreviewPracticeId !== activeKey) {
+    state.documentPreviewPracticeId = activeKey;
+    changed = true;
+  }
+  if (!validAttachment) {
+    const nextAttachmentId = docs[0]?.id || '';
+    if (state.documentPreviewAttachmentId !== nextAttachmentId) {
+      state.documentPreviewAttachmentId = nextAttachmentId;
+      changed = true;
+    }
+  }
+  if (changed) save();
+}
+
+function renderDocumentPreviewPanel() {
+  const host = document.getElementById('documentPreviewHost');
+  if (!host || !DocumentPreview || typeof DocumentPreview.render !== 'function') return;
+  DocumentPreview.render({
+    host,
+    attachmentId: state.documentPreviewAttachmentId,
+    attachments: PracticeAttachments,
+    i18n: I18N
+  });
+}
+
   function bindDocumentEvents() {
     const input = document.getElementById('documentSearchQuery');
 
     input?.addEventListener('input', (event) => {
       state.documentSearchQuery = event.target.value || '';
       state.documentPreviewPracticeId = '';
+      state.documentPreviewAttachmentId = '';
       save();
       render();
     });
@@ -1090,6 +1155,16 @@
     main.querySelectorAll('[data-document-preview]').forEach((button) => {
       button.addEventListener('click', () => {
         state.documentPreviewPracticeId = button.dataset.documentPreview || '';
+        state.documentPreviewAttachmentId = '';
+        save();
+        render();
+      });
+    });
+
+    main.querySelectorAll('[data-document-preview-file]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        state.documentPreviewAttachmentId = button.dataset.documentPreviewFile || '';
         save();
         render();
       });
@@ -1128,6 +1203,10 @@
 
     title.textContent = routeMeta.fullTitle;
 
+    if (route !== 'documents' && DocumentPreview && typeof DocumentPreview.revokePreviewUrl === 'function') {
+      DocumentPreview.revokePreviewUrl();
+    }
+
     if (route === 'dashboard') {
       main.innerHTML = Templates.dashboard(state, Modules.summary(), licensingSummary());
       return;
@@ -1140,8 +1219,10 @@
     }
 
     if (route === 'documents') {
+      ensureDocumentPreviewSelection();
       main.innerHTML = Templates.documents(state, module, documentSearchResults());
       bindDocumentEvents();
+      renderDocumentPreviewPanel();
       return;
     }
 
@@ -1200,6 +1281,9 @@
     const numberingIncludeYear = document.getElementById('numberingIncludeYear');
     const numberingPreview = document.getElementById('numberingPreview');
     const saveNumberingRule = document.getElementById('saveNumberingRule');
+    const documentTypeOptionsEditor = document.getElementById('documentTypeOptionsEditor');
+    const saveDocumentTypeOptions = document.getElementById('saveDocumentTypeOptions');
+    const resetDocumentTypeOptions = document.getElementById('resetDocumentTypeOptions');
 
     function refreshSettingsStateAfterAccessChange() {
       state.currentRoute = safeRoute(state.currentRoute);
@@ -1259,6 +1343,23 @@
       if (!field) return;
       field.addEventListener(field.type === 'checkbox' ? 'change' : 'input', updateNumberingPreview);
     });
+
+
+saveDocumentTypeOptions?.addEventListener('click', () => {
+  if (!DocumentCategories || typeof DocumentCategories.applyOptionsText !== 'function') return;
+  DocumentCategories.applyOptionsText(state, documentTypeOptionsEditor?.value || '', I18N);
+  save();
+  render();
+  toast(I18N.t('ui.documentCategoriesSaved', 'Categorie documentali aggiornate'), 'success');
+});
+
+resetDocumentTypeOptions?.addEventListener('click', () => {
+  if (!DocumentCategories || typeof DocumentCategories.resetToDefault !== 'function') return;
+  DocumentCategories.resetToDefault(state, I18N);
+  save();
+  render();
+  toast(I18N.t('ui.documentCategoriesReset', 'Categorie documentali ripristinate'), 'success');
+});
 
     saveNumberingRule?.addEventListener('click', () => {
       const client = getClientById(state.settingsClientId);

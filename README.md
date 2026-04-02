@@ -196,3 +196,10 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 - rimozione allegato nel tab Allegati aggiornata: conferma tramite dialog interno app, non `window.confirm`
 - aggiornamento tipo documento ora confermato con feedback applicativo
 - service worker riallineato ai file reali del repo per evitare cache incoerenti nello staging PWA
+
+
+## STEP 6B.3 — Preview documenti + categorie documentali
+
+- preview inline per PDF / immagini / testi nel modulo Documenti
+- categorie documentali configurabili da Impostazioni
+- nessun uso di popup browser per le conferme operative documentali

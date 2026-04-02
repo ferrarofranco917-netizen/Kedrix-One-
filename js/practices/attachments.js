@@ -70,8 +70,20 @@ window.KedrixOnePracticeAttachments = (() => {
     ).trim();
   }
 
-  function getDocumentTypeOptions(i18n) {
-    const t = (key, fallback) => (i18n && typeof i18n.t === 'function' ? i18n.t(key, fallback) : fallback);
+  function resolveStateAndI18n(firstArg, secondArg) {
+    const looksLikeState = firstArg && typeof firstArg === 'object' && ('companyConfig' in firstArg || 'practices' in firstArg);
+    return {
+      state: looksLikeState ? firstArg : null,
+      i18n: looksLikeState ? secondArg : firstArg
+    };
+  }
+
+  function getDocumentTypeOptions(firstArg, secondArg) {
+    const context = resolveStateAndI18n(firstArg, secondArg);
+    if (DocumentCategories && typeof DocumentCategories.getOptions === 'function') {
+      return DocumentCategories.getOptions(context.state || { companyConfig: {} }, context.i18n);
+    }
+    const t = (key, fallback) => (context.i18n && typeof context.i18n.t === 'function' ? context.i18n.t(key, fallback) : fallback);
     return [
       { value: 'generic', label: t('ui.attachmentTypeGeneric', 'Allegato operativo') },
       { value: 'clientInstructions', label: t('ui.attachmentTypeClientInstructions', 'Istruzioni cliente') },
@@ -145,7 +157,7 @@ window.KedrixOnePracticeAttachments = (() => {
     }
 
     const items = getAttachments(state, draft);
-    const typeOptions = getDocumentTypeOptions(i18n);
+    const typeOptions = getDocumentTypeOptions(state, i18n);
     const locale = typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'en-GB' : 'it-IT';
     const ownerKey = ensureDraftOwnerKey(draft);
     const countLabel = items.length === 1 ? t('ui.attachmentCountOne', '1 allegato') : t('ui.attachmentCountMany', '{{count}} allegati').replace('{{count}}', String(items.length));
@@ -401,6 +413,7 @@ window.KedrixOnePracticeAttachments = (() => {
     getAttachments,
     getDocumentTypeOptions,
     normalizeAttachmentIndex,
+    getAttachmentRecord,
     openAttachment,
     removeAttachment,
     renderPanelHTML,
