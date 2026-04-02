@@ -203,3 +203,8 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 - preview inline per PDF / immagini / testi nel modulo Documenti
 - categorie documentali configurabili da Impostazioni
 - nessun uso di popup browser per le conferme operative documentali
+
+
+## STEP 6B.3 HF1 — Hotfix allegati
+- Ripristinato trigger applicativo esplicito **Carica allegati** nel tab Allegati.
+- Il caricamento non dipende più solo dal controllo file nativo del browser.
