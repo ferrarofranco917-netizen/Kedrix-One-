@@ -1186,7 +1186,7 @@ function renderDocumentPreviewPanel() {
             await PracticeAttachments.openAttachment({ attachmentId: button.dataset.documentOpen, toast });
           }
         } catch (error) {
-          toast(error?.message || 'Errore apertura allegato', 'warning');
+          toast(error?.message || I18N.t('ui.attachmentOpenError', 'Unable to open the attachment'), 'warning');
         }
       });
     });

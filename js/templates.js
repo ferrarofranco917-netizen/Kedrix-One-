@@ -146,12 +146,12 @@ window.KedrixOneTemplates = (() => {
       { key: 'practice', label: T.t('ui.tabPractice', 'Pratica') },
       { key: 'detail', label: T.t('ui.tabDetail', 'Dettaglio') },
       { key: 'notes', label: T.t('ui.tabNotes', 'Note') },
-      { key: 'attachments', label: T.t('ui.tabAttachments', 'Allegati') }
+      { key: 'attachments', label: T.t('ui.tabAttachments', fallbackByLanguage('Allegati', 'Attachments')) }
     ];
     const currentTabKey = state.practiceTab || 'practice';
     const currentTab = tabs.find((tab) => tab.key === currentTabKey) || tabs[0];
-    const dynamicPanelTitle = currentTabKey === 'attachments' ? T.t('ui.attachmentsPanelShellTitle', 'Gestione allegati') : T.t('ui.dynamicPreview', 'Anteprima schema');
-    const dynamicPanelSubtitle = currentTabKey === 'attachments' ? T.t('ui.attachmentsPanelShellSubtitle', 'Import, elenco, apertura e rimozione controllata degli allegati collegati alla pratica.') : T.t('ui.dynamicSchemaIntro', '');
+    const dynamicPanelTitle = currentTabKey === 'attachments' ? T.t('ui.attachmentsPanelShellTitle', fallbackByLanguage('Gestione allegati', 'Attachment management')) : T.t('ui.dynamicPreview', 'Anteprima schema');
+    const dynamicPanelSubtitle = currentTabKey === 'attachments' ? T.t('ui.attachmentsPanelShellSubtitle', fallbackByLanguage('Import, elenco, apertura e rimozione controllata degli allegati collegati alla pratica.', 'Import, list, open and remove attachments linked to the current practice in a controlled way.')) : T.t('ui.dynamicSchemaIntro', '');
     const selectedType = practiceTypes.find((item) => item.value === draft.practiceType) || null;
     const categoryOptions = draft.practiceType ? PracticeSchemas.getCategoryOptions(draft.practiceType) : [];
     const searchQuery = state.practiceSearchQuery || '';

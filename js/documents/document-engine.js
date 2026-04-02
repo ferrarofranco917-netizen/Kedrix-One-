@@ -13,7 +13,7 @@ window.KedrixOneDocumentEngine = (() => {
     { key: 'practiceTypeLabel', label: 'Tipologia', getter: (practice) => practice.practiceTypeLabel || practice.practiceType },
     { key: 'containerCode', label: 'Container', getter: (practice) => practice.containerCode },
     { key: 'booking', label: 'Booking', getter: (practice) => practice.booking },
-    { key: 'policyNumber', label: 'Polizza', getter: (practice) => practice.policyNumber || practice.mbl },
+    { key: 'policyNumber', label: 'Policy', getter: (practice) => practice.policyNumber || practice.mbl },
     { key: 'customsOffice', label: 'Dogana', getter: (practice) => practice.customsOffice },
     { key: 'terminal', label: 'Terminal', getter: (practice) => practice.terminal },
     { key: 'goodsDescription', label: 'Merce', getter: (practice) => practice.goodsDescription }
@@ -32,15 +32,15 @@ window.KedrixOneDocumentEngine = (() => {
     return Attachments && typeof Attachments.getDocumentTypeOptions === 'function'
       ? Attachments.getDocumentTypeOptions(state, i18n)
       : [
-          { value: 'generic', label: 'Allegato operativo' },
+          { value: 'generic', label: 'Operational attachment' },
           { value: 'clientInstructions', label: 'Istruzioni cliente' },
           { value: 'invoice', label: 'Invoice' },
           { value: 'packingList', label: 'Packing list' },
           { value: 'signedMandate', label: 'Mandato firmato' },
           { value: 'booking', label: 'Booking' },
-          { value: 'policy', label: 'Polizza / BL / AWB' },
-          { value: 'customsDocs', label: 'Documenti doganali' },
-          { value: 'other', label: 'Altro' }
+          { value: 'policy', label: 'Policy / BL / AWB' },
+          { value: 'customsDocs', label: 'Customs documents' },
+          { value: 'other', label: 'Other' }
         ];
   }
 
@@ -172,15 +172,15 @@ window.KedrixOneDocumentEngine = (() => {
   function collectDocumentMatches(document, tokens) {
     const candidates = [
       { label: 'Documento', value: document.fileName },
-      { label: 'Tipo documento', value: document.documentTypeLabel },
+      { label: i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentTypeLabel', fallbackByLanguage(i18n, 'Tipo documento', 'Document type')) : fallbackByLanguage(i18n, 'Tipo documento', 'Document type'), value: document.documentTypeLabel },
       { label: 'Dogana', value: document.customsOffice },
       { label: 'Container', value: document.containerCode },
       { label: 'Booking', value: document.booking },
       { label: 'Merce', value: document.goodsDescription },
-      { label: 'Rif. documento', value: document.externalReference },
+      { label: i18n && typeof i18n.t === 'function' ? i18n.t('ui.documentReference', fallbackByLanguage(i18n, 'Rif. documento', 'Document reference')) : fallbackByLanguage(i18n, 'Rif. documento', 'Document reference'), value: document.externalReference },
       { label: 'MRN', value: document.customsMrn },
       { label: 'Tags', value: Array.isArray(document.tags) ? document.tags.join(', ') : '' },
-      { label: 'Note', value: document.notes }
+      { label: i18n && typeof i18n.t === 'function' ? i18n.t('ui.notes', fallbackByLanguage(i18n, 'Note', 'Notes')) : fallbackByLanguage(i18n, 'Note', 'Notes'), value: document.notes }
     ];
 
     return candidates.filter((candidate) => {

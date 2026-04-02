@@ -4,17 +4,31 @@ window.KedrixOnePracticeAttachments = (() => {
   const DB_NAME = 'kedrix-one-practice-attachments';
   const DocumentCategories = window.KedrixOneDocumentCategories;
   const DocumentMetadata = window.KedrixOneDocumentMetadata;
+  const I18N = window.KedrixOneI18N;
   const DB_VERSION = 1;
   const STORE_NAME = 'attachments';
+
+  function tGlobal(key, fallback) {
+    return I18N && typeof I18N.t === 'function' ? I18N.t(key, fallback) : fallback;
+  }
+
+
+  function isEnglish(i18n) {
+    return !!(i18n && typeof i18n.getLanguage === 'function' && i18n.getLanguage() === 'en');
+  }
+
+  function fallbackByLanguage(i18n, itText, enText) {
+    return isEnglish(i18n) ? enText : itText;
+  }
 
   function openDb() {
     return new Promise((resolve, reject) => {
       if (!window.indexedDB) {
-        reject(new Error('IndexedDB non disponibile in questo browser.'));
+        reject(new Error(tGlobal('ui.attachmentIndexedDbUnavailable', fallbackByLanguage(I18N, 'IndexedDB non disponibile in questo browser.', 'IndexedDB is not available in this browser.'))));
         return;
       }
       const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-      request.onerror = () => reject(request.error || new Error('Errore apertura archivio allegati.'));
+      request.onerror = () => reject(request.error || new Error(tGlobal('ui.attachmentStoreOpenError', fallbackByLanguage(I18N, 'Errore apertura archivio allegati.', 'Unable to open the attachment archive.'))));
       request.onupgradeneeded = () => {
         const db = request.result;
         const store = db.objectStoreNames.contains(STORE_NAME)
@@ -32,7 +46,7 @@ window.KedrixOnePracticeAttachments = (() => {
       const tx = db.transaction(STORE_NAME, mode);
       const store = tx.objectStore(STORE_NAME);
       Promise.resolve(worker(store, tx)).then(resolve).catch(reject);
-      tx.onerror = () => reject(tx.error || new Error('Errore archivio allegati.'));
+      tx.onerror = () => reject(tx.error || new Error(tGlobal('ui.attachmentStoreError', fallbackByLanguage(I18N, 'Errore archivio allegati.', 'Attachment archive error.'))));
       tx.oncomplete = () => db.close();
     });
   }
@@ -87,15 +101,15 @@ window.KedrixOnePracticeAttachments = (() => {
     }
     const t = (key, fallback) => (context.i18n && typeof context.i18n.t === 'function' ? context.i18n.t(key, fallback) : fallback);
     return [
-      { value: 'generic', label: t('ui.attachmentTypeGeneric', 'Allegato operativo') },
-      { value: 'clientInstructions', label: t('ui.attachmentTypeClientInstructions', 'Istruzioni cliente') },
+      { value: 'generic', label: t('ui.attachmentTypeGeneric', fallbackByLanguage(context.i18n, 'Allegato operativo', 'Operational attachment')) },
+      { value: 'clientInstructions', label: t('ui.attachmentTypeClientInstructions', fallbackByLanguage(context.i18n, 'Istruzioni cliente', 'Client instructions')) },
       { value: 'invoice', label: t('ui.attachmentTypeInvoice', 'Invoice') },
       { value: 'packingList', label: t('ui.attachmentTypePackingList', 'Packing list') },
-      { value: 'signedMandate', label: t('ui.attachmentTypeSignedMandate', 'Mandato firmato') },
+      { value: 'signedMandate', label: t('ui.attachmentTypeSignedMandate', fallbackByLanguage(context.i18n, 'Mandato firmato', 'Signed mandate')) },
       { value: 'booking', label: t('ui.attachmentTypeBooking', 'Booking') },
-      { value: 'policy', label: t('ui.attachmentTypePolicy', 'Polizza / BL / AWB') },
-      { value: 'customsDocs', label: t('ui.attachmentTypeCustomsDocs', 'Documenti doganali') },
-      { value: 'other', label: t('ui.attachmentTypeOther', 'Altro') }
+      { value: 'policy', label: t('ui.attachmentTypePolicy', fallbackByLanguage(context.i18n, 'Polizza / BL / AWB', 'Policy / BL / AWB')) },
+      { value: 'customsDocs', label: t('ui.attachmentTypeCustomsDocs', fallbackByLanguage(context.i18n, 'Documenti doganali', 'Customs documents')) },
+      { value: 'other', label: t('ui.attachmentTypeOther', fallbackByLanguage(context.i18n, 'Altro', 'Other')) }
     ];
   }
 
@@ -171,39 +185,39 @@ window.KedrixOnePracticeAttachments = (() => {
     const t = (key, fallback) => (i18n && typeof i18n.t === 'function' ? i18n.t(key, fallback) : fallback);
     const escapeHtml = (value) => (utils && typeof utils.escapeHtml === 'function' ? utils.escapeHtml(value) : String(value || ''));
     if (!draft?.practiceType) {
-      return `<div class="empty-text">${escapeHtml(t('ui.attachmentsTypeGuard', 'Seleziona prima il tipo pratica per attivare l’area allegati.'))}</div>`;
+      return `<div class="empty-text">${escapeHtml(t('ui.attachmentsTypeGuard', fallbackByLanguage(i18n, 'Seleziona prima il tipo pratica per attivare l’area allegati.', 'Select the practice type first to enable the attachments area.')))}</div>`;
     }
 
     const items = getAttachments(state, draft);
     const typeOptions = getDocumentTypeOptions(state, i18n);
     const locale = typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'en-GB' : 'it-IT';
     const ownerKey = ensureDraftOwnerKey(draft);
-    const countLabel = items.length === 1 ? t('ui.attachmentCountOne', '1 allegato') : t('ui.attachmentCountMany', '{{count}} allegati').replace('{{count}}', String(items.length));
+    const countLabel = items.length === 1 ? t('ui.attachmentCountOne', fallbackByLanguage(i18n, '1 allegato', '1 attachment')) : t('ui.attachmentCountMany', fallbackByLanguage(i18n, '{{count}} allegati', '{{count}} attachments')).replace('{{count}}', String(items.length));
 
     return `
       <section class="attachments-panel" data-attachments-owner-key="${escapeHtml(ownerKey)}">
         <div class="attachments-toolbar">
           <div>
-            <h4 class="attachments-title">${escapeHtml(t('ui.attachmentsPanelTitle', 'Allegati pratica'))}</h4>
-            <p class="attachments-subtitle">${escapeHtml(t('ui.attachmentsPanelSubtitle', 'Importa documenti operativi nella pratica, tieni il tipo documento visibile e apri o rimuovi gli allegati in modo controllato.'))}</p>
+            <h4 class="attachments-title">${escapeHtml(t('ui.attachmentsPanelTitle', fallbackByLanguage(i18n, 'Allegati pratica', 'Practice attachments')))}</h4>
+            <p class="attachments-subtitle">${escapeHtml(t('ui.attachmentsPanelSubtitle', fallbackByLanguage(i18n, 'Importa documenti operativi nella pratica, tieni il tipo documento visibile e apri o rimuovi gli allegati in modo controllato.', 'Import operational documents into the practice, keep the document type visible and open or remove attachments in a controlled way.')))}</p>
           </div>
           <div class="attachments-meta-pills">
             <span class="helper-pill">${escapeHtml(countLabel)}</span>
-            <span class="helper-pill">${escapeHtml(t('ui.attachmentsStorageHint', 'Archivio browser locale (demo/staging)'))}</span>
+            <span class="helper-pill">${escapeHtml(t('ui.attachmentsStorageHint', fallbackByLanguage(i18n, 'Archivio browser locale (demo/staging)', 'Local browser archive (demo/staging)')))}</span>
           </div>
         </div>
 
         <div class="attachments-upload-row">
           <div class="field">
-            <label for="practiceAttachmentType">${escapeHtml(t('ui.attachmentTypeLabel', 'Tipo documento'))}</label>
+            <label for="practiceAttachmentType">${escapeHtml(t('ui.attachmentTypeLabel', fallbackByLanguage(i18n, 'Tipo documento', 'Document type')))}</label>
             <select id="practiceAttachmentType" name="practiceAttachmentType">
               ${typeOptions.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('')}
             </select>
           </div>
           <div class="field full">
-            <label for="practiceAttachmentInput">${escapeHtml(t('ui.attachmentUploadLabel', 'Importa file'))}</label>
+            <label for="practiceAttachmentInput">${escapeHtml(t('ui.attachmentUploadLabel', fallbackByLanguage(i18n, 'Importa file', 'Import file')))}</label>
             <input id="practiceAttachmentInput" type="file" multiple />
-            <div class="field-hint">${escapeHtml(t('ui.attachmentUploadHint', 'PDF, immagini, fogli Excel o altri documenti. Per demo/staging evita file troppo pesanti.'))}</div>
+            <div class="field-hint">${escapeHtml(t('ui.attachmentUploadHint', fallbackByLanguage(i18n, 'PDF, immagini, fogli Excel o altri documenti. Per demo/staging evita file troppo pesanti.', 'PDFs, images, Excel sheets or other documents. For demo/staging, avoid very large files.')))}</div>
           </div>
         </div>
 
@@ -216,7 +230,7 @@ window.KedrixOnePracticeAttachments = (() => {
                   <div class="attachment-file-meta">${escapeHtml(formatSize(item.size, locale))} · ${escapeHtml(formatImportedAt(item.importedAt, locale))}</div>
                 </div>
                 <div class="attachment-type-wrap">
-                  <label class="attachment-inline-label" for="attachment_type_${escapeHtml(item.id)}">${escapeHtml(t('ui.attachmentTypeLabel', 'Tipo documento'))}</label>
+                  <label class="attachment-inline-label" for="attachment_type_${escapeHtml(item.id)}">${escapeHtml(t('ui.attachmentTypeLabel', fallbackByLanguage(i18n, 'Tipo documento', 'Document type')))}</label>
                   <select id="attachment_type_${escapeHtml(item.id)}" data-attachment-type-id="${escapeHtml(item.id)}">
                     ${typeOptions.map((option) => `<option value="${escapeHtml(option.value)}" ${item.documentType === option.value ? 'selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}
                   </select>
@@ -224,36 +238,36 @@ window.KedrixOnePracticeAttachments = (() => {
                 ${renderMetadataSummary(item, i18n, escapeHtml)}
                 <div class="attachment-metadata-grid">
                   <div class="field">
-                    <label for="attachment_date_${escapeHtml(item.id)}">${escapeHtml(t('ui.documentDate', 'Data documento'))}</label>
+                    <label for="attachment_date_${escapeHtml(item.id)}">${escapeHtml(t('ui.documentDate', fallbackByLanguage(i18n, 'Data documento', 'Document date')))}</label>
                     <input id="attachment_date_${escapeHtml(item.id)}" type="date" value="${escapeHtml(item.documentDate || '')}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="documentDate" />
                   </div>
                   <div class="field">
-                    <label for="attachment_ref_${escapeHtml(item.id)}">${escapeHtml(t('ui.documentReference', 'Rif. documento'))}</label>
-                    <input id="attachment_ref_${escapeHtml(item.id)}" type="text" value="${escapeHtml(item.externalReference || '')}" placeholder="${escapeHtml(t('ui.documentReferencePlaceholder', 'Numero invoice, packing list, riferimento cliente...'))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="externalReference" />
+                    <label for="attachment_ref_${escapeHtml(item.id)}">${escapeHtml(t('ui.documentReference', fallbackByLanguage(i18n, 'Rif. documento', 'Document reference')))}</label>
+                    <input id="attachment_ref_${escapeHtml(item.id)}" type="text" value="${escapeHtml(item.externalReference || '')}" placeholder="${escapeHtml(t('ui.documentReferencePlaceholder', fallbackByLanguage(i18n, 'Numero invoice, packing list, riferimento cliente...', 'Invoice number, packing list, client reference...')))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="externalReference" />
                   </div>
                   <div class="field">
-                    <label for="attachment_mrn_${escapeHtml(item.id)}">${escapeHtml(t('ui.customsMrn', 'MRN / Rif. doganale'))}</label>
-                    <input id="attachment_mrn_${escapeHtml(item.id)}" type="text" value="${escapeHtml(item.customsMrn || '')}" placeholder="${escapeHtml(t('ui.customsMrnPlaceholder', 'MRN, svincolo, rif. ufficio...'))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="customsMrn" />
+                    <label for="attachment_mrn_${escapeHtml(item.id)}">${escapeHtml(t('ui.customsMrn', fallbackByLanguage(i18n, 'MRN / Rif. doganale', 'MRN / Customs reference')))}</label>
+                    <input id="attachment_mrn_${escapeHtml(item.id)}" type="text" value="${escapeHtml(item.customsMrn || '')}" placeholder="${escapeHtml(t('ui.customsMrnPlaceholder', fallbackByLanguage(i18n, 'MRN, svincolo, rif. ufficio...', 'MRN, customs release, office reference...')))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="customsMrn" />
                   </div>
                   <div class="field full">
                     <label for="attachment_tags_${escapeHtml(item.id)}">${escapeHtml(t('ui.tags', 'Tags'))}</label>
-                    <input id="attachment_tags_${escapeHtml(item.id)}" type="text" value="${escapeHtml(DocumentMetadata && typeof DocumentMetadata.serializeTags === 'function' ? DocumentMetadata.serializeTags(item.tags) : (Array.isArray(item.tags) ? item.tags.join(', ') : ''))}" placeholder="${escapeHtml(t('ui.attachmentTagsPlaceholder', 'dogana, scanner, originale, urgente...'))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="tags" />
+                    <input id="attachment_tags_${escapeHtml(item.id)}" type="text" value="${escapeHtml(DocumentMetadata && typeof DocumentMetadata.serializeTags === 'function' ? DocumentMetadata.serializeTags(item.tags) : (Array.isArray(item.tags) ? item.tags.join(', ') : ''))}" placeholder="${escapeHtml(t('ui.attachmentTagsPlaceholder', fallbackByLanguage(i18n, 'dogana, scanner, originale, urgente...', 'customs, scanner, original, urgent...')))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="tags" />
                   </div>
                   <div class="field full">
                     <label for="attachment_notes_${escapeHtml(item.id)}">${escapeHtml(t('ui.notes', 'Note'))}</label>
-                    <textarea id="attachment_notes_${escapeHtml(item.id)}" rows="2" placeholder="${escapeHtml(t('ui.attachmentNotesPlaceholder', 'Note operative sul documento, esito, originali, osservazioni...'))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="notes">${escapeHtml(item.notes || '')}</textarea>
+                    <textarea id="attachment_notes_${escapeHtml(item.id)}" rows="2" placeholder="${escapeHtml(t('ui.attachmentNotesPlaceholder', fallbackByLanguage(i18n, 'Note operative sul documento, esito, originali, osservazioni...', 'Operational notes on the document, outcome, originals, remarks...')))}" data-attachment-meta-id="${escapeHtml(item.id)}" data-attachment-meta-field="notes">${escapeHtml(item.notes || '')}</textarea>
                   </div>
                 </div>
                 <div class="attachment-actions">
-                  <button class="btn secondary small-btn" type="button" data-attachment-open="${escapeHtml(item.id)}">${escapeHtml(t('ui.openAttachment', 'Apri'))}</button>
-                  <button class="btn secondary small-btn danger-btn" type="button" data-attachment-remove="${escapeHtml(item.id)}">${escapeHtml(t('ui.removeAttachment', 'Rimuovi'))}</button>
+                  <button class="btn secondary small-btn" type="button" data-attachment-open="${escapeHtml(item.id)}">${escapeHtml(t('ui.openAttachment', fallbackByLanguage(i18n, 'Apri', 'Open')))}</button>
+                  <button class="btn secondary small-btn danger-btn" type="button" data-attachment-remove="${escapeHtml(item.id)}">${escapeHtml(t('ui.removeAttachment', fallbackByLanguage(i18n, 'Rimuovi', 'Remove')))}</button>
                 </div>
               </article>
             `).join('')}
           </div>
         ` : `
           <div class="attachments-empty-state">
-            <div class="empty-text">${escapeHtml(t('ui.attachmentsEmpty', 'Nessun allegato importato per questa pratica.'))}</div>
+            <div class="empty-text">${escapeHtml(t('ui.attachmentsEmpty', fallbackByLanguage(i18n, 'Nessun allegato importato per questa pratica.', 'No attachments imported for this practice.')))}</div>
           </div>
         `}
       </section>
@@ -264,7 +278,7 @@ window.KedrixOnePracticeAttachments = (() => {
     await withStore('readwrite', (store) => new Promise((resolve, reject) => {
       const request = store.put(record);
       request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error || new Error('Errore salvataggio allegato.'));
+      request.onerror = () => reject(request.error || new Error(tGlobal('ui.attachmentSaveError', 'Unable to save the attachment.')));
     }));
   }
 
@@ -272,7 +286,7 @@ window.KedrixOnePracticeAttachments = (() => {
     return withStore('readonly', (store) => new Promise((resolve, reject) => {
       const request = store.get(id);
       request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error || new Error('Errore lettura allegato.'));
+      request.onerror = () => reject(request.error || new Error(tGlobal('ui.attachmentReadError', 'Unable to read the attachment.')));
     }));
   }
 
@@ -280,7 +294,7 @@ window.KedrixOnePracticeAttachments = (() => {
     await withStore('readwrite', (store) => new Promise((resolve, reject) => {
       const request = store.delete(id);
       request.onsuccess = () => resolve(true);
-      request.onerror = () => reject(request.error || new Error('Errore rimozione allegato.'));
+      request.onerror = () => reject(request.error || new Error(tGlobal('ui.attachmentDeleteError', 'Unable to remove the attachment.')));
     }));
   }
 
@@ -297,7 +311,7 @@ window.KedrixOnePracticeAttachments = (() => {
         }
         const next = { ...current, ...normalizeItem(item) };
         const putRequest = store.put(next);
-        putRequest.onerror = () => reject(putRequest.error || new Error('Errore aggiornamento allegato.'));
+        putRequest.onerror = () => reject(putRequest.error || new Error(tGlobal('ui.attachmentUpdateError', 'Unable to update the attachment.')));
         putRequest.onsuccess = () => resolve(true);
       };
     }));
@@ -316,7 +330,7 @@ window.KedrixOnePracticeAttachments = (() => {
       const item = {
         id: createAttachmentId(),
         ownerKey,
-        fileName: file.name || 'allegato',
+        fileName: file.name || tGlobal('ui.attachmentDefaultFilename', 'attachment'),
         mimeType: file.type || 'application/octet-stream',
         size: Number(file.size || 0),
         documentType: String(documentType || 'generic'),
@@ -336,7 +350,7 @@ window.KedrixOnePracticeAttachments = (() => {
     if (typeof save === 'function') save();
     if (typeof rerender === 'function') rerender();
     if (typeof toast === 'function') {
-      toast(incoming.length === 1 ? 'Allegato importato' : `${incoming.length} allegati importati`);
+      toast(incoming.length === 1 ? tGlobal('ui.attachmentImportedSingle', 'Attachment imported') : tGlobal('ui.attachmentImportedMany', '{{count}} attachments imported').replace('{{count}}', String(incoming.length)));
     }
     return incoming.length;
   }
@@ -351,14 +365,14 @@ window.KedrixOnePracticeAttachments = (() => {
     syncLinkedPracticeRecordState(state, draft);
     if (typeof save === 'function') save();
     if (typeof rerender === 'function') rerender();
-    if (typeof toast === 'function') toast('Allegato rimosso');
+    if (typeof toast === 'function') toast(tGlobal('ui.attachmentRemoved', 'Attachment removed'));
   }
 
   async function openAttachment(options = {}) {
     const { attachmentId, toast } = options;
     const record = await getAttachmentRecord(attachmentId);
     if (!record || !record.blob) {
-      if (typeof toast === 'function') toast('Allegato non disponibile');
+      if (typeof toast === 'function') toast(tGlobal('ui.attachmentUnavailable', 'Attachment unavailable'));
       return false;
     }
     const blobUrl = window.URL.createObjectURL(record.blob);
@@ -366,7 +380,7 @@ window.KedrixOnePracticeAttachments = (() => {
     if (!opened) {
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = record.fileName || 'allegato';
+      link.download = record.fileName || tGlobal('ui.attachmentDefaultFilename', 'attachment');
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -388,7 +402,7 @@ window.KedrixOnePracticeAttachments = (() => {
     if (typeof save === 'function') save();
     if (typeof rerender === 'function') rerender();
     if (typeof toast === 'function') {
-      const label = i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentTypeUpdated', 'Tipo documento aggiornato') : 'Tipo documento aggiornato';
+      const label = i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentTypeUpdated', fallbackByLanguage(i18n, fallbackByLanguage(i18n, 'Tipo documento aggiornato', 'Document type updated'), 'Document type updated')) : fallbackByLanguage(i18n, 'Tipo documento aggiornato', 'Document type updated');
       toast(label);
     }
     return true;
@@ -428,7 +442,7 @@ window.KedrixOnePracticeAttachments = (() => {
     if (typeof save === 'function') save();
     if (typeof rerender === 'function') rerender();
     if (typeof toast === 'function') {
-      const label = i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentMetadataUpdated', 'Metadati documento aggiornati') : 'Metadati documento aggiornati';
+      const label = i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentMetadataUpdated', fallbackByLanguage(i18n, fallbackByLanguage(i18n, 'Metadati documento aggiornati', 'Document metadata updated'), 'Document metadata updated')) : fallbackByLanguage(i18n, 'Metadati documento aggiornati', 'Document metadata updated');
       toast(label);
     }
     return true;
@@ -454,7 +468,7 @@ window.KedrixOnePracticeAttachments = (() => {
           rerender
         });
       } catch (error) {
-        if (typeof toast === 'function') toast(error?.message || 'Errore import allegato');
+        if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentImportError', 'Unable to import the attachment'));
       } finally {
         event.target.value = '';
       }
@@ -465,7 +479,7 @@ window.KedrixOnePracticeAttachments = (() => {
         try {
           await openAttachment({ attachmentId: button.dataset.attachmentOpen, toast });
         } catch (error) {
-          if (typeof toast === 'function') toast(error?.message || 'Errore apertura allegato');
+          if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentOpenError', 'Unable to open the attachment'));
         }
       });
     });
@@ -475,11 +489,11 @@ window.KedrixOnePracticeAttachments = (() => {
         const confirmed = feedback && typeof feedback.confirm === 'function'
           ? await feedback.confirm({
               title: i18n && typeof i18n.t === 'function' ? i18n.t('ui.removeAttachmentConfirmTitle', 'Rimuovere allegato') : 'Rimuovere allegato',
-              message: i18n && typeof i18n.t === 'function' ? i18n.t('ui.removeAttachmentConfirmMessage', 'L’allegato verrà scollegato dalla pratica corrente.') : 'L’allegato verrà scollegato dalla pratica corrente.',
-              confirmLabel: i18n && typeof i18n.t === 'function' ? i18n.t('ui.removeAttachment', 'Rimuovi') : 'Rimuovi',
+              message: i18n && typeof i18n.t === 'function' ? i18n.t('ui.removeAttachmentConfirmMessage', fallbackByLanguage(i18n, fallbackByLanguage(i18n, 'L’allegato verrà scollegato dalla pratica corrente.', 'The attachment will be unlinked from the current practice.'), 'The attachment will be unlinked from the current practice.')) : fallbackByLanguage(i18n, 'L’allegato verrà scollegato dalla pratica corrente.', 'The attachment will be unlinked from the current practice.'),
+              confirmLabel: i18n && typeof i18n.t === 'function' ? i18n.t('ui.removeAttachment', fallbackByLanguage(i18n, 'Rimuovi', 'Remove')) : 'Rimuovi',
               cancelLabel: i18n && typeof i18n.t === 'function' ? i18n.t('ui.cancel', 'Annulla') : 'Annulla'
             })
-          : window.confirm('Rimuovere questo allegato dalla pratica?');
+          : window.confirm(i18n && typeof i18n.t === 'function' ? i18n.t('ui.removeAttachmentConfirmFallback', 'Remove this attachment from the current practice?') : 'Remove this attachment from the current practice?');
         if (!confirmed) return;
         try {
           await removeAttachment({
@@ -491,7 +505,7 @@ window.KedrixOnePracticeAttachments = (() => {
             rerender
           });
         } catch (error) {
-          if (typeof toast === 'function') toast(error?.message || 'Errore rimozione allegato');
+          if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentRemoveError', 'Unable to remove the attachment'));
         }
       });
     });

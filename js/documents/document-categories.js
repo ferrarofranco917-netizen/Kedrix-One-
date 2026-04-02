@@ -2,18 +2,18 @@ window.KedrixOneDocumentCategories = (() => {
   'use strict';
 
   const DEFAULT_OPTIONS = [
-    { value: 'generic', labelKey: 'ui.attachmentTypeGeneric', fallback: 'Allegato operativo' },
-    { value: 'clientInstructions', labelKey: 'ui.attachmentTypeClientInstructions', fallback: 'Istruzioni cliente' },
+    { value: 'generic', labelKey: 'ui.attachmentTypeGeneric', fallback: 'Operational attachment' },
+    { value: 'clientInstructions', labelKey: 'ui.attachmentTypeClientInstructions', fallback: 'Client instructions' },
     { value: 'invoice', labelKey: 'ui.attachmentTypeInvoice', fallback: 'Invoice' },
     { value: 'packingList', labelKey: 'ui.attachmentTypePackingList', fallback: 'Packing list' },
-    { value: 'signedMandate', labelKey: 'ui.attachmentTypeSignedMandate', fallback: 'Mandato firmato' },
+    { value: 'signedMandate', labelKey: 'ui.attachmentTypeSignedMandate', fallback: 'Signed mandate' },
     { value: 'booking', labelKey: 'ui.attachmentTypeBooking', fallback: 'Booking' },
-    { value: 'policy', labelKey: 'ui.attachmentTypePolicy', fallback: 'Polizza / BL / AWB' },
-    { value: 'customsDocs', labelKey: 'ui.attachmentTypeCustomsDocs', fallback: 'Documenti doganali' },
+    { value: 'policy', labelKey: 'ui.attachmentTypePolicy', fallback: 'Policy / BL / AWB' },
+    { value: 'customsDocs', labelKey: 'ui.attachmentTypeCustomsDocs', fallback: 'Customs documents' },
     { value: 'deliveryOrder', labelKey: 'ui.attachmentTypeDeliveryOrder', fallback: 'Delivery order' },
-    { value: 'fundRequest', labelKey: 'ui.attachmentTypeFundRequest', fallback: 'Richiesta fondi' },
-    { value: 'quotation', labelKey: 'ui.attachmentTypeQuotation', fallback: 'Quotazione' },
-    { value: 'other', labelKey: 'ui.attachmentTypeOther', fallback: 'Altro' }
+    { value: 'fundRequest', labelKey: 'ui.attachmentTypeFundRequest', fallback: 'Fund request' },
+    { value: 'quotation', labelKey: 'ui.attachmentTypeQuotation', fallback: 'Quotation' },
+    { value: 'other', labelKey: 'ui.attachmentTypeOther', fallback: 'Other' }
   ];
 
   function t(i18n, key, fallback) {

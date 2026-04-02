@@ -230,3 +230,10 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 ## STEP 6B.3 HF2 — Allegati hotfix
 - Fix `DocumentCategories is not defined` nel pannello allegati.
 - Ripristinato il caricamento allegati con alias globale sicuro e ordine script protetto.
+
+- Hotfix i18n Allegati: completate traduzioni EN del pannello, azioni, toast, conferme ed errori del modulo attachments.
+
+
+## STEP 6B.4 HF2
+- Hardened English coverage for the Attachments module.
+- Replaced Italian-only fallbacks in attachments/templates/document engine with language-aware fallbacks.
