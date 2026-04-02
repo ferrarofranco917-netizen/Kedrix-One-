@@ -86,6 +86,11 @@ window.KedrixOnePracticeSavePipeline = (() => {
       nextPracticeId
     } = options;
 
+    const attachmentOwnerKey = String(draft.attachmentOwnerKey || existingRecord?.attachmentOwnerKey || draft.editingPracticeId || '').trim();
+    const attachmentItems = attachmentOwnerKey && state && state.practiceAttachmentIndex && Array.isArray(state.practiceAttachmentIndex[attachmentOwnerKey])
+      ? state.practiceAttachmentIndex[attachmentOwnerKey]
+      : [];
+
     const schema = typeof getPracticeSchema === 'function' ? getPracticeSchema(draft.practiceType) : null;
     const dynamicLabels = typeof buildDynamicLabelsForType === 'function' ? buildDynamicLabelsForType(draft.practiceType) : {};
     const existingRecord = draft.editingPracticeId ? ((state && state.practices) || []).find((item) => item.id === draft.editingPracticeId) : null;
@@ -148,7 +153,10 @@ window.KedrixOnePracticeSavePipeline = (() => {
         billingLinkStatus: existingRecord?.billingLinkStatus || 'Da collegare',
         sourceModule: 'practices',
         dynamicData: { ...(draft.dynamicData || {}) },
-        dynamicLabels
+        dynamicLabels,
+        attachmentOwnerKey,
+        attachmentCount: attachmentItems.length,
+        attachmentUpdatedAt: attachmentItems.length ? attachmentItems[0].importedAt || '' : ''
       }
     };
   }

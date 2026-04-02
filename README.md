@@ -175,3 +175,12 @@ Regola: niente nuova logica autonoma in `app.js` se può vivere in un modulo ded
 - controllo live e pre-save: il peso netto non può superare il peso lordo
 - dataset ponte per `articleCode` e `packageType` con suggerimenti operativi
 - dettaglio merce più guidato senza introdurre monoliti
+
+
+## STEP 6B.1 — Allegati pratica + lista allegati
+
+- nuovo modulo `js/practices/attachments.js`
+- import file nella pratica con archivio browser locale (IndexedDB)
+- tab dedicata `Allegati` nel form pratica
+- lista allegati con nome file, tipo documento, data importazione, apertura e rimozione controllata
+- owner key stabile per allegati anche prima del primo salvataggio della pratica

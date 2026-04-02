@@ -9,6 +9,16 @@ window.KedrixOneStorage = (() => {
       : [];
   }
 
+  function normalizePracticeAttachmentIndex(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return Object.fromEntries(
+      Object.entries(value).map(([ownerKey, items]) => [
+        String(ownerKey || '').trim(),
+        Array.isArray(items) ? items.filter((item) => item && typeof item === 'object') : []
+      ]).filter(([ownerKey]) => ownerKey)
+    );
+  }
+
   function load(fallbackFactory) {
     const fallback = fallbackFactory();
 
@@ -25,7 +35,8 @@ window.KedrixOneStorage = (() => {
         practices: Array.isArray(parsed.practices) ? parsed.practices : fallback.practices,
         operatorLogs: Array.isArray(parsed.operatorLogs) ? parsed.operatorLogs : fallback.operatorLogs,
         contacts: Array.isArray(parsed.contacts) ? parsed.contacts : fallback.contacts,
-        expandedModules: normalizeExpandedModules(parsed.expandedModules)
+        expandedModules: normalizeExpandedModules(parsed.expandedModules),
+        practiceAttachmentIndex: normalizePracticeAttachmentIndex(parsed.practiceAttachmentIndex)
       };
     } catch {
       return fallback;

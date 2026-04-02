@@ -143,10 +143,13 @@ window.KedrixOneTemplates = (() => {
     const tabs = [
       { key: 'practice', label: T.t('ui.tabPractice', 'Pratica') },
       { key: 'detail', label: T.t('ui.tabDetail', 'Dettaglio') },
-      { key: 'notes', label: T.t('ui.tabNotes', 'Note') }
+      { key: 'notes', label: T.t('ui.tabNotes', 'Note') },
+      { key: 'attachments', label: T.t('ui.tabAttachments', 'Allegati') }
     ];
     const currentTabKey = state.practiceTab || 'practice';
     const currentTab = tabs.find((tab) => tab.key === currentTabKey) || tabs[0];
+    const dynamicPanelTitle = currentTabKey === 'attachments' ? T.t('ui.attachmentsPanelShellTitle', 'Gestione allegati') : T.t('ui.dynamicPreview', 'Anteprima schema');
+    const dynamicPanelSubtitle = currentTabKey === 'attachments' ? T.t('ui.attachmentsPanelShellSubtitle', 'Import, elenco, apertura e rimozione controllata degli allegati collegati alla pratica.') : T.t('ui.dynamicSchemaIntro', '');
     const selectedType = practiceTypes.find((item) => item.value === draft.practiceType) || null;
     const categoryOptions = draft.practiceType ? PracticeSchemas.getCategoryOptions(draft.practiceType) : [];
     const searchQuery = state.practiceSearchQuery || '';
@@ -305,8 +308,8 @@ window.KedrixOneTemplates = (() => {
             <div class="panel inset-panel practice-dynamic-panel" data-practice-dependent>
               <div class="panel-head">
                 <div>
-                  <h3 class="panel-title">${U.escapeHtml(T.t('ui.dynamicPreview', 'Anteprima schema'))}</h3>
-                  <p class="panel-subtitle">${U.escapeHtml(T.t('ui.dynamicSchemaIntro', ''))}</p>
+                  <h3 class="panel-title">${U.escapeHtml(dynamicPanelTitle)}</h3>
+                  <p class="panel-subtitle">${U.escapeHtml(dynamicPanelSubtitle)}</p>
                 </div>
               </div>
               <div id="practiceDynamicFields"></div>

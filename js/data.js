@@ -19,6 +19,7 @@ window.KedrixOneData = (() => {
       settingsClientId: 'CL-001',
       language: 'it',
       practiceTab: 'practice',
+      practiceAttachmentIndex: {},
       draftPractice: {
         editingPracticeId: '',
         practiceType: '',
@@ -28,6 +29,7 @@ window.KedrixOneData = (() => {
         category: '',
         status: 'In attesa documenti',
         generatedReference: '',
+        attachmentOwnerKey: '',
         dynamicData: {}
       },
       practiceDuplicateSource: null,

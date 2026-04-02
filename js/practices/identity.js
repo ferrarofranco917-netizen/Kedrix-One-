@@ -7,6 +7,18 @@ window.KedrixOnePracticeIdentity = (() => {
     return new Date().toISOString().slice(0, 10);
   }
 
+  function createAttachmentOwnerKey() {
+    return `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  function resolveAttachmentOwnerKey(overrides = {}) {
+    const explicitOwnerKey = String(overrides.attachmentOwnerKey || '').trim();
+    if (explicitOwnerKey) return explicitOwnerKey;
+    const editingPracticeId = String(overrides.editingPracticeId || '').trim();
+    if (editingPracticeId) return editingPracticeId;
+    return createAttachmentOwnerKey();
+  }
+
   function createEmptyDraft(overrides = {}) {
     return {
       editingPracticeId: '',
@@ -17,8 +29,10 @@ window.KedrixOnePracticeIdentity = (() => {
       category: '',
       status: 'In attesa documenti',
       generatedReference: '',
+      attachmentOwnerKey: resolveAttachmentOwnerKey(overrides),
       dynamicData: {},
       ...overrides,
+      attachmentOwnerKey: resolveAttachmentOwnerKey(overrides),
       dynamicData: {
         ...((overrides && overrides.dynamicData) || {})
       }
@@ -98,6 +112,7 @@ window.KedrixOnePracticeIdentity = (() => {
       category: practice.category || '',
       status: practice.status || 'Operativa',
       generatedReference: practice.reference || '',
+      attachmentOwnerKey: practice.attachmentOwnerKey || practice.id || createAttachmentOwnerKey(),
       dynamicData: typeof extractPracticeDynamicData === 'function' ? extractPracticeDynamicData(practice) : { ...((practice && practice.dynamicData) || {}) }
     });
 
@@ -121,6 +136,7 @@ window.KedrixOnePracticeIdentity = (() => {
       category: practice.category || '',
       status: practice.status || 'In attesa documenti',
       generatedReference: '',
+      attachmentOwnerKey: createAttachmentOwnerKey(),
       dynamicData: typeof extractPracticeDynamicData === 'function' ? extractPracticeDynamicData(practice) : { ...((practice && practice.dynamicData) || {}) }
     });
 
@@ -133,6 +149,7 @@ window.KedrixOnePracticeIdentity = (() => {
 
   return {
     buildCurrentPracticeReference,
+    createAttachmentOwnerKey,
     createDuplicateSafeDraft,
     createEmptyDraft,
     ensureDraft,

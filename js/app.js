@@ -19,12 +19,16 @@
   const PracticeSavePipeline = window.KedrixOnePracticeSavePipeline;
   const PracticeContainerIntegrity = window.KedrixOnePracticeContainerIntegrity;
   const PracticeWeightIntegrity = window.KedrixOnePracticeWeightIntegrity;
+  const PracticeAttachments = window.KedrixOnePracticeAttachments;
   const PracticeDuplicate = window.KedrixOnePracticeDuplicate;
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
 
   const state = Storage.load(() => Data.initialState());
+  if (PracticeAttachments && typeof PracticeAttachments.normalizeAttachmentIndex === 'function') {
+    PracticeAttachments.normalizeAttachmentIndex(state);
+  }
 
   sanitizeLegacyPortSuggestions();
 
@@ -396,6 +400,9 @@
   }
 
   function renderDynamicFieldsHTML(type, tab, draft = ensureDraftPractice()) {
+    if (tab === 'attachments' && PracticeAttachments && typeof PracticeAttachments.renderPanelHTML === 'function') {
+      return PracticeAttachments.renderPanelHTML({ state, draft, i18n: I18N, utils: Utils });
+    }
     return PracticeFormRenderer && typeof PracticeFormRenderer.renderDynamicFieldsHTML === 'function'
       ? PracticeFormRenderer.renderDynamicFieldsHTML(type, tab, draft, state.companyConfig)
       : `<div class="empty-text">${Utils.escapeHtml(I18N.t('ui.noDataYet', 'Nessun dato'))}</div>`;
@@ -431,6 +438,7 @@
       category: '',
       status: 'In attesa documenti',
       generatedReference: '',
+      attachmentOwnerKey: PracticeAttachments && typeof PracticeAttachments.createDraftOwnerKey === 'function' ? PracticeAttachments.createDraftOwnerKey() : '',
       dynamicData: {}
     };
     state.practiceTab = 'practice';
@@ -487,6 +495,7 @@
       category: practice.category || '',
       status: practice.status || 'Operativa',
       generatedReference: practice.reference || '',
+      attachmentOwnerKey: practice.attachmentOwnerKey || practice.id || (PracticeAttachments && typeof PracticeAttachments.createDraftOwnerKey === 'function' ? PracticeAttachments.createDraftOwnerKey() : ''),
       dynamicData: extractPracticeDynamicData(practice)
     };
   }
@@ -672,10 +681,24 @@
 
     function renderDynamicPanels() {
       if (!dynamicFields) return;
-      dynamicFields.innerHTML = renderDynamicFieldsHTML(draft.practiceType || '', state.practiceTab || 'practice', draft);
-      bindDynamicPersistence();
+      const activeTab = state.practiceTab || 'practice';
+      dynamicFields.innerHTML = renderDynamicFieldsHTML(draft.practiceType || '', activeTab, draft);
       updateVerificationBannerState(draft);
       refreshValidationState();
+      if (activeTab === 'attachments') {
+        if (PracticeAttachments && typeof PracticeAttachments.bind === 'function') {
+          PracticeAttachments.bind({
+            state,
+            draft,
+            root: dynamicFields,
+            save,
+            toast,
+            rerender: () => renderDynamicPanels()
+          });
+        }
+        return;
+      }
+      bindDynamicPersistence();
       refreshContainerIntegrityState();
       refreshWeightIntegrityState();
     }
@@ -901,6 +924,8 @@
         if (!result.ok && Array.isArray(result.errors) && result.errors.length) {
           state._practiceValidationErrors = result.errors;
           applyValidationState(result.errors);
+        } else if (result.ok && result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
+          PracticeAttachments.syncRecordSummary(state, result.record);
         }
         return;
       }
@@ -968,7 +993,9 @@
         billingLinkStatus: existingRecord?.billingLinkStatus || I18N.t('ui.billingLinkPending', 'Da collegare'),
         sourceModule: 'practices',
         dynamicData: { ...(draft.dynamicData || {}) },
-        dynamicLabels
+        dynamicLabels,
+        attachmentOwnerKey: draft.attachmentOwnerKey || draft.editingPracticeId || '',
+        attachmentCount: (state.practiceAttachmentIndex?.[draft.attachmentOwnerKey || draft.editingPracticeId || ''] || []).length
       };
 
       const matchedClient = getClientById(draft.clientId);
@@ -995,6 +1022,9 @@
         toast(I18N.t('ui.practiceSaved', 'Pratica salvata'));
       }
 
+      if (PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
+        PracticeAttachments.syncRecordSummary(state, record);
+      }
       state.selectedPracticeId = record.id;
       loadPracticeIntoDraft(record.id);
       state.practiceOpenSource = 'save';
