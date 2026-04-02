@@ -2,6 +2,19 @@ window.KedrixOneTemplates = (() => {
   'use strict';
 
   const U = window.KedrixOneUtils;
+
+  function fallbackByLanguage() {
+    const args = Array.from(arguments);
+    if (args.length >= 3 && args[0] && typeof args[0] === 'object' && typeof args[0].getLanguage === 'function') {
+      const i18n = args[0];
+      const itText = args[1];
+      const enText = args[2];
+      return i18n.getLanguage() === 'en' ? enText : itText;
+    }
+    const itText = args[0];
+    const enText = args[1];
+    return T && typeof T.getLanguage === 'function' && T.getLanguage() === 'en' ? enText : itText;
+  }
   const W = window.KedrixOneWiseMind;
   const L = window.KedrixOneLicensing;
   const T = window.KedrixOneI18N;

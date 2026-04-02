@@ -6,6 +6,19 @@ window.KedrixOneDocumentEngine = (() => {
   const DocumentCategories = window.KedrixOneDocumentCategories;
   const DocumentMetadata = window.KedrixOneDocumentMetadata;
 
+  function fallbackByLanguage() {
+    const args = Array.from(arguments);
+    if (args.length >= 3 && args[0] && typeof args[0] === 'object' && typeof args[0].getLanguage === 'function') {
+      const i18n = args[0];
+      const itText = args[1];
+      const enText = args[2];
+      return i18n.getLanguage() === 'en' ? enText : itText;
+    }
+    const itText = args[0];
+    const enText = args[1];
+    return T && typeof T.getLanguage === 'function' && T.getLanguage() === 'en' ? enText : itText;
+  }
+
   const PRACTICE_FIELD_DEFS = [
     { key: 'reference', label: 'Numero pratica', getter: (practice) => practice.reference },
     { key: 'id', label: 'ID', getter: (practice) => practice.id },
