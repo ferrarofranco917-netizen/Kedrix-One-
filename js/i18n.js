@@ -481,6 +481,72 @@ window.KedrixOneI18N = (() => {
   dictionary.it.submodules = Object.fromEntries(Object.entries(SUBMODULE_MAP).map(([k, v]) => [k, v.it]));
   dictionary.en.submodules = Object.fromEntries(Object.entries(SUBMODULE_MAP).map(([k, v]) => [k, v.en]));
 
+Object.assign(dictionary.it.ui, {
+  quickAdd: 'Quick add',
+  quickAddButtonTitle: 'Aggiungi rapidamente in anagrafica',
+  masterDataTitle: 'Anagrafiche',
+  masterDataIntro: 'Gestisci anagrafiche e directory operative condivise tra pratiche e moduli collegati.',
+  masterDataQuickAddTitle: 'Inserimento rapido anagrafica',
+  masterDataReturnHint: 'Stai aggiungendo un valore da una pratica: al salvataggio tornerai automaticamente al punto di origine.',
+  masterDataManualHint: 'Puoi popolare manualmente le directory operative e riutilizzarle nelle pratiche.',
+  masterDataFamilyLabel: 'Famiglia anagrafica',
+  masterDataFamilyClients: 'Clienti',
+  masterDataFamilyImporters: 'Importatori',
+  masterDataFamilyConsignees: 'Destinatari',
+  masterDataFamilyVessels: 'Navi',
+  masterDataFamilySenders: 'Mittenti',
+  masterDataFamilyTaric: 'TARIC',
+  masterDataClientName: 'Ragione sociale',
+  masterDataVesselSingle: 'Nave',
+  masterDataSenderSingle: 'Mittente',
+  masterDataTaricCode: 'Codice TARIC',
+  masterDataDescription: 'Descrizione',
+  masterDataSaveEntry: 'Salva anagrafica',
+  masterDataBackToPractice: 'Torna alla pratica',
+  masterDataCurrentList: 'Elenco corrente',
+  masterDataNoEntries: 'Nessun valore presente in questa anagrafica.',
+  masterDataMissingValue: 'Compila il valore da inserire.',
+  masterDataSaved: 'Anagrafica salvata correttamente.',
+  masterDataAlreadyPresent: 'Valore già presente in anagrafica.',
+  masterDataQuickAddSaved: 'Anagrafica salvata e riportata nella pratica.',
+  masterDataQuickAddSelected: 'Valore già presente: selezionato nella pratica.',
+  details: 'Dettagli',
+  city: 'Città'
+});
+
+Object.assign(dictionary.en.ui, {
+  quickAdd: 'Quick add',
+  quickAddButtonTitle: 'Add quickly to master data',
+  masterDataTitle: 'Master Data',
+  masterDataIntro: 'Manage shared master data and operational directories used by practices and related modules.',
+  masterDataQuickAddTitle: 'Quick master data entry',
+  masterDataReturnHint: 'You are adding a value from a practice: after saving you will return automatically to the origin point.',
+  masterDataManualHint: 'You can populate operational directories manually and reuse them in practices.',
+  masterDataFamilyLabel: 'Master data family',
+  masterDataFamilyClients: 'Clients',
+  masterDataFamilyImporters: 'Importers',
+  masterDataFamilyConsignees: 'Consignees',
+  masterDataFamilyVessels: 'Vessels',
+  masterDataFamilySenders: 'Senders',
+  masterDataFamilyTaric: 'TARIC',
+  masterDataClientName: 'Company name',
+  masterDataVesselSingle: 'Vessel',
+  masterDataSenderSingle: 'Sender',
+  masterDataTaricCode: 'TARIC code',
+  masterDataDescription: 'Description',
+  masterDataSaveEntry: 'Save master data',
+  masterDataBackToPractice: 'Back to practice',
+  masterDataCurrentList: 'Current list',
+  masterDataNoEntries: 'No values available in this master data family.',
+  masterDataMissingValue: 'Fill in the value to add.',
+  masterDataSaved: 'Master data saved successfully.',
+  masterDataAlreadyPresent: 'Value already available in master data.',
+  masterDataQuickAddSaved: 'Master data saved and applied back to the practice.',
+  masterDataQuickAddSelected: 'Value already present: applied to the practice.',
+  details: 'Details',
+  city: 'City'
+});
+
   let currentLanguage = 'it';
 
   function setLanguage(language) {

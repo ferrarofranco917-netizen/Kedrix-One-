@@ -57,11 +57,11 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'sea',
       tabs: {
         practice: [
-          { name: 'importer', type: 'text', labelKey: 'ui.importer', required: true },
+          { name: 'importer', type: 'text', labelKey: 'ui.importer', required: true, suggestionKey: 'importers' },
           { name: 'clientContact', type: 'text', labelKey: 'ui.clientContact' },
           { name: 'clientAgency', type: 'text', labelKey: 'ui.agency' },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true, suggestionKey: 'consignees' },
           { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
           { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPortLocodes' },
           { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPortLocodes' },
@@ -70,7 +70,7 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'vesselExchangeRate', type: 'number', labelKey: 'ui.vesselExchangeRate' },
           { name: 'vesselExchangeCurrency', type: 'select', labelKey: 'ui.vesselExchangeCurrency', suggestionKey: 'currencies' },
           { name: 'terminal', type: 'text', labelKey: 'ui.terminal', suggestionKey: 'seaTerminals' },
-          { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage' },
+          { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage', suggestionKey: 'vessels' },
           { name: 'arrivalDate', type: 'date', labelKey: 'ui.arrivalDate', required: true },
           { name: 'freightAmount', type: 'number', labelKey: 'ui.freightAmount' },
           { name: 'freightCurrency', type: 'select', labelKey: 'ui.freightCurrency', suggestionKey: 'currencies' },
@@ -105,9 +105,9 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'sea',
       tabs: {
         practice: [
-          { name: 'shipper', type: 'text', labelKey: 'ui.shipper', required: true },
+          { name: 'shipper', type: 'text', labelKey: 'ui.shipper', required: true, suggestionKey: 'shippers' },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true, suggestionKey: 'consignees' },
           { name: 'company', type: 'text', labelKey: 'ui.shippingCompany', suggestionKey: 'shippingCompanies' },
           { name: 'portLoading', type: 'text', labelKey: 'ui.seaPortLoading', required: true, suggestionKey: 'seaPortLocodes' },
           { name: 'portDischarge', type: 'text', labelKey: 'ui.seaPortDischarge', required: true, suggestionKey: 'seaPortLocodes' },
@@ -116,7 +116,7 @@ window.KedrixOnePracticeSchemas = (() => {
           { name: 'vesselExchangeRate', type: 'number', labelKey: 'ui.vesselExchangeRate' },
           { name: 'vesselExchangeCurrency', type: 'select', labelKey: 'ui.vesselExchangeCurrency', suggestionKey: 'currencies' },
           { name: 'terminal', type: 'text', labelKey: 'ui.terminal', suggestionKey: 'seaTerminals' },
-          { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage' },
+          { name: 'vesselVoyage', type: 'text', labelKey: 'ui.vesselVoyage', suggestionKey: 'vessels' },
           { name: 'departureDate', type: 'date', labelKey: 'ui.departureDate', required: true },
           { name: 'freightAmount', type: 'number', labelKey: 'ui.freightAmount' },
           { name: 'freightCurrency', type: 'select', labelKey: 'ui.freightCurrency', suggestionKey: 'currencies' },
@@ -151,9 +151,9 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'air',
       tabs: {
         practice: [
-          { name: 'importer', type: 'text', labelKey: 'ui.importer', required: true },
+          { name: 'importer', type: 'text', labelKey: 'ui.importer', required: true, suggestionKey: 'importers' },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true, suggestionKey: 'consignees' },
           { name: 'airline', type: 'text', labelKey: 'ui.airline', suggestionKey: 'airlines' },
           { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
           { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
@@ -184,9 +184,9 @@ window.KedrixOnePracticeSchemas = (() => {
       group: 'air',
       tabs: {
         practice: [
-          { name: 'shipper', type: 'text', labelKey: 'ui.shipper', required: true },
+          { name: 'shipper', type: 'text', labelKey: 'ui.shipper', required: true, suggestionKey: 'shippers' },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true, suggestionKey: 'consignees' },
           { name: 'airline', type: 'text', labelKey: 'ui.airline', suggestionKey: 'airlines' },
           { name: 'airportDeparture', type: 'text', labelKey: 'ui.airportDeparture', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
           { name: 'airportDestination', type: 'text', labelKey: 'ui.airportDestination', required: true, suggestionKey: 'airports', hintKey: 'ui.airportCodeHint', hintFallback: 'Scrivi l’aeroporto o il codice. Esempio: Malpensa → ITMXP.' },
@@ -218,7 +218,7 @@ window.KedrixOnePracticeSchemas = (() => {
         practice: [
           { name: 'shipper', type: 'text', labelKey: 'ui.sender', required: true },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true, suggestionKey: 'consignees' },
           { name: 'carrier', type: 'text', labelKey: 'ui.carrier', required: true, suggestionKey: 'carriers' },
           { name: 'originDest', type: 'text', labelKey: 'ui.originDestination' },
           { name: 'pickupDate', type: 'date', labelKey: 'ui.pickupDate', required: true },
@@ -251,7 +251,7 @@ window.KedrixOnePracticeSchemas = (() => {
         practice: [
           { name: 'shipper', type: 'text', labelKey: 'ui.sender', required: true },
           { name: 'client', type: 'derived', labelKey: 'ui.clientRequired' },
-          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true },
+          { name: 'consignee', type: 'text', labelKey: 'ui.consignee', required: true, suggestionKey: 'consignees' },
           { name: 'carrier', type: 'text', labelKey: 'ui.carrier', required: true, suggestionKey: 'carriers' },
           { name: 'originDest', type: 'text', labelKey: 'ui.originDestination' },
           { name: 'pickupDate', type: 'date', labelKey: 'ui.pickupDate', required: true },

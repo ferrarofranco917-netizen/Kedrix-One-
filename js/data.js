@@ -36,6 +36,11 @@ window.KedrixOneData = (() => {
         dynamicData: {}
       },
       practiceDuplicateSource: null,
+      masterDataModule: {
+        activeEntity: 'client',
+        quickAddContext: null,
+        formDrafts: {}
+      },
       companyConfig: {
         id: 'CMP-001',
         name: 'Kedrix Demo Logistics',
@@ -92,7 +97,12 @@ window.KedrixOneData = (() => {
             currencies: ['EUR', 'USD', 'GBP', 'CHF', 'CNY', 'JPY'],
             deposits: ['Magazzino interno', 'Deposito doganale', 'Transit point'],
             warehouseLinks: ['Pratica import', 'Pratica export', 'Transito interno'],
-            customsOffices: defaultCustomsOffices
+            customsOffices: defaultCustomsOffices,
+            importers: ['Michelin Italia', 'Aprica S.p.A.'],
+            consignees: ['Michelin Italia', 'Aprica S.p.A.', 'Cliente Francia'],
+            shippers: ['Monge & C. S.p.A.'],
+            vessels: ['MSC LORETO', 'MAERSK HAMBURG'],
+            taricCodes: [{ value: '40111000', label: '40111000', description: 'Pneumatici nuovi di gomma', displayValue: '40111000 · Pneumatici nuovi di gomma' }]
           }
         }
       },

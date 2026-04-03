@@ -29,6 +29,7 @@
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
+  const MasterDataQuickAdd = window.KedrixOneMasterDataQuickAdd;
 
   const state = Storage.load(() => Data.initialState());
   if (PracticeAttachments && typeof PracticeAttachments.normalizeAttachmentIndex === 'function') {
@@ -36,6 +37,9 @@
   }
   if (DocumentCategories && typeof DocumentCategories.ensureStateOptions === 'function') {
     DocumentCategories.ensureStateOptions(state, I18N);
+  }
+  if (MasterDataQuickAdd && typeof MasterDataQuickAdd.ensureModuleState === 'function') {
+    MasterDataQuickAdd.ensureModuleState(state);
   }
 
   sanitizeLegacyPortSuggestions();
@@ -1254,6 +1258,7 @@ function renderDocumentPreviewPanel() {
 
     if (route === 'master-data') {
       main.innerHTML = Templates.contacts(state, module);
+      bindMasterDataEvents();
       return;
     }
 
@@ -1292,6 +1297,20 @@ function renderDocumentPreviewPanel() {
           // ignore selection restore errors on unsupported input types
         }
       }
+    });
+  }
+
+  function bindMasterDataEvents() {
+    if (!MasterDataQuickAdd || typeof MasterDataQuickAdd.bind !== 'function') return;
+    MasterDataQuickAdd.bind({
+      state,
+      root: main,
+      save,
+      render,
+      navigate,
+      toast,
+      buildCurrentPracticeReference,
+      i18n: I18N
     });
   }
 
@@ -1466,6 +1485,18 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     const toggle = event.target.closest('[data-module-toggle]');
     if (toggle) {
       toggleModule(toggle.dataset.moduleToggle);
+      return;
+    }
+
+    const quickAdd = event.target.closest('[data-quick-add-field]');
+    if (quickAdd && MasterDataQuickAdd && typeof MasterDataQuickAdd.prepareQuickAdd === 'function') {
+      MasterDataQuickAdd.prepareQuickAdd(state, {
+        fieldName: quickAdd.dataset.quickAddField,
+        returnRoute: currentRoute(),
+        returnTab: state.practiceTab || 'practice'
+      });
+      save();
+      navigate('master-data');
       return;
     }
 

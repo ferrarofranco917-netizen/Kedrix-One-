@@ -21,6 +21,7 @@ window.KedrixOneTemplates = (() => {
   const PracticeVerification = window.KedrixOnePracticeVerification;
   const DocumentEngine = window.KedrixOneDocumentEngine;
   const DocumentCategories = window.KedrixOneDocumentCategories;
+  const MasterDataQuickAdd = window.KedrixOneMasterDataQuickAdd;
 
   function sidebar(modules, activeRoute, expandedModules) {
     const expanded = new Set(expandedModules || []);
@@ -263,7 +264,10 @@ window.KedrixOneTemplates = (() => {
               </div>
 
               <div class="field" data-practice-dependent data-field-wrap="clientName">
-                <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} <span class="required-mark">*</span></label>
+                <div class="field-label-row">
+                  <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} <span class="required-mark">*</span></label>
+                  ${MasterDataQuickAdd && typeof MasterDataQuickAdd.buildQuickAddButton === 'function' ? MasterDataQuickAdd.buildQuickAddButton('clientName', T) : ''}
+                </div>
                 <input id="clientName" name="clientName" list="clientSuggestions" value="${U.escapeHtml(draft.clientName || '')}" autocomplete="off" ${draft.practiceType ? '' : 'disabled'} />
                 <datalist id="clientSuggestions">
                   ${clients.map((client) => `<option value="${U.escapeHtml(client.name)}"></option>`).join('')}
@@ -664,32 +668,14 @@ function documents(state, module, searchResults = []) {
 
 
 function contacts(state, module) {
+  if (MasterDataQuickAdd && typeof MasterDataQuickAdd.renderPanel === 'function') {
+    return MasterDataQuickAdd.renderPanel({ state, module, t: T, u: U });
+  }
   return `
     <section class="hero">
       <div class="hero-meta">Master data</div>
       <h2>${U.escapeHtml(module.label)}</h2>
       <p>${U.escapeHtml(module.description)}</p>
-    </section>
-
-    <section class="kpi-grid compact-kpi-grid">
-      <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.moduleFamiliesPlanned', 'Famiglie previste'))}</div><div class="kpi-value">${module.submodules.length}</div><div class="kpi-hint">Master data</div></article>
-      <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.baseContacts', 'Base contatti'))}</div><div class="kpi-value">${state.contacts.length}</div><div class="kpi-hint">Preserved</div></article>
-      <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.nextStep', 'STEP successivo'))}</div><div class="kpi-value">STEP 5</div><div class="kpi-hint">Master data reali</div></article>
-    </section>
-
-    <section class="table-panel">
-      <div class="panel-head"><div><h3 class="panel-title">${U.escapeHtml(T.t('ui.currentBase', 'Base attuale'))}</h3><p class="panel-subtitle">${U.escapeHtml(T.t('ui.founderNamingNote', ''))}</p></div></div>
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>${U.escapeHtml(T.t('ui.id', 'ID'))}</th><th>${U.escapeHtml(T.t('ui.client', 'Cliente'))}</th><th>${U.escapeHtml(T.t('ui.type', 'Tipo'))}</th><th>City</th></tr></thead>
-          <tbody>${state.contacts.map((contact) => `<tr><td>${U.escapeHtml(contact.id)}</td><td>${U.escapeHtml(contact.name)}</td><td>${U.escapeHtml(contact.type)}</td><td>${U.escapeHtml(contact.city)}</td></tr>`).join('')}</tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head"><div><h3 class="panel-title">${U.escapeHtml(T.t('ui.plannedFamilies', 'Famiglie previste'))}</h3><p class="panel-subtitle">${U.escapeHtml(T.t('ui.nextImplementation', ''))}</p></div></div>
-      <div class="tag-grid">${module.submodules.map((submodule) => `<span class="tag-pill">${U.escapeHtml(submodule.label)}</span>`).join('')}</div>
     </section>`;
 }
 
