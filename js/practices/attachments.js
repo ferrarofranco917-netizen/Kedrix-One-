@@ -180,6 +180,57 @@ window.KedrixOnePracticeAttachments = (() => {
     return `<div class="attachment-metadata-summary">${summary.map((entry) => `<span class="match-chip"><strong>${safe(entry.label)}:</strong> ${safe(entry.value)}</span>`).join('')}</div>`;
   }
 
+
+  function buildCustomUploaderLabels(i18n) {
+    return {
+      button: tGlobal('ui.attachmentChooseFiles', fallbackByLanguage(i18n, 'Scegli file', 'Choose files')),
+      empty: tGlobal('ui.attachmentNoFileSelected', fallbackByLanguage(i18n, 'Nessun file selezionato', 'No file selected')),
+      single: tGlobal('ui.attachmentFileSelectedSingle', fallbackByLanguage(i18n, 'File selezionato: {{name}}', 'Selected file: {{name}}')),
+      many: tGlobal('ui.attachmentFilesSelectedMany', fallbackByLanguage(i18n, '{{count}} file selezionati', '{{count}} files selected'))
+    };
+  }
+
+  function renderCustomUploader(i18n, escapeHtml) {
+    const labels = buildCustomUploaderLabels(i18n);
+    return `
+      <div class="custom-file-uploader" data-custom-file-uploader>
+        <input id="practiceAttachmentInput" class="custom-file-input" type="file" multiple />
+        <button class="btn secondary custom-file-trigger" type="button" data-file-trigger="practiceAttachmentInput">${escapeHtml(labels.button)}</button>
+        <div
+          class="custom-file-status"
+          data-file-status
+          aria-live="polite"
+          data-empty-label="${escapeHtml(labels.empty)}"
+          data-single-template="${escapeHtml(labels.single)}"
+          data-many-template="${escapeHtml(labels.many)}"
+        >${escapeHtml(labels.empty)}</div>
+      </div>
+    `;
+  }
+
+  function updateCustomUploaderStatus(root, files) {
+    if (!root) return;
+    const status = root.querySelector('[data-file-status]');
+    if (!status) return;
+
+    const incoming = Array.from(files || []).filter(Boolean);
+    const emptyLabel = status.dataset.emptyLabel || 'No file selected';
+    const singleTemplate = status.dataset.singleTemplate || 'Selected file: {{name}}';
+    const manyTemplate = status.dataset.manyTemplate || '{{count}} files selected';
+
+    if (!incoming.length) {
+      status.textContent = emptyLabel;
+      return;
+    }
+
+    if (incoming.length === 1) {
+      status.textContent = singleTemplate.replace('{{name}}', String(incoming[0].name || ''));
+      return;
+    }
+
+    status.textContent = manyTemplate.replace('{{count}}', String(incoming.length));
+  }
+
   function renderPanelHTML(options = {}) {
     const { state, draft, i18n, utils } = options;
     const t = (key, fallback) => (i18n && typeof i18n.t === 'function' ? i18n.t(key, fallback) : fallback);
@@ -216,7 +267,7 @@ window.KedrixOnePracticeAttachments = (() => {
           </div>
           <div class="field full">
             <label for="practiceAttachmentInput">${escapeHtml(t('ui.attachmentUploadLabel', fallbackByLanguage(i18n, 'Importa file', 'Import file')))}</label>
-            <input id="practiceAttachmentInput" type="file" multiple />
+            ${renderCustomUploader(i18n, escapeHtml)}
             <div class="field-hint">${escapeHtml(t('ui.attachmentUploadHint', fallbackByLanguage(i18n, 'PDF, immagini, fogli Excel o altri documenti. Per demo/staging evita file troppo pesanti.', 'PDFs, images, Excel sheets or other documents. For demo/staging, avoid very large files.')))}</div>
           </div>
         </div>
@@ -453,9 +504,16 @@ window.KedrixOnePracticeAttachments = (() => {
     if (!root) return;
     const fileInput = root.querySelector('#practiceAttachmentInput');
     const typeSelect = root.querySelector('#practiceAttachmentType');
+    const uploaderRoot = root.querySelector('[data-custom-file-uploader]');
+    const fileTrigger = root.querySelector('[data-file-trigger]');
+
+    fileTrigger?.addEventListener('click', () => {
+      fileInput?.click();
+    });
 
     fileInput?.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files || []);
+      updateCustomUploaderStatus(uploaderRoot, files);
       if (!files.length) return;
       try {
         await addFiles({
@@ -471,6 +529,7 @@ window.KedrixOnePracticeAttachments = (() => {
         if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentImportError', 'Unable to import the attachment'));
       } finally {
         event.target.value = '';
+        updateCustomUploaderStatus(uploaderRoot, []);
       }
     });
 
