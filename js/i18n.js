@@ -475,7 +475,24 @@ window.KedrixOneI18N = (() => {
     'tracking/carrier-links': { it: 'Carrier links', en: 'Carrier links' },
     'tracking/marinetraffic-integration-future': { it: 'MarineTraffic integration (future)', en: 'MarineTraffic integration (future)' },
     'tracking/tracking-events': { it: 'Tracking events', en: 'Tracking events' },
-    'tracking/exception-alerts': { it: 'Exception alerts', en: 'Exception alerts' }
+    'tracking/exception-alerts': { it: 'Exception alerts', en: 'Exception alerts' },
+
+    'documents/preview': { it: 'Preview', en: 'Preview' },
+    'documents/elenco-stampe': { it: 'Elenco stampe', en: 'Print list' },
+    'documents/elenco-documenti': { it: 'Elenco documenti', en: 'Document list' },
+    'documents/note': { it: 'Note', en: 'Notes' },
+    'documents/categorie': { it: 'Categorie', en: 'Categories' },
+    'documents/stampe-multiple': { it: 'Stampe multiple', en: 'Multiple prints' },
+
+    'bi/business-intelligence': { it: 'Business intelligence', en: 'Business intelligence' },
+    'bi/reportistica': { it: 'Reportistica', en: 'Reporting' },
+    'bi/pratiche-strane': { it: 'Pratiche strane', en: 'Anomalous practices' },
+    'bi/fatture-strane': { it: 'Fatture strane', en: 'Anomalous invoices' },
+    'bi/grafici': { it: 'Grafici', en: 'Charts' },
+    'bi/reportistica-2-0': { it: 'Reportistica 2.0', en: 'Reporting 2.0' },
+    'bi/statistiche': { it: 'Statistiche', en: 'Statistics' },
+    'bi/creazione-statistiche': { it: 'Creazione statistiche', en: 'Statistics creation' },
+    'bi/statistiche-v2': { it: 'Statistiche v2', en: 'Statistics v2' }
   };
 
   dictionary.it.submodules = Object.fromEntries(Object.entries(SUBMODULE_MAP).map(([k, v]) => [k, v.it]));
