@@ -627,6 +627,23 @@ img {
   font-size: 12px;
 }
 
+select option,
+select optgroup {
+  color: #0f1720;
+  background: #f3f6f8;
+}
+
+select option:checked,
+select option:hover,
+select option:focus {
+  color: #0f1720;
+  background: #dce7ec;
+}
+
+select option[value=""] {
+  color: #5c6c77;
+}
+
 .field input,
 .field select,
 .field textarea {
