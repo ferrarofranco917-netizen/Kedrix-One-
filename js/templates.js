@@ -180,6 +180,11 @@ window.KedrixOneTemplates = (() => {
         }))
       : [];
     const activeWorkspaceSessionId = state.practiceWorkspace?.activeSessionId || workspaceSessions[0]?.summary?.id || '';
+    workspaceSessions.forEach((entry) => {
+      const tabKey = entry.summary?.activeTabKey || 'practice';
+      const tabMeta = tabs.find((tab) => tab.key === tabKey) || tabs[0];
+      entry.summary.activeTabLabel = tabMeta.label;
+    });
     const currentTabKey = state.practiceTab || 'practice';
     const currentTab = tabs.find((tab) => tab.key === currentTabKey) || tabs[0];
     const dynamicPanelTitle = currentTabKey === 'attachments' ? T.t('ui.attachmentsPanelShellTitle', fallbackByLanguage('Gestione allegati', 'Attachment management')) : T.t('ui.dynamicPreview', 'Anteprima schema');
@@ -257,6 +262,7 @@ window.KedrixOneTemplates = (() => {
                   <span class="practice-workspace-mask-subtitle">${U.escapeHtml(summary.subtitle || '—')}</span>
                 </span>
                 <span class="practice-workspace-badges">
+                  <span class="badge">${U.escapeHtml(summary.activeTabLabel || currentTab.label)}</span>
                   ${summary.isDirty ? `<span class="badge warning">${U.escapeHtml(summary.dirtyBadge || '')}</span>` : ''}
                   <span class="badge info">${U.escapeHtml(summary.badge || '')}</span>
                 </span>

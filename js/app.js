@@ -140,7 +140,8 @@
       PracticeWorkspace.openDraftSession(state, {
         draft: nextDraft,
         source: options.source || 'manual',
-        createEmptyDraft: createEmptyPracticeDraft
+        createEmptyDraft: createEmptyPracticeDraft,
+        practiceTab: options.practiceTab || 'practice'
       });
       PracticeWorkspace.syncActiveDraft(state, { createEmptyDraft: createEmptyPracticeDraft });
       return state.draftPractice;
@@ -166,6 +167,14 @@
   function markActivePracticeSessionDirty(isDirty = true) {
     if (!PracticeWorkspace || typeof PracticeWorkspace.setActiveDirty !== 'function') return null;
     return PracticeWorkspace.setActiveDirty(state, isDirty, { createEmptyDraft: createEmptyPracticeDraft });
+  }
+
+  function setActivePracticeSessionTab(tab = 'practice') {
+    if (!PracticeWorkspace || typeof PracticeWorkspace.setActiveTab !== 'function') {
+      state.practiceTab = String(tab || 'practice').trim() || 'practice';
+      return null;
+    }
+    return PracticeWorkspace.setActiveTab(state, tab, { createEmptyDraft: createEmptyPracticeDraft });
   }
 
   async function confirmClosePracticeSession(sessionId) {
@@ -618,8 +627,9 @@
   function resetPracticeDraft(options = {}) {
     const overrides = options.overrides || {};
     if (PracticeWorkspace && typeof PracticeWorkspace.openDraftSession === 'function') {
-      openPracticeDraftSession(createEmptyPracticeDraft(overrides), { source: options.source || 'new' });
+      openPracticeDraftSession(createEmptyPracticeDraft(overrides), { source: options.source || 'new', practiceTab: options.practiceTab || 'practice' });
       state.practiceTab = options.practiceTab || 'practice';
+      setActivePracticeSessionTab(state.practiceTab);
       state._practiceValidationErrors = [];
       state.practiceSearchPreviewId = '';
       state.practiceOpenSource = '';
@@ -685,7 +695,8 @@
         createEmptyDraft: createEmptyPracticeDraft,
         source: options.source || state.practiceOpenSource || 'manual',
         refreshExisting: options.refreshExisting === true,
-        reuseActiveSession: Boolean(options.reuseActiveSession)
+        reuseActiveSession: Boolean(options.reuseActiveSession),
+        practiceTab: options.practiceTab || ''
       });
       if (!session) return;
       state.selectedPracticeId = practiceId;
@@ -1077,6 +1088,7 @@
       draft.dynamicData = {};
       draft.category = '';
       state.practiceTab = 'practice';
+      setActivePracticeSessionTab('practice');
       state._practiceValidationErrors = [];
       clearValidationState();
       persistIdentity({ refreshValidation: false });
@@ -1096,6 +1108,7 @@
     main.querySelectorAll('[data-practice-tab]').forEach((button) => {
       button.addEventListener('click', () => {
         state.practiceTab = button.dataset.practiceTab;
+        setActivePracticeSessionTab(state.practiceTab);
         save();
         render();
       });
@@ -1111,6 +1124,7 @@
         const firstInvalid = validation.errors[0];
         if (firstInvalid && firstInvalid.tab && firstInvalid.tab !== 'identity' && firstInvalid.tab !== state.practiceTab) {
           state.practiceTab = firstInvalid.tab;
+          setActivePracticeSessionTab(state.practiceTab);
           render();
         } else {
           applyValidationState(validation.errors);
