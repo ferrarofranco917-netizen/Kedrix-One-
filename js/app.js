@@ -488,30 +488,44 @@
     if (PracticeOpenEdit && typeof PracticeOpenEdit.openForEditing === 'function') {
       PracticeOpenEdit.openForEditing(practiceId, {
         source: options.source || 'manual',
-        targetRoute: options.targetRoute || '',
         state,
         main,
         save,
         render,
-        navigate,
-        toast,
-        i18n: I18N,
         loadPracticeIntoDraft
       });
       return;
     }
     if (!practiceId) return;
-    loadPracticeIntoDraft(practiceId, { source: options.source || 'manual' });
+    loadPracticeIntoDraft(practiceId);
     state._practiceValidationErrors = [];
     state.practiceSearchPreviewId = options.source === 'search' ? practiceId : '';
     state.practiceOpenSource = options.source || 'manual';
     save();
-    if (options.targetRoute) {
-      navigate(options.targetRoute);
-      return;
-    }
     render();
   }
+
+  function queuePracticeOpenFromDocuments(practiceId = '') {
+    const normalizedPracticeId = String(practiceId || '').trim();
+    if (!normalizedPracticeId) return;
+    state._pendingPracticeOpen = { practiceId: normalizedPracticeId, source: 'documents' };
+    save();
+    navigate('practices');
+  }
+
+  function consumePendingPracticeOpen() {
+    const pending = state && state._pendingPracticeOpen && typeof state._pendingPracticeOpen === 'object'
+      ? state._pendingPracticeOpen
+      : null;
+    const practiceId = String(pending?.practiceId || '').trim();
+    if (!practiceId) return;
+    state._pendingPracticeOpen = null;
+    save();
+    window.requestAnimationFrame(() => {
+      openPracticeForEditing(practiceId, { source: pending?.source || 'documents' });
+    });
+  }
+
 
   function focusPracticeEditor(source = 'manual', practiceId = '') {
     if (PracticeOpenEdit && typeof PracticeOpenEdit.focusEditor === 'function') {
@@ -1415,10 +1429,7 @@ function renderDocumentPreviewPanel() {
     main.querySelectorAll('[data-document-open-practice]').forEach((button) => {
       button.addEventListener('click', (event) => {
         event.stopPropagation();
-        openPracticeForEditing(button.dataset.documentOpenPractice, {
-          source: 'documents',
-          targetRoute: 'practices'
-        });
+        queuePracticeOpenFromDocuments(button.dataset.documentOpenPractice);
       });
     });
   }
@@ -1448,6 +1459,7 @@ function renderDocumentPreviewPanel() {
       ensurePracticeWorkspace();
       main.innerHTML = Templates.practices(state, selectedPractice(), filteredPractices(), practiceSearchResults());
       bindPracticeEvents();
+      consumePendingPracticeOpen();
       return;
     }
 

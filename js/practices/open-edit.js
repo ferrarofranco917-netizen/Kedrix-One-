@@ -60,40 +60,24 @@ window.KedrixOnePracticeOpenEdit = (() => {
     if (!practiceId) return;
     const {
       source = 'manual',
-      targetRoute = '',
       state,
       main = document,
       save,
       render,
-      navigate,
-      toast,
-      i18n,
       loadPracticeIntoDraft
     } = options;
 
     if (!state || typeof save !== 'function' || typeof render !== 'function' || typeof loadPracticeIntoDraft !== 'function') return;
 
-    loadPracticeIntoDraft(practiceId, { source });
+    loadPracticeIntoDraft(practiceId);
     state._practiceValidationErrors = [];
     state.practiceSearchPreviewId = source === 'search' ? practiceId : '';
     state.practiceOpenSource = source;
     save();
-
-    const shouldNavigate = String(targetRoute || '').trim() && state.currentRoute !== String(targetRoute || '').trim();
-    if (shouldNavigate && typeof navigate === 'function') {
-      navigate(targetRoute);
-      if (source === 'documents' && typeof toast === 'function') {
-        toast((typeof i18n?.t === 'function'
-          ? i18n.t('ui.practiceOpenedFromDocuments', 'Pratica aperta in maschera dedicata dai Documenti')
-          : 'Pratica aperta in maschera dedicata dai Documenti'), 'info');
-      }
-      focusEditor({ main, source, practiceId });
-      return;
-    }
-
     render();
     focusEditor({ main, source, practiceId });
   }
+
 
   function bindOpenTriggers(options = {}) {
     const { main = document, openPracticeForEditing } = options;
