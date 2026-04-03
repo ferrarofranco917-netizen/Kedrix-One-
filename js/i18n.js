@@ -1115,6 +1115,24 @@ Object.assign(dictionary.en.ui, {
 });
 
 Object.assign(dictionary.it.ui, {
+  searchLabel: 'Ricerca',
+  indexedFieldsHint: 'Campi indicizzati',
+  indexedFieldsList: 'pratiche · cliente · container · booking · HBL/Polizza · AWB/HAWB/MAWB · CMR · terminal · documenti collegati · MRN · riferimenti documento',
+  searchReady: 'Ricerca pronta',
+  searchPrompt: 'Digita almeno un riferimento operativo per interrogare l’indice trasversale.',
+  quickFilter: 'Filtro rapido elenco'
+});
+
+Object.assign(dictionary.en.ui, {
+  searchLabel: 'Search',
+  indexedFieldsHint: 'Indexed fields',
+  indexedFieldsList: 'practices · client · container · booking · HBL/Policy · AWB/HAWB/MAWB · CMR · terminal · linked documents · MRN · document references',
+  searchReady: 'Search ready',
+  searchPrompt: 'Enter at least one operational reference to query the cross index.',
+  quickFilter: 'Quick list filter'
+});
+
+Object.assign(dictionary.it.ui, {
   duplicatePractice: 'Duplica pratica',
   duplicatePracticeBannerKicker: 'Copia generata da pratica esistente',
   duplicateDraftReady: 'Copia pronta da personalizzare',
