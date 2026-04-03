@@ -401,7 +401,7 @@ window.KedrixOnePracticeAttachments = (() => {
     if (typeof save === 'function') save();
     if (typeof rerender === 'function') rerender();
     if (typeof toast === 'function') {
-      toast(incoming.length === 1 ? tGlobal('ui.attachmentImportedSingle', 'Attachment imported') : tGlobal('ui.attachmentImportedMany', '{{count}} attachments imported').replace('{{count}}', String(incoming.length)));
+      toast(incoming.length === 1 ? tGlobal('ui.attachmentImportedSingle', 'Attachment imported') : tGlobal('ui.attachmentImportedMany', '{{count}} attachments imported').replace('{{count}}', String(incoming.length)), 'success');
     }
     return incoming.length;
   }
@@ -416,14 +416,14 @@ window.KedrixOnePracticeAttachments = (() => {
     syncLinkedPracticeRecordState(state, draft);
     if (typeof save === 'function') save();
     if (typeof rerender === 'function') rerender();
-    if (typeof toast === 'function') toast(tGlobal('ui.attachmentRemoved', 'Attachment removed'));
+    if (typeof toast === 'function') toast(tGlobal('ui.attachmentRemoved', 'Attachment removed'), 'success');
   }
 
   async function openAttachment(options = {}) {
     const { attachmentId, toast } = options;
     const record = await getAttachmentRecord(attachmentId);
     if (!record || !record.blob) {
-      if (typeof toast === 'function') toast(tGlobal('ui.attachmentUnavailable', 'Attachment unavailable'));
+      if (typeof toast === 'function') toast(tGlobal('ui.attachmentUnavailable', 'Attachment unavailable'), 'warning');
       return false;
     }
     const blobUrl = window.URL.createObjectURL(record.blob);
@@ -454,7 +454,7 @@ window.KedrixOnePracticeAttachments = (() => {
     if (typeof rerender === 'function') rerender();
     if (typeof toast === 'function') {
       const label = i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentTypeUpdated', fallbackByLanguage(i18n, fallbackByLanguage(i18n, 'Tipo documento aggiornato', 'Document type updated'), 'Document type updated')) : fallbackByLanguage(i18n, 'Tipo documento aggiornato', 'Document type updated');
-      toast(label);
+      toast(label, 'success');
     }
     return true;
   }
@@ -494,7 +494,7 @@ window.KedrixOnePracticeAttachments = (() => {
     if (typeof rerender === 'function') rerender();
     if (typeof toast === 'function') {
       const label = i18n && typeof i18n.t === 'function' ? i18n.t('ui.attachmentMetadataUpdated', fallbackByLanguage(i18n, fallbackByLanguage(i18n, 'Metadati documento aggiornati', 'Document metadata updated'), 'Document metadata updated')) : fallbackByLanguage(i18n, 'Metadati documento aggiornati', 'Document metadata updated');
-      toast(label);
+      toast(label, 'success');
     }
     return true;
   }
@@ -526,7 +526,7 @@ window.KedrixOnePracticeAttachments = (() => {
           rerender
         });
       } catch (error) {
-        if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentImportError', 'Unable to import the attachment'));
+        if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentImportError', 'Unable to import the attachment'), 'warning');
       } finally {
         event.target.value = '';
         updateCustomUploaderStatus(uploaderRoot, []);
@@ -538,7 +538,7 @@ window.KedrixOnePracticeAttachments = (() => {
         try {
           await openAttachment({ attachmentId: button.dataset.attachmentOpen, toast });
         } catch (error) {
-          if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentOpenError', 'Unable to open the attachment'));
+          if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentOpenError', 'Unable to open the attachment'), 'warning');
         }
       });
     });
@@ -564,7 +564,7 @@ window.KedrixOnePracticeAttachments = (() => {
             rerender
           });
         } catch (error) {
-          if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentRemoveError', 'Unable to remove the attachment'));
+          if (typeof toast === 'function') toast(error?.message || tGlobal('ui.attachmentRemoveError', 'Unable to remove the attachment'), 'warning');
         }
       });
     });

@@ -751,7 +751,19 @@ img {
 
 .toast {
   padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  color: var(--text);
 }
+
+.toast-info {
+  border-color: rgba(78, 143, 159, 0.34);
+}
+
+.toast-error {
+  border-color: rgba(189, 84, 84, 0.44);
+}
+
 
 @media (max-width: 1180px) {
   .kpi-grid,

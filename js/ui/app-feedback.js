@@ -31,17 +31,36 @@ window.KedrixOneAppFeedback = (() => {
 
   function showToast(message, options = {}) {
     if (!message) return null;
-    const tone = String(options.tone || 'info');
-    const duration = Number(options.duration || 2600);
+    const allowedTones = new Set(['info', 'success', 'warning', 'error']);
+    const requestedTone = String(options.tone || 'info');
+    const tone = allowedTones.has(requestedTone) ? requestedTone : 'info';
+    const duration = Number(options.duration || (tone === 'warning' || tone === 'error' ? 3600 : 2600));
     const region = toastRegion || document.getElementById('toastRegion');
     if (!region) return null;
 
     const el = document.createElement('div');
     el.className = `toast toast-${tone}`;
+    el.setAttribute('role', tone === 'warning' || tone === 'error' ? 'alert' : 'status');
     el.textContent = String(message);
     region.appendChild(el);
     window.setTimeout(() => el.remove(), duration);
     return el;
+  }
+
+  function info(message, options = {}) {
+    return showToast(message, { ...options, tone: 'info' });
+  }
+
+  function success(message, options = {}) {
+    return showToast(message, { ...options, tone: 'success' });
+  }
+
+  function warning(message, options = {}) {
+    return showToast(message, { ...options, tone: 'warning' });
+  }
+
+  function error(message, options = {}) {
+    return showToast(message, { ...options, tone: 'error' });
   }
 
   function closeDialog() {
@@ -107,6 +126,10 @@ window.KedrixOneAppFeedback = (() => {
   return {
     init,
     showToast,
+    info,
+    success,
+    warning,
+    error,
     confirm,
     closeDialog
   };

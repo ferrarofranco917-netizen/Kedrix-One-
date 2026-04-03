@@ -86,6 +86,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
       nextPracticeId
     } = options;
 
+    const existingRecord = draft.editingPracticeId ? ((state && state.practices) || []).find((item) => item.id === draft.editingPracticeId) : null;
     const attachmentOwnerKey = String(draft.attachmentOwnerKey || existingRecord?.attachmentOwnerKey || draft.editingPracticeId || '').trim();
     const attachmentItems = attachmentOwnerKey && state && state.practiceAttachmentIndex && Array.isArray(state.practiceAttachmentIndex[attachmentOwnerKey])
       ? state.practiceAttachmentIndex[attachmentOwnerKey]
@@ -93,7 +94,6 @@ window.KedrixOnePracticeSavePipeline = (() => {
 
     const schema = typeof getPracticeSchema === 'function' ? getPracticeSchema(draft.practiceType) : null;
     const dynamicLabels = typeof buildDynamicLabelsForType === 'function' ? buildDynamicLabelsForType(draft.practiceType) : {};
-    const existingRecord = draft.editingPracticeId ? ((state && state.practices) || []).find((item) => item.id === draft.editingPracticeId) : null;
     if (SeaSchemaCleanup && typeof SeaSchemaCleanup.normalizeDraft === 'function') {
       SeaSchemaCleanup.normalizeDraft(draft);
     }
@@ -234,7 +234,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
       });
     }
 
-    if (typeof toast === 'function') toast(isEditing ? logTexts.updatedToast : logTexts.createdToast);
+    if (typeof toast === 'function') toast(isEditing ? logTexts.updatedToast : logTexts.createdToast, 'success');
 
     state.selectedPracticeId = record.id;
     state.practiceDuplicateSource = null;

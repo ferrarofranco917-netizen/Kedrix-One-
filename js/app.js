@@ -98,15 +98,33 @@
   }
 
   function toast(text, tone = 'info') {
-    if (AppFeedback && typeof AppFeedback.showToast === 'function') {
-      AppFeedback.showToast(text, { tone });
-      return;
+    if (AppFeedback) {
+      if (tone === 'success' && typeof AppFeedback.success === 'function') {
+        AppFeedback.success(text);
+        return;
+      }
+      if (tone === 'warning' && typeof AppFeedback.warning === 'function') {
+        AppFeedback.warning(text);
+        return;
+      }
+      if (tone === 'error' && typeof AppFeedback.error === 'function') {
+        AppFeedback.error(text);
+        return;
+      }
+      if (tone === 'info' && typeof AppFeedback.info === 'function') {
+        AppFeedback.info(text);
+        return;
+      }
+      if (typeof AppFeedback.showToast === 'function') {
+        AppFeedback.showToast(text, { tone });
+        return;
+      }
     }
     const el = document.createElement('div');
     el.className = `toast toast-${tone}`;
     el.textContent = text;
     toastRegion.appendChild(el);
-    setTimeout(() => el.remove(), 2500);
+    setTimeout(() => el.remove(), tone === 'warning' || tone === 'error' ? 3600 : 2500);
   }
 
   function updateStaticLabels() {
@@ -355,7 +373,7 @@
   function duplicatePracticeDraft(practiceId = '') {
     const sourcePracticeId = practiceId || ensureDraftPractice().editingPracticeId || state.selectedPracticeId || '';
     if (!sourcePracticeId) {
-      toast(I18N.t('ui.duplicateUnavailable', 'Apri prima una pratica esistente da duplicare.'));
+      toast(I18N.t('ui.duplicateUnavailable', 'Apri prima una pratica esistente da duplicare.'), 'warning');
       return { ok: false, reason: 'missing-practice-id' };
     }
 
@@ -377,7 +395,7 @@
       });
     }
 
-    toast(I18N.t('ui.duplicateUnavailable', 'Apri prima una pratica esistente da duplicare.'));
+    toast(I18N.t('ui.duplicateUnavailable', 'Apri prima una pratica esistente da duplicare.'), 'warning');
     return { ok: false, reason: 'duplicate-module-unavailable' };
   }
 
@@ -922,7 +940,7 @@
           applyValidationState(validation.errors);
           if (firstInvalid) focusField(firstInvalid.field, firstInvalid.tab);
         }
-        toast(I18N.t('ui.validationBlockedSave', 'Salvataggio bloccato: completa i controlli evidenziati.'));
+        toast(I18N.t('ui.validationBlockedSave', 'Salvataggio bloccato: completa i controlli evidenziati.'), 'warning');
         return;
       }
 
@@ -1040,7 +1058,7 @@
           practiceId: record.id,
           text: `${I18N.getLanguage() === 'en' ? 'Practice updated' : 'Pratica aggiornata'} ${record.reference}.`
         });
-        toast(I18N.t('ui.practiceUpdated', 'Pratica aggiornata'));
+        toast(I18N.t('ui.practiceUpdated', 'Pratica aggiornata correttamente'), 'success');
       } else {
         state.practices.unshift(record);
         state.operatorLogs.unshift({
@@ -1049,7 +1067,7 @@
           practiceId: record.id,
           text: `${I18N.getLanguage() === 'en' ? 'Practice created' : 'Creata pratica'} ${record.reference}.`
         });
-        toast(I18N.t('ui.practiceSaved', 'Pratica salvata'));
+        toast(I18N.t('ui.practiceSaved', 'Pratica salvata correttamente'), 'success');
       }
 
       if (PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
@@ -1317,13 +1335,13 @@ function renderDocumentPreviewPanel() {
     companyPlan?.addEventListener('change', (event) => {
       Licensing.setCompanyPlan(state, event.target.value || 'base');
       refreshSettingsStateAfterAccessChange();
-      toast(I18N.t('ui.settingsSaved', 'Impostazioni aggiornate'));
+      toast(I18N.t('ui.settingsSaved', 'Impostazioni aggiornate correttamente'), 'success');
     });
 
     activeUserId?.addEventListener('change', (event) => {
       Licensing.setActiveUser(state, event.target.value || '');
       refreshSettingsStateAfterAccessChange();
-      toast(I18N.t('ui.settingsSaved', 'Impostazioni aggiornate'));
+      toast(I18N.t('ui.activeUserUpdated', 'Utente attivo aggiornato'), 'success');
     });
 
     languageSelect?.addEventListener('change', (event) => {
@@ -1332,7 +1350,7 @@ function renderDocumentPreviewPanel() {
       normalizePracticeRecordsState();
       save();
       render();
-      toast(I18N.t('ui.languageUpdated', 'Language updated'));
+      toast(I18N.t('ui.languageUpdated', 'Lingua aggiornata correttamente'), 'success');
     });
 
     settingsModuleKey?.addEventListener('change', (event) => {
@@ -1358,7 +1376,7 @@ saveDocumentTypeOptions?.addEventListener('click', () => {
   DocumentCategories.applyOptionsText(state, documentTypeOptionsEditor?.value || '', I18N);
   save();
   render();
-  toast(I18N.t('ui.documentCategoriesSaved', 'Categorie documentali aggiornate'), 'success');
+  toast(I18N.t('ui.documentCategoriesSaved', 'Categorie documentali aggiornate correttamente'), 'success');
 });
 
 resetDocumentTypeOptions?.addEventListener('click', () => {
@@ -1366,7 +1384,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
   DocumentCategories.resetToDefault(state, I18N);
   save();
   render();
-  toast(I18N.t('ui.documentCategoriesReset', 'Categorie documentali ripristinate'), 'success');
+  toast(I18N.t('ui.documentCategoriesReset', 'Categorie documentali ripristinate correttamente'), 'success');
 });
 
     saveNumberingRule?.addEventListener('click', () => {
@@ -1383,13 +1401,14 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       };
       save();
       render();
-      toast(I18N.t('ui.settingsSaved', 'Impostazioni aggiornate'));
+      toast(I18N.t('ui.numberingSaved', 'Regola numerazione cliente aggiornata correttamente'), 'success');
     });
 
     main.querySelectorAll('[data-toggle-company-module]').forEach((button) => {
       button.addEventListener('click', () => {
         Licensing.toggleCompanyModule(state, button.dataset.toggleCompanyModule);
         refreshSettingsStateAfterAccessChange();
+        toast(I18N.t('ui.companyUpdated', 'Acquisti azienda aggiornati'), 'success');
       });
     });
 
@@ -1397,6 +1416,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       button.addEventListener('click', () => {
         Licensing.toggleUserModule(state, button.dataset.toggleUserModule);
         refreshSettingsStateAfterAccessChange();
+        toast(I18N.t('ui.userModuleUpdated', 'Permessi modulo utente aggiornati'), 'success');
       });
     });
 
@@ -1406,6 +1426,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
         if (!module) return;
         Licensing.toggleCompanySubmodule(state, module, button.dataset.toggleCompanySubmodule);
         refreshSettingsStateAfterAccessChange();
+        toast(I18N.t('ui.companySubmoduleUpdated', 'Permessi sottomodulo azienda aggiornati'), 'success');
       });
     });
 
@@ -1415,6 +1436,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
         if (!module) return;
         Licensing.toggleUserSubmodule(state, module, button.dataset.toggleUserSubmodule);
         refreshSettingsStateAfterAccessChange();
+        toast(I18N.t('ui.userSubmoduleUpdated', 'Permessi sottomodulo utente aggiornati'), 'success');
       });
     });
 
@@ -1434,7 +1456,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
         resetPracticeDraft();
         save();
         navigate(routeAction.dataset.routeAction || 'practices');
-        toast(I18N.t('ui.newDraft', 'Nuova pratica'));
+        toast(I18N.t('ui.newDraft', 'Nuova pratica'), 'info');
         return;
       }
       navigate(routeAction.dataset.routeAction);
@@ -1452,7 +1474,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
 
     if (action.dataset.action === 'save-backup') {
       save();
-      toast(I18N.t('ui.backupUpdated', 'Backup locale aggiornato'));
+      toast(I18N.t('ui.backupUpdated', 'Backup locale aggiornato correttamente'), 'success');
     }
 
     if (action.dataset.action === 'duplicate-practice-draft') {
@@ -1468,14 +1490,14 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       ensureCurrentModuleExpanded();
       save();
       render();
-      toast(I18N.t('ui.demoReset', 'Dati demo ripristinati'));
+      toast(I18N.t('ui.demoReset', 'Dati demo ripristinati correttamente'), 'success');
     }
 
     if (action.dataset.action === 'reset-practice-draft') {
       resetPracticeDraft();
       save();
       render();
-      toast(I18N.t('ui.newDraft', 'Nuova pratica'));
+      toast(I18N.t('ui.newDraft', 'Nuova pratica'), 'info');
     }
   });
 
