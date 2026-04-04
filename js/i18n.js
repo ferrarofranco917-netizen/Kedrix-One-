@@ -1430,18 +1430,6 @@ Object.assign(dictionary.en.ui, {
   duplicateUnavailable: 'Open an existing practice before duplicating it.'
 });
 
-  return {
-    dictionary,
-    setLanguage,
-    getLanguage,
-    t,
-    moduleLabel,
-    submoduleLabel,
-    moduleDescription,
-    submoduleDescription
-  };
-})();
-
 Object.assign(dictionary.it.ui, {
   sectionOperationalIdentity: 'Identità operativa',
   sectionOperationalIdentityHint: 'Riferimenti chiave della pratica: numero documentale, quotazione base e agganci operativi.',
@@ -1499,3 +1487,15 @@ Object.assign(dictionary.en.ui, {
   practiceNotesArchitectureTitle: 'Practice notes',
   practiceNotesArchitectureHint: 'Dedicated area for practice operational notes, kept separate but aligned with the active record.'
 });
+
+  return {
+    dictionary,
+    setLanguage,
+    getLanguage,
+    t,
+    moduleLabel,
+    submoduleLabel,
+    moduleDescription,
+    submoduleDescription
+  };
+})();
