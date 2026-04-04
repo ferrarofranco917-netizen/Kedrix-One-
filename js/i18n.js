@@ -1505,7 +1505,22 @@ Object.assign(dictionary.it.ui, {
   masterDataFamilyShippingCompanies: 'Compagnie marittime',
   masterDataFamilyAirlines: 'Compagnie aeree',
   masterDataFamilyCarriers: 'Vettori',
-  masterDataFamilyTransportUnitTypes: 'Tipologie unità'
+  masterDataFamilyTransportUnitTypes: 'Tipologie unità',
+  fieldRelationLinkedEntity: 'Entità collegata',
+  masterDataShortName: 'Nome breve',
+  masterDataInternalCode: 'Codice interno',
+  masterDataVatNumber: 'Partita IVA',
+  masterDataTaxCode: 'Codice fiscale',
+  masterDataAddress: 'Indirizzo',
+  masterDataZipCode: 'CAP',
+  masterDataProvince: 'Provincia',
+  masterDataCountry: 'Nazione',
+  masterDataPec: 'PEC',
+  masterDataSdi: 'Codice SDI',
+  masterDataActiveEntity: 'Entità attiva',
+  masterDataListThirdColumn: 'P.IVA / Codice',
+  email: 'Email',
+  phone: 'Telefono'
 });
 
 Object.assign(dictionary.en.ui, {
@@ -1524,7 +1539,22 @@ Object.assign(dictionary.en.ui, {
   masterDataFamilyShippingCompanies: 'Shipping companies',
   masterDataFamilyAirlines: 'Airlines',
   masterDataFamilyCarriers: 'Carriers',
-  masterDataFamilyTransportUnitTypes: 'Unit types'
+  masterDataFamilyTransportUnitTypes: 'Unit types',
+  fieldRelationLinkedEntity: 'Linked entity',
+  masterDataShortName: 'Short name',
+  masterDataInternalCode: 'Internal code',
+  masterDataVatNumber: 'VAT number',
+  masterDataTaxCode: 'Tax code',
+  masterDataAddress: 'Address',
+  masterDataZipCode: 'ZIP code',
+  masterDataProvince: 'Province',
+  masterDataCountry: 'Country',
+  masterDataPec: 'PEC',
+  masterDataSdi: 'SDI code',
+  masterDataActiveEntity: 'Active entity',
+  masterDataListThirdColumn: 'VAT / Code',
+  email: 'Email',
+  phone: 'Phone'
 });
 
   return {

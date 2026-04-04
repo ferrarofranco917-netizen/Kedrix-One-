@@ -1,6 +1,8 @@
 window.KedrixOneMasterDataQuickAdd = (() => {
   'use strict';
 
+  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+
   function ensureModuleState(state) {
     if (!state || typeof state !== 'object') return { activeEntity: 'client', quickAddContext: null, formDrafts: {} };
     if (!state.masterDataModule || typeof state.masterDataModule !== 'object') {
@@ -9,144 +11,20 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     if (!state.masterDataModule.formDrafts || typeof state.masterDataModule.formDrafts !== 'object') {
       state.masterDataModule.formDrafts = {};
     }
-    if (!state.masterDataModule.activeEntity) {
-      state.masterDataModule.activeEntity = 'client';
-    }
+    if (!state.masterDataModule.activeEntity) state.masterDataModule.activeEntity = 'client';
     return state.masterDataModule;
   }
 
-  function nextSequentialId(prefix, items) {
-    const max = (Array.isArray(items) ? items : []).reduce((acc, item) => {
-      const raw = String(item && item.id ? item.id : '');
-      const numeric = Number(raw.replace(/[^0-9]/g, ''));
-      return Number.isFinite(numeric) ? Math.max(acc, numeric) : acc;
-    }, 0);
-    return `${prefix}${String(max + 1).padStart(3, '0')}`;
-  }
-
   function getEntityDefinitions(i18n) {
-    const t = (key, fallback) => i18n && typeof i18n.t === 'function' ? i18n.t(key, fallback) : fallback;
-    return {
-      client: {
-        key: 'client',
-        familyLabel: t('ui.masterDataFamilyClients', 'Clienti'),
-        singleLabel: t('ui.client', 'Cliente'),
-        valueLabel: t('ui.masterDataClientName', 'Ragione sociale'),
-        supportsCity: true,
-        listType: 'clients'
-      },
-      importer: {
-        key: 'importer',
-        familyLabel: t('ui.masterDataFamilyImporters', 'Importatori'),
-        singleLabel: t('ui.importer', 'Importatore'),
-        valueLabel: t('ui.importer', 'Importatore'),
-        directoryKey: 'importers'
-      },
-      consignee: {
-        key: 'consignee',
-        familyLabel: t('ui.masterDataFamilyConsignees', 'Destinatari'),
-        singleLabel: t('ui.consignee', 'Destinatario'),
-        valueLabel: t('ui.consignee', 'Destinatario'),
-        directoryKey: 'consignees'
-      },
-      vessel: {
-        key: 'vessel',
-        familyLabel: t('ui.masterDataFamilyVessels', 'Navi'),
-        singleLabel: t('ui.masterDataVesselSingle', 'Nave'),
-        valueLabel: t('ui.masterDataVesselSingle', 'Nave'),
-        directoryKey: 'vessels'
-      },
-      sender: {
-        key: 'sender',
-        familyLabel: t('ui.masterDataFamilySenders', 'Mittenti'),
-        singleLabel: t('ui.masterDataSenderSingle', 'Mittente'),
-        valueLabel: t('ui.masterDataSenderSingle', 'Mittente'),
-        directoryKey: 'shippers'
-      },
-      taric: {
-        key: 'taric',
-        familyLabel: t('ui.masterDataFamilyTaric', 'TARIC'),
-        singleLabel: t('ui.taric', 'TARIC'),
-        valueLabel: t('ui.masterDataTaricCode', 'Codice TARIC'),
-        supportsDescription: true,
-        directoryKey: 'taricCodes'
-      },
-      customsOffice: {
-        key: 'customsOffice',
-        familyLabel: t('ui.masterDataFamilyCustomsOffices', 'Dogane'),
-        singleLabel: t('ui.customsOffice', 'Dogana'),
-        valueLabel: t('ui.customsOffice', 'Dogana'),
-        directoryKey: 'customsOffices'
-      },
-      origin: {
-        key: 'origin',
-        familyLabel: t('ui.masterDataFamilyOrigins', 'Origini'),
-        singleLabel: t('ui.originRef', 'Origine'),
-        valueLabel: t('ui.originRef', 'Origine'),
-        directoryKey: 'originDirectories'
-      },
-      destination: {
-        key: 'destination',
-        familyLabel: t('ui.masterDataFamilyDestinations', 'Destinazioni'),
-        singleLabel: t('ui.destinationRef', 'Destinazione'),
-        valueLabel: t('ui.destinationRef', 'Destinazione'),
-        directoryKey: 'destinationDirectories'
-      },
-      articleCode: {
-        key: 'articleCode',
-        familyLabel: t('ui.masterDataFamilyArticleCodes', 'Codici articolo'),
-        singleLabel: t('ui.articleCode', 'Codice articolo'),
-        valueLabel: t('ui.articleCode', 'Codice articolo'),
-        directoryKey: 'articleCodes'
-      },
-      shippingCompany: {
-        key: 'shippingCompany',
-        familyLabel: t('ui.masterDataFamilyShippingCompanies', 'Compagnie marittime'),
-        singleLabel: t('ui.shippingCompany', 'Compagnia marittima'),
-        valueLabel: t('ui.shippingCompany', 'Compagnia marittima'),
-        directoryKey: 'shippingCompanies'
-      },
-      airline: {
-        key: 'airline',
-        familyLabel: t('ui.masterDataFamilyAirlines', 'Compagnie aeree'),
-        singleLabel: t('ui.airline', 'Compagnia aerea'),
-        valueLabel: t('ui.airline', 'Compagnia aerea'),
-        directoryKey: 'airlines'
-      },
-      carrier: {
-        key: 'carrier',
-        familyLabel: t('ui.masterDataFamilyCarriers', 'Vettori'),
-        singleLabel: t('ui.carrier', 'Vettore'),
-        valueLabel: t('ui.carrier', 'Vettore'),
-        directoryKey: 'carriers'
-      },
-      transportUnitType: {
-        key: 'transportUnitType',
-        familyLabel: t('ui.masterDataFamilyTransportUnitTypes', 'Tipologie unità'),
-        singleLabel: t('ui.transportUnitType', 'Tipologia unità/trasporto'),
-        valueLabel: t('ui.transportUnitType', 'Tipologia unità/trasporto'),
-        directoryKey: 'transportUnitTypes'
-      }
-    };
+    return MasterDataEntities && typeof MasterDataEntities.getEntityDefinitions === 'function'
+      ? MasterDataEntities.getEntityDefinitions(i18n)
+      : {};
   }
 
   function resolveEntityKeyForField(fieldName) {
-    const clean = String(fieldName || '').trim();
-    if (clean === 'clientName') return 'client';
-    if (clean === 'importer') return 'importer';
-    if (clean === 'consignee') return 'consignee';
-    if (clean === 'vesselVoyage') return 'vessel';
-    if (clean === 'shipper' || clean === 'sender') return 'sender';
-    if (clean === 'taric') return 'taric';
-    if (clean === 'customsOffice') return 'customsOffice';
-    if (clean === 'originRef') return 'origin';
-    if (clean === 'destinationRef') return 'destination';
-    if (clean === 'articleCode') return 'articleCode';
-    if (clean === 'company') return 'shippingCompany';
-    if (clean === 'airline') return 'airline';
-    if (clean === 'carrier' || clean === 'transporter') return 'carrier';
-    if (clean === 'transportUnitType') return 'transportUnitType';
-    return '';
+    return MasterDataEntities && typeof MasterDataEntities.resolveEntityKeyForField === 'function'
+      ? MasterDataEntities.resolveEntityKeyForField(fieldName)
+      : '';
   }
 
   function supportsQuickAdd(fieldName) {
@@ -168,36 +46,18 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   }
 
   function getEntries(state, entityKey, i18n) {
-    const defs = getEntityDefinitions(i18n);
-    const def = defs[entityKey];
-    if (!def) return [];
-
-    if (def.listType === 'clients') {
-      return (state.clients || []).map((item) => ({
-        id: String(item.id || item.name || ''),
-        primary: String(item.name || '').trim(),
-        secondary: String(item.city || '').trim(),
-        value: String(item.name || '').trim()
-      })).filter((item) => item.primary);
+    if (MasterDataEntities && typeof MasterDataEntities.listEntityRecords === 'function') {
+      return MasterDataEntities.listEntityRecords(state, entityKey, i18n);
     }
-
-    const raw = ensureDirectory(state, def.directoryKey);
-    return raw.map((item, index) => {
-      if (item && typeof item === 'object' && !Array.isArray(item)) {
-        const value = String(item.value || item.code || item.name || item.label || '').trim();
-        const primary = String(item.displayValue || item.label || value).trim();
-        const secondary = String(item.description || item.city || item.code || '').trim();
-        return { id: `${entityKey}-${index}`, primary, secondary, value: value || primary };
-      }
-      const value = String(item || '').trim();
-      return { id: `${entityKey}-${index}`, primary: value, secondary: '', value };
-    }).filter((item) => item.primary);
+    return [];
   }
 
   function getFormDraft(state, entityKey) {
     const moduleState = ensureModuleState(state);
     if (!moduleState.formDrafts[entityKey] || typeof moduleState.formDrafts[entityKey] !== 'object') {
-      moduleState.formDrafts[entityKey] = { value: '', description: '', city: '' };
+      moduleState.formDrafts[entityKey] = MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
+        ? MasterDataEntities.createFormDraft(entityKey)
+        : { value: '', description: '', city: '' };
     }
     return moduleState.formDrafts[entityKey];
   }
@@ -240,6 +100,10 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
     if (context.fieldName) {
       draft.dynamicData[context.fieldName] = result.value;
+      if (MasterDataEntities && typeof MasterDataEntities.getRelationFieldName === 'function') {
+        const relationFieldName = MasterDataEntities.getRelationFieldName(context.fieldName);
+        if (relationFieldName) draft.dynamicData[relationFieldName] = result.relatedId || '';
+      }
     }
   }
 
@@ -248,63 +112,18 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const def = defs[entityKey];
     if (!def) return { ok: false, reason: 'invalid-entity' };
 
+    if (def.structured && MasterDataEntities && typeof MasterDataEntities.saveBusinessEntity === 'function') {
+      return MasterDataEntities.saveBusinessEntity(state, entityKey, payload, i18n);
+    }
+
     let value = String(payload.value || '').trim();
     const description = String(payload.description || '').trim();
     const city = String(payload.city || '').trim();
-    if (entityKey === 'taric') {
-      value = value.replace(/\s+/g, '');
-    }
+    if (entityKey === 'taric') value = value.replace(/\s+/g, '');
     if (!value) return { ok: false, reason: 'missing-value' };
 
-    if (def.listType === 'clients') {
-      state.clients = Array.isArray(state.clients) ? state.clients : [];
-      state.contacts = Array.isArray(state.contacts) ? state.contacts : [];
-      const existing = state.clients.find((item) => String(item.name || '').trim().toUpperCase() === value.toUpperCase());
-      if (existing) {
-        return { ok: true, created: false, value: existing.name, relatedId: existing.id };
-      }
-      const client = {
-        id: nextSequentialId('CL-', state.clients),
-        name: value,
-        city,
-        numberingRule: {
-          prefix: '',
-          separator: '-',
-          includeYear: true,
-          resetEveryYear: true,
-          nextNumber: 1,
-          lastYear: new Date().getFullYear()
-        }
-      };
-      state.clients.push(client);
-      const contactExists = state.contacts.some((item) => String(item.name || '').trim().toUpperCase() === value.toUpperCase());
-      if (!contactExists) {
-        state.contacts.push({ id: nextSequentialId('CNT-', state.contacts), name: value, type: 'Cliente', city });
-      }
-      return { ok: true, created: true, value: client.name, relatedId: client.id };
-    }
-
     const directory = ensureDirectory(state, def.directoryKey);
-    if (entityKey === 'taric') {
-      const existingTaric = directory.find((item) => String((item && (item.value || item.code || item.name)) || '').trim().toUpperCase() === value.toUpperCase());
-      if (existingTaric) {
-        return {
-          ok: true,
-          created: false,
-          value: String(existingTaric.value || existingTaric.code || value).trim(),
-          relatedId: String(existingTaric.value || existingTaric.code || value).trim()
-        };
-      }
-      directory.push({
-        value,
-        label: value,
-        description,
-        displayValue: description ? `${value} · ${description}` : value
-      });
-      return { ok: true, created: true, value, relatedId: value };
-    }
-
-    if (def.supportsDescription) {
+    if (entityKey === 'taric' || def.supportsDescription) {
       const existingComplex = directory.find((item) => String((item && (item.value || item.code || item.name)) || '').trim().toUpperCase() === value.toUpperCase());
       if (existingComplex) {
         return {
@@ -318,15 +137,14 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         value,
         label: value,
         description,
-        displayValue: description ? `${value} · ${description}` : value
+        city,
+        displayValue: description ? `${value} · ${description}` : (city ? `${value} · ${city}` : value)
       });
       return { ok: true, created: true, value, relatedId: value };
     }
 
     const existing = directory.find((item) => String(item && item.value !== undefined ? item.value : item || '').trim().toUpperCase() === value.toUpperCase());
-    if (existing) {
-      return { ok: true, created: false, value: String(existing.value !== undefined ? existing.value : existing).trim(), relatedId: value };
-    }
+    if (existing) return { ok: true, created: false, value: String(existing.value !== undefined ? existing.value : existing).trim(), relatedId: value };
     directory.push(value);
     return { ok: true, created: true, value, relatedId: value };
   }
@@ -351,6 +169,31 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       .replace(/'/g, '&#39;');
   }
 
+  function renderEntryFormFields({ activeDef, formDraft, t }) {
+    const structuredFields = MasterDataEntities && typeof MasterDataEntities.getFormFields === 'function'
+      ? MasterDataEntities.getFormFields(activeDef.key, t)
+      : [];
+    if (Array.isArray(structuredFields) && structuredFields.length) {
+      const blocks = structuredFields.map((field) => {
+        const fieldId = `masterData_${field.name}`;
+        const requiredMark = field.required ? ' <span class="required-mark">*</span>' : '';
+        if (field.type === 'textarea') {
+          return `<div class="field ${field.full ? 'full' : ''}"><label for="${fieldId}">${escapeHtml(field.label)}${requiredMark}</label><textarea id="${fieldId}" name="${field.name}" rows="3">${escapeHtml(formDraft[field.name] || '')}</textarea></div>`;
+        }
+        if (field.type === 'checkbox') {
+          return `<div class="field ${field.full ? 'full' : ''}"><label class="checkbox-chip master-data-checkbox"><input id="${fieldId}" name="${field.name}" type="checkbox" ${formDraft[field.name] !== false ? 'checked' : ''} /> ${escapeHtml(field.label)}</label></div>`;
+        }
+        return `<div class="field ${field.full ? 'full' : ''}"><label for="${fieldId}">${escapeHtml(field.label)}${requiredMark}</label><input id="${fieldId}" name="${field.name}" type="text" value="${escapeHtml(formDraft[field.name] || '')}" autocomplete="off" /></div>`;
+      }).join('');
+      return `<div class="form-grid two master-data-entity-grid">${blocks}</div>`;
+    }
+
+    const currentValue = escapeHtml(formDraft.value || '');
+    const currentDescription = escapeHtml(formDraft.description || '');
+    const currentCity = escapeHtml(formDraft.city || '');
+    return `<div class="form-grid two"><div class="field ${activeDef.supportsDescription ? '' : (activeDef.supportsCity ? '' : 'full')}"><label for="masterDataValue">${escapeHtml(activeDef.valueLabel)}</label><input id="masterDataValue" name="value" type="text" value="${currentValue}" autocomplete="off" /></div>${activeDef.supportsDescription ? `<div class="field"><label for="masterDataDescription">${escapeHtml(t.t('ui.masterDataDescription', 'Descrizione'))}</label><input id="masterDataDescription" name="description" type="text" value="${currentDescription}" autocomplete="off" /></div>` : ''}${activeDef.supportsCity ? `<div class="field"><label for="masterDataCity">${escapeHtml(t.t('ui.city', 'Città'))}</label><input id="masterDataCity" name="city" type="text" value="${currentCity}" autocomplete="off" /></div>` : ''}</div>`;
+  }
+
   function renderPanel({ state, module, t }) {
     const defs = getEntityDefinitions(t);
     const moduleState = ensureModuleState(state);
@@ -360,9 +203,6 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const entries = getEntries(state, activeEntity, t);
     const formDraft = getFormDraft(state, activeEntity);
     const familyOptions = Object.values(defs);
-    const currentValue = escapeHtml(formDraft.value || '');
-    const currentDescription = escapeHtml(formDraft.description || '');
-    const currentCity = escapeHtml(formDraft.city || '');
 
     return `
       <section class="hero">
@@ -392,14 +232,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           </div>
 
           <form id="masterDataEntryForm" class="master-data-form-stack">
-            <div class="form-grid two">
-              <div class="field ${activeDef.supportsDescription ? '' : (activeDef.supportsCity ? '' : 'full')}">
-                <label for="masterDataValue">${escapeHtml(activeDef.valueLabel)}</label>
-                <input id="masterDataValue" name="value" type="text" value="${currentValue}" autocomplete="off" />
-              </div>
-              ${activeDef.supportsDescription ? `<div class="field"><label for="masterDataDescription">${escapeHtml(t.t('ui.masterDataDescription', 'Descrizione'))}</label><input id="masterDataDescription" name="description" type="text" value="${currentDescription}" autocomplete="off" /></div>` : ''}
-              ${activeDef.supportsCity ? `<div class="field"><label for="masterDataCity">${escapeHtml(t.t('ui.city', 'Città'))}</label><input id="masterDataCity" name="city" type="text" value="${currentCity}" autocomplete="off" /></div>` : ''}
-            </div>
+            ${renderEntryFormFields({ activeDef, formDraft, t })}
             <div class="form-actions master-data-actions">
               <button class="btn" type="submit">${escapeHtml(t.t('ui.masterDataSaveEntry', 'Salva anagrafica'))}</button>
               ${quickAddContext ? `<button class="btn secondary" id="masterDataReturnButton" type="button">${escapeHtml(t.t('ui.masterDataBackToPractice', 'Torna alla pratica'))}</button>` : ''}
@@ -420,10 +253,11 @@ window.KedrixOneMasterDataQuickAdd = (() => {
                 <tr>
                   <th>${escapeHtml(activeDef.singleLabel)}</th>
                   <th>${escapeHtml(t.t('ui.details', 'Dettagli'))}</th>
+                  <th>${escapeHtml(t.t('ui.masterDataListThirdColumn', 'P.IVA / Codice'))}</th>
                 </tr>
               </thead>
               <tbody>
-                ${entries.length ? entries.map((entry) => `<tr><td>${escapeHtml(entry.primary)}</td><td>${escapeHtml(entry.secondary || '—')}</td></tr>`).join('') : `<tr><td colspan="2">${escapeHtml(t.t('ui.masterDataNoEntries', 'Nessun valore presente in questa anagrafica.'))}</td></tr>`}
+                ${entries.length ? entries.map((entry) => `<tr><td>${escapeHtml(entry.primary)}</td><td>${escapeHtml(entry.secondary || '—')}</td><td>${escapeHtml(entry.tertiary || '—')}</td></tr>`).join('') : `<tr><td colspan="3">${escapeHtml(t.t('ui.masterDataNoEntries', 'Nessun valore presente in questa anagrafica.'))}</td></tr>`}
               </tbody>
             </table>
           </div>
@@ -456,9 +290,12 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       const formData = new FormData(form);
       const targetEntity = moduleState.quickAddContext?.entityKey || activeEntity;
       const currentDraft = getFormDraft(state, targetEntity);
-      currentDraft.value = String(formData.get('value') || '').trim();
-      currentDraft.description = String(formData.get('description') || '').trim();
-      currentDraft.city = String(formData.get('city') || '').trim();
+
+      Array.from(form.querySelectorAll('[name]')).forEach((node) => {
+        if (!node.name) return;
+        if (node.type === 'checkbox') currentDraft[node.name] = Boolean(node.checked);
+        else currentDraft[node.name] = String(formData.get(node.name) || '').trim();
+      });
 
       const result = addEntry(state, targetEntity, currentDraft, i18n);
       if (!result.ok) {
@@ -466,9 +303,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         return;
       }
 
-      currentDraft.value = '';
-      currentDraft.description = '';
-      currentDraft.city = '';
+      Object.assign(currentDraft, MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
+        ? MasterDataEntities.createFormDraft(targetEntity)
+        : { value: '', description: '', city: '' });
 
       const context = moduleState.quickAddContext;
       if (context) {

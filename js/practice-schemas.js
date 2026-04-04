@@ -7,6 +7,7 @@ window.KedrixOnePracticeSchemas = (() => {
   const TaricData = window.KedrixOneTaricData || {};
   const GoodsMasterData = window.KedrixOneGoodsMasterData || {};
   const TransportUnitData = window.KedrixOneTransportUnitData || {};
+  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
   const incoterms2020 = ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP', 'FAS', 'FOB', 'CFR', 'CIF'];
 
@@ -575,6 +576,10 @@ window.KedrixOnePracticeSchemas = (() => {
     }
     if (Array.isArray(field.options) && field.options.length) return [...field.options];
     if (field.suggestionKey) {
+      if (MasterDataEntities && typeof MasterDataEntities.getSuggestionOptions === 'function') {
+        const entityOptions = MasterDataEntities.getSuggestionOptions(companyConfig, field.suggestionKey);
+        if (Array.isArray(entityOptions) && entityOptions.length) return [...entityOptions];
+      }
       const config = getPracticeConfig(companyConfig);
       const values = config.directories[field.suggestionKey];
       return Array.isArray(values) ? [...values] : [];

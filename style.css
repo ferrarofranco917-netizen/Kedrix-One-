@@ -1775,6 +1775,17 @@ body.dialog-open {
   margin-bottom: 14px;
 }
 
+.master-data-entity-grid {
+  align-items: start;
+}
+
+.master-data-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
 .practice-workspace-panel {
   margin-bottom: 18px;
 }

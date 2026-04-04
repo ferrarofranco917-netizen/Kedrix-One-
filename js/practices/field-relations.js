@@ -2,6 +2,7 @@ window.KedrixOnePracticeFieldRelations = (() => {
   'use strict';
 
   const PracticeSchemas = window.KedrixOnePracticeSchemas;
+  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
   const relationalSuggestionKeys = new Set([
     'importers',
@@ -21,9 +22,7 @@ window.KedrixOnePracticeFieldRelations = (() => {
 
   function text(source, fallback = '') {
     if (source === null || source === undefined) return String(fallback || '').trim();
-    if (typeof source === 'string' || typeof source === 'number' || typeof source === 'boolean') {
-      return String(source).trim();
-    }
+    if (typeof source === 'string' || typeof source === 'number' || typeof source === 'boolean') return String(source).trim();
     if (Array.isArray(source)) {
       for (const item of source) {
         const resolved = text(item, '');
@@ -32,15 +31,7 @@ window.KedrixOnePracticeFieldRelations = (() => {
       return String(fallback || '').trim();
     }
     if (typeof source === 'object') {
-      const candidates = [
-        source.displayValue,
-        source.label,
-        source.value,
-        source.code,
-        source.city,
-        source.name,
-        source.id
-      ];
+      const candidates = [source.displayValue, source.label, source.value, source.code, source.city, source.name, source.id];
       for (const candidate of candidates) {
         const resolved = text(candidate, '');
         if (resolved) return resolved;
@@ -71,18 +62,29 @@ window.KedrixOnePracticeFieldRelations = (() => {
     return entries.find((entry) => (entry.aliases || []).some((alias) => normalize(alias) === clean)) || null;
   }
 
+  function linkedStructuredRecord(state, draft, field) {
+    if (!MasterDataEntities || typeof MasterDataEntities.getLinkedRecordFromDraft !== 'function') return null;
+    return MasterDataEntities.getLinkedRecordFromDraft({ state, draft, fieldName: field?.type === 'derived' ? 'clientName' : field?.name }) || null;
+  }
+
+  function linkedDetail(record) {
+    if (!record || typeof record !== 'object') return '';
+    return record.displayValue || [record.name, record.city, record.vatNumber].filter(Boolean).join(' · ') || record.name || '';
+  }
+
   function getFieldRelationMeta(options = {}) {
-    const { type = '', field = null, draft = {}, companyConfig = null, i18n = null } = options;
+    const { state = null, type = '', field = null, draft = {}, companyConfig = null, i18n = null } = options;
     if (!isRelationalField(field)) return null;
 
     if (field.type === 'derived' && field.name === 'client') {
       const clientName = String(draft.clientName || '').trim();
       if (!clientName) return null;
       if (String(draft.clientId || '').trim()) {
+        const linkedRecord = linkedStructuredRecord(state, draft, field);
         return {
           kind: 'linked',
           badgeLabel: t(i18n, 'ui.fieldRelationClientLinked', 'Cliente collegato'),
-          detailLabel: clientName
+          detailLabel: linkedDetail(linkedRecord) || clientName
         };
       }
       return {
@@ -92,11 +94,18 @@ window.KedrixOnePracticeFieldRelations = (() => {
       };
     }
 
-    const rawValue = draft && draft.dynamicData && typeof draft.dynamicData === 'object'
-      ? draft.dynamicData[field.name]
-      : '';
+    const rawValue = draft && draft.dynamicData && typeof draft.dynamicData === 'object' ? draft.dynamicData[field.name] : '';
     const currentValue = text(rawValue, '');
     if (!currentValue) return null;
+
+    const linkedRecord = linkedStructuredRecord(state, draft, field);
+    if (linkedRecord) {
+      return {
+        kind: 'linked',
+        badgeLabel: t(i18n, 'ui.fieldRelationLinkedEntity', 'Entità collegata'),
+        detailLabel: linkedDetail(linkedRecord)
+      };
+    }
 
     const matched = matchEntry(type, field, currentValue, companyConfig);
     if (matched) {
@@ -118,15 +127,13 @@ window.KedrixOnePracticeFieldRelations = (() => {
     const { utils } = options;
     const meta = getFieldRelationMeta(options);
     if (!meta) return '';
-    const escape = utils && typeof utils.escapeHtml === 'function'
-      ? utils.escapeHtml
-      : (value) => String(value || '');
+    const escape = utils && typeof utils.escapeHtml === 'function' ? utils.escapeHtml : (value) => String(value || '');
     const pillClass = meta.kind === 'linked' ? 'success' : 'default';
     return `<div class="field-relation-row"><span class="field-relation-pill ${pillClass}">${escape(meta.badgeLabel)}</span><span class="field-relation-text">${escape(meta.detailLabel)}</span></div>`;
   }
 
   function buildCoverageSummary(options = {}) {
-    const { type = '', draft = {}, companyConfig = null } = options;
+    const { state = null, type = '', draft = {}, companyConfig = null } = options;
     if (!type || !PracticeSchemas || typeof PracticeSchemas.getSchema !== 'function') return null;
     const schema = PracticeSchemas.getSchema(type);
     if (!schema || !schema.tabs || !Array.isArray(schema.tabs.practice)) return null;
@@ -134,15 +141,9 @@ window.KedrixOnePracticeFieldRelations = (() => {
     const relationalFields = schema.tabs.practice.filter((field) => isRelationalField(field));
     if (!relationalFields.length) return null;
 
-    const summary = {
-      total: relationalFields.length,
-      linked: 0,
-      manual: 0,
-      empty: 0
-    };
-
+    const summary = { total: relationalFields.length, linked: 0, manual: 0, empty: 0 };
     relationalFields.forEach((field) => {
-      const meta = getFieldRelationMeta({ type, field, draft, companyConfig });
+      const meta = getFieldRelationMeta({ state, type, field, draft, companyConfig });
       if (!meta) {
         summary.empty += 1;
         return;
@@ -150,12 +151,11 @@ window.KedrixOnePracticeFieldRelations = (() => {
       if (meta.kind === 'linked') summary.linked += 1;
       else summary.manual += 1;
     });
-
     return summary;
   }
 
   function applyFieldState(options = {}) {
-    const { root, type = '', draft = {}, companyConfig = null, i18n = null, utils = null } = options;
+    const { root, state = null, type = '', draft = {}, companyConfig = null, i18n = null, utils = null } = options;
     if (!root || !type || !PracticeSchemas || typeof PracticeSchemas.getField !== 'function') return;
 
     root.querySelectorAll('[data-field-wrap]').forEach((wrap) => {
@@ -164,7 +164,7 @@ window.KedrixOnePracticeFieldRelations = (() => {
       const field = PracticeSchemas.getField(type, fieldName);
       if (!field || !isRelationalField(field)) return;
 
-      const html = renderFieldRelationMeta({ type, field, draft, companyConfig, i18n, utils });
+      const html = renderFieldRelationMeta({ state, type, field, draft, companyConfig, i18n, utils });
       const existing = wrap.querySelector('.field-relation-row');
       if (!html) {
         if (existing) existing.remove();

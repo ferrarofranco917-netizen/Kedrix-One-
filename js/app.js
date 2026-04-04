@@ -950,6 +950,7 @@
         root: dynamicFields,
         type: draft.practiceType || '',
         draft,
+        state,
         companyConfig: state.companyConfig,
         i18n: I18N,
         utils: Utils
@@ -1056,6 +1057,10 @@
             }
             if (PracticeContainerIntegrity && typeof PracticeContainerIntegrity.normalizeFieldValue === 'function') {
               nextValue = PracticeContainerIntegrity.normalizeFieldValue(fieldName, nextValue, draft);
+            }
+            const MasterDataEntities = window.KedrixOneMasterDataEntities;
+            if (MasterDataEntities && typeof MasterDataEntities.syncDraftRelationField === 'function') {
+              MasterDataEntities.syncDraftRelationField({ state, draft, fieldName, value: nextValue });
             }
             if (!Array.isArray(nextValue) && node && nextValue !== node.value) node.value = nextValue;
             return nextValue;
