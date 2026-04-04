@@ -4,7 +4,7 @@ window.KedrixOneVatAutofill = (() => {
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
   const DEFAULT_CONFIG = {
-    provider: 'custom-endpoint',
+    provider: 'apps-script-vies',
     endpointUrl: '',
     apiKeyHeader: 'x-api-key',
     apiKey: '',
@@ -21,6 +21,12 @@ window.KedrixOneVatAutofill = (() => {
     return cleanText(value).toUpperCase();
   }
 
+  function getGlobalDefaults() {
+    return window.KedrixOneIntegrationEndpoints && typeof window.KedrixOneIntegrationEndpoints === 'object'
+      ? window.KedrixOneIntegrationEndpoints
+      : {};
+  }
+
   function ensureConfig(state) {
     if (!state.companyConfig || typeof state.companyConfig !== 'object') state.companyConfig = {};
     if (!state.companyConfig.integrations || typeof state.companyConfig.integrations !== 'object') {
@@ -30,13 +36,14 @@ window.KedrixOneVatAutofill = (() => {
       state.companyConfig.integrations.vatAutofill = { ...DEFAULT_CONFIG };
     }
     const cfg = state.companyConfig.integrations.vatAutofill;
+    const defaults = getGlobalDefaults();
     return Object.assign(cfg, {
-      provider: cleanText(cfg.provider) || DEFAULT_CONFIG.provider,
-      endpointUrl: cleanText(cfg.endpointUrl),
-      apiKeyHeader: cleanText(cfg.apiKeyHeader) || DEFAULT_CONFIG.apiKeyHeader,
-      apiKey: cleanText(cfg.apiKey),
-      countryDefault: cleanUpper(cfg.countryDefault) || DEFAULT_CONFIG.countryDefault,
-      applyMode: cleanText(cfg.applyMode) || DEFAULT_CONFIG.applyMode,
+      provider: cleanText(cfg.provider) || cleanText(defaults.vatLookupProvider) || DEFAULT_CONFIG.provider,
+      endpointUrl: cleanText(cfg.endpointUrl) || cleanText(defaults.vatLookupUrl),
+      apiKeyHeader: cleanText(cfg.apiKeyHeader) || cleanText(defaults.vatLookupApiKeyHeader) || DEFAULT_CONFIG.apiKeyHeader,
+      apiKey: cleanText(cfg.apiKey) || cleanText(defaults.vatLookupApiKey),
+      countryDefault: cleanUpper(cfg.countryDefault || defaults.vatLookupCountryDefault) || DEFAULT_CONFIG.countryDefault,
+      applyMode: cleanText(cfg.applyMode || defaults.vatLookupApplyMode) || DEFAULT_CONFIG.applyMode,
       requestTimeoutMs: Number(cfg.requestTimeoutMs) > 0 ? Number(cfg.requestTimeoutMs) : DEFAULT_CONFIG.requestTimeoutMs
     });
   }
@@ -116,9 +123,21 @@ window.KedrixOneVatAutofill = (() => {
     return result;
   }
 
+  function resolveEndpointUrl(config) {
+    return cleanText(config && config.endpointUrl);
+  }
+
+  function normalizeRemoteFailure(payload, fallback = 'lookup-error') {
+    const status = cleanText(payload && (payload.status || payload.lookupStatus || payload.reason));
+    if (status === 'not-found') return 'not-found';
+    if (status === 'invalid-vat') return 'invalid-vat';
+    if (status === 'needs-config') return 'needs-config';
+    return fallback;
+  }
+
   function buildHeaders(config) {
     const headers = { Accept: 'application/json' };
-    if (config.apiKey && config.apiKeyHeader) headers[config.apiKeyHeader] = config.apiKey;
+    if (config.apiKey && config.apiKeyHeader && cleanText(config.provider) !== 'apps-script-vies') headers[config.apiKeyHeader] = config.apiKey;
     return headers;
   }
 
@@ -169,25 +188,30 @@ window.KedrixOneVatAutofill = (() => {
 
   async function fetchFromCustomEndpoint(state, entityKey, normalizedVat) {
     const config = ensureConfig(state);
-    if (!config.endpointUrl) return { ok: false, reason: 'missing-endpoint' };
-    const url = new URL(config.endpointUrl, window.location.href);
+    const endpointUrl = resolveEndpointUrl(config);
+    if (!endpointUrl) return { ok: false, reason: 'missing-endpoint' };
+    const url = new URL(endpointUrl, window.location.href);
     url.searchParams.set('country', normalizedVat.countryCode);
     url.searchParams.set('vat', normalizedVat.nationalNumber);
     url.searchParams.set('entity', cleanText(entityKey));
+    if (cleanText(config.provider) === 'apps-script-vies' && config.apiKey) url.searchParams.set('key', config.apiKey);
 
     const response = await fetchWithTimeout(url.toString(), { method: 'GET', headers: buildHeaders(config) }, config.requestTimeoutMs);
     const text = await response.text();
     const payload = safeJsonParse(text);
     if (!response.ok) {
-      return { ok: false, reason: response.status === 404 ? 'not-found' : 'lookup-http-error', status: response.status, payload };
+      return { ok: false, reason: response.status === 404 ? 'not-found' : normalizeRemoteFailure(payload, 'lookup-http-error'), status: response.status, payload };
+    }
+    if (payload && typeof payload === 'object' && payload.ok === false) {
+      return { ok: false, reason: normalizeRemoteFailure(payload, 'lookup-error'), status: response.status, payload };
     }
     const normalized = normalizeLookupPayload(payload, normalizedVat.nationalNumber, normalizedVat.countryCode);
-    if (!normalized) return { ok: false, reason: 'invalid-payload', payload };
+    if (!normalized) return { ok: false, reason: normalizeRemoteFailure(payload, 'invalid-payload'), payload };
     return {
       ok: true,
       found: true,
-      source: normalized.sourceLabel || 'Custom endpoint',
-      sourceKind: 'custom-endpoint',
+      source: normalized.sourceLabel || (cleanText(config.provider) === 'apps-script-vies' ? 'Apps Script VIES proxy' : 'Custom endpoint'),
+      sourceKind: cleanText(config.provider) === 'apps-script-vies' ? 'apps-script-vies' : 'custom-endpoint',
       lookupStatus: normalized.lookupStatus || 'official-data',
       data: normalized,
       normalizedVat
@@ -257,6 +281,7 @@ window.KedrixOneVatAutofill = (() => {
             <div class="field">
               <label for="vatLookupProvider">${escapeHtml(i18n.t('ui.masterDataVatLookupProvider', 'Provider'))}</label>
               <select id="vatLookupProvider" name="provider">
+                <option value="apps-script-vies" ${config.provider === 'apps-script-vies' ? 'selected' : ''}>${escapeHtml(i18n.t('ui.masterDataVatLookupProviderAppsScript', 'Apps Script · VIES'))}</option>
                 <option value="custom-endpoint" ${config.provider === 'custom-endpoint' ? 'selected' : ''}>${escapeHtml(i18n.t('ui.masterDataVatLookupProviderCustom', 'Endpoint personalizzato'))}</option>
                 <option value="local-records" ${config.provider === 'local-records' ? 'selected' : ''}>${escapeHtml(i18n.t('ui.masterDataVatLookupProviderLocal', 'Archivio Kedrix locale'))}</option>
               </select>
@@ -268,15 +293,15 @@ window.KedrixOneVatAutofill = (() => {
                 <option value="replace-empty" ${config.applyMode === 'replace-empty' ? 'selected' : ''}>${escapeHtml(i18n.t('ui.masterDataVatLookupApplyEmpty', 'Compila solo i campi vuoti'))}</option>
               </select>
             </div>
-            <div class="field full" data-vat-endpoint-row ${config.provider === 'custom-endpoint' ? '' : 'hidden'}>
+            <div class="field full" data-vat-endpoint-row ${(config.provider === 'custom-endpoint' || config.provider === 'apps-script-vies') ? '' : 'hidden'}>
               <label for="vatLookupEndpointUrl">${escapeHtml(i18n.t('ui.masterDataVatLookupEndpoint', 'Endpoint lookup'))}</label>
               <input id="vatLookupEndpointUrl" name="endpointUrl" type="text" value="${escapeHtml(config.endpointUrl)}" placeholder="https://.../vat-lookup" autocomplete="off" />
             </div>
-            <div class="field" data-vat-endpoint-row ${config.provider === 'custom-endpoint' ? '' : 'hidden'}>
+            <div class="field" data-vat-header-row ${config.provider === 'custom-endpoint' ? '' : 'hidden'}>
               <label for="vatLookupApiKeyHeader">${escapeHtml(i18n.t('ui.masterDataVatLookupApiKeyHeader', 'Header API key'))}</label>
               <input id="vatLookupApiKeyHeader" name="apiKeyHeader" type="text" value="${escapeHtml(config.apiKeyHeader)}" autocomplete="off" />
             </div>
-            <div class="field" data-vat-endpoint-row ${config.provider === 'custom-endpoint' ? '' : 'hidden'}>
+            <div class="field" data-vat-endpoint-row ${(config.provider === 'custom-endpoint' || config.provider === 'apps-script-vies') ? '' : 'hidden'}>
               <label for="vatLookupApiKey">${escapeHtml(i18n.t('ui.masterDataVatLookupApiKey', 'API key'))}</label>
               <input id="vatLookupApiKey" name="apiKey" type="password" value="${escapeHtml(config.apiKey)}" autocomplete="off" />
             </div>
@@ -295,10 +320,13 @@ window.KedrixOneVatAutofill = (() => {
     const form = root.querySelector('#vatLookupConfigForm');
     const provider = root.querySelector('#vatLookupProvider');
     const endpointRows = Array.from(root.querySelectorAll('[data-vat-endpoint-row]'));
+    const headerRows = Array.from(root.querySelectorAll('[data-vat-header-row]'));
 
     function toggleRows() {
-      const showEndpoint = (provider && provider.value) === 'custom-endpoint';
+      const providerValue = (provider && provider.value) || '';
+      const showEndpoint = ['custom-endpoint', 'apps-script-vies'].includes(providerValue);
       endpointRows.forEach((node) => { node.hidden = !showEndpoint; });
+      headerRows.forEach((node) => { node.hidden = providerValue !== 'custom-endpoint'; });
     }
 
     provider?.addEventListener('change', toggleRows);
@@ -310,7 +338,7 @@ window.KedrixOneVatAutofill = (() => {
       const formData = new FormData(form);
       config.provider = cleanText(formData.get('provider')) || DEFAULT_CONFIG.provider;
       config.applyMode = cleanText(formData.get('applyMode')) || DEFAULT_CONFIG.applyMode;
-      config.endpointUrl = cleanText(formData.get('endpointUrl'));
+      config.endpointUrl = cleanText(formData.get('endpointUrl')) || cleanText(getGlobalDefaults().vatLookupUrl);
       config.apiKeyHeader = cleanText(formData.get('apiKeyHeader')) || DEFAULT_CONFIG.apiKeyHeader;
       config.apiKey = cleanText(formData.get('apiKey'));
       config.countryDefault = cleanUpper(formData.get('countryDefault')) || DEFAULT_CONFIG.countryDefault;
@@ -328,7 +356,7 @@ window.KedrixOneVatAutofill = (() => {
     const localHit = findLocalRecordByVat(state, normalizedVat.formatted, entityKey);
     if (localHit && config.provider === 'local-records') return localHit;
 
-    if (config.provider === 'custom-endpoint') {
+    if (config.provider === 'custom-endpoint' || config.provider === 'apps-script-vies') {
       if (!config.endpointUrl) {
         return localHit || { ok: false, reason: 'missing-endpoint', lookupStatus: 'needs-config', normalizedVat };
       }
@@ -377,6 +405,7 @@ window.KedrixOneVatAutofill = (() => {
 
   return {
     DEFAULT_CONFIG,
+    getGlobalDefaults,
     ensureConfig,
     normalizeVatNumber,
     lookupByVatNumber,

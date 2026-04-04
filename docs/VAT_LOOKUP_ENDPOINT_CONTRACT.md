@@ -48,3 +48,15 @@ Il frontend accetta anche alias frequenti come:
 - `404` se partita IVA non trovata
 - `401/403` per accesso negato
 - `500` per errore backend
+
+
+## Apps Script / response 200 con `ok:false`
+Per compatibilità con Web App Google Apps Script, il frontend ora accetta anche risposte HTTP 200 con payload del tipo:
+```json
+{
+  "ok": false,
+  "status": "not-found",
+  "message": "VAT number not valid in VIES."
+}
+```
+In questo caso Kedrix mappa comunque correttamente lo stato lookup (`not-found`, `invalid-vat`, `lookup-error`).

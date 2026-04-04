@@ -7,6 +7,7 @@ window.KedrixOneData = (() => {
   const defaultAirports = Array.isArray(PortData.defaultAirports) ? PortData.defaultAirports.map((entry) => ({ ...entry })) : [];
   const defaultCustomsOffices = Array.isArray(CustomsData.defaultCustomsOffices) ? CustomsData.defaultCustomsOffices.map((entry) => ({ ...entry })) : [];
   const TransportUnitData = window.KedrixOneTransportUnitData || {};
+  const IntegrationDefaults = window.KedrixOneIntegrationEndpoints || {};
   const defaultTransportUnitTypes = Array.isArray(TransportUnitData.defaultTransportUnitTypes) ? TransportUnitData.defaultTransportUnitTypes.map((entry) => ({ ...entry })) : [];
 
   function initialState() {
@@ -69,12 +70,12 @@ window.KedrixOneData = (() => {
         ],
         integrations: {
           vatAutofill: {
-            provider: 'custom-endpoint',
-            endpointUrl: '',
-            apiKeyHeader: 'x-api-key',
-            apiKey: '',
-            countryDefault: 'IT',
-            applyMode: 'replace-all',
+            provider: String(IntegrationDefaults.vatLookupProvider || 'apps-script-vies').trim() || 'apps-script-vies',
+            endpointUrl: String(IntegrationDefaults.vatLookupUrl || '').trim(),
+            apiKeyHeader: String(IntegrationDefaults.vatLookupApiKeyHeader || 'x-api-key').trim() || 'x-api-key',
+            apiKey: String(IntegrationDefaults.vatLookupApiKey || '').trim(),
+            countryDefault: String(IntegrationDefaults.vatLookupCountryDefault || 'IT').trim().toUpperCase() || 'IT',
+            applyMode: String(IntegrationDefaults.vatLookupApplyMode || 'replace-all').trim() || 'replace-all',
             requestTimeoutMs: 8000
           }
         },
