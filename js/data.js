@@ -45,7 +45,9 @@ window.KedrixOneData = (() => {
       masterDataModule: {
         activeEntity: 'client',
         quickAddContext: null,
-        formDrafts: {}
+        formDrafts: {},
+        selectedRecordId: '',
+        searchQuery: ''
       },
       companyConfig: {
         id: 'CMP-001',

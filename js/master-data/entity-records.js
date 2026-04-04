@@ -103,7 +103,9 @@ window.KedrixOneMasterDataEntities = (() => {
         storageType: 'directory',
         directoryKey: 'customsOffices',
         fieldNames: ['customsOffice'],
-        suggestionKeys: ['customsOffices']
+        suggestionKeys: ['customsOffices'],
+        supportsDescription: true,
+        supportsCity: true
       },
       origin: {
         key: 'origin',
@@ -113,7 +115,8 @@ window.KedrixOneMasterDataEntities = (() => {
         storageType: 'directory',
         directoryKey: 'originDirectories',
         fieldNames: ['originRef'],
-        suggestionKeys: ['originDirectories']
+        suggestionKeys: ['originDirectories'],
+        supportsDescription: true
       },
       destination: {
         key: 'destination',
@@ -123,7 +126,8 @@ window.KedrixOneMasterDataEntities = (() => {
         storageType: 'directory',
         directoryKey: 'destinationDirectories',
         fieldNames: ['destinationRef'],
-        suggestionKeys: ['destinationDirectories']
+        suggestionKeys: ['destinationDirectories'],
+        supportsDescription: true
       },
       articleCode: {
         key: 'articleCode',
@@ -133,7 +137,8 @@ window.KedrixOneMasterDataEntities = (() => {
         storageType: 'directory',
         directoryKey: 'articleCodes',
         fieldNames: ['articleCode'],
-        suggestionKeys: ['articleCodes']
+        suggestionKeys: ['articleCodes'],
+        supportsDescription: true
       },
       shippingCompany: {
         key: 'shippingCompany',
@@ -143,7 +148,8 @@ window.KedrixOneMasterDataEntities = (() => {
         storageType: 'directory',
         directoryKey: 'shippingCompanies',
         fieldNames: ['company'],
-        suggestionKeys: ['shippingCompanies']
+        suggestionKeys: ['shippingCompanies'],
+        supportsDescription: true
       },
       airline: {
         key: 'airline',
@@ -153,7 +159,8 @@ window.KedrixOneMasterDataEntities = (() => {
         storageType: 'directory',
         directoryKey: 'airlines',
         fieldNames: ['airline'],
-        suggestionKeys: ['airlines']
+        suggestionKeys: ['airlines'],
+        supportsDescription: true
       },
       carrier: {
         key: 'carrier',
@@ -176,7 +183,8 @@ window.KedrixOneMasterDataEntities = (() => {
         storageType: 'directory',
         directoryKey: 'transportUnitTypes',
         fieldNames: ['transportUnitType'],
-        suggestionKeys: ['transportUnitTypes']
+        suggestionKeys: ['transportUnitTypes'],
+        supportsDescription: true
       }
     };
   }
@@ -254,7 +262,7 @@ window.KedrixOneMasterDataEntities = (() => {
       name,
       shortName: cleanText(record.shortName || ''),
       code: cleanText(record.code || ''),
-      vatNumber: cleanText(record.vatNumber || record.vat || ''),
+      vatNumber: cleanText(record.vatNumber || ''),
       taxCode: cleanText(record.taxCode || ''),
       address: cleanText(record.address || ''),
       zipCode: cleanText(record.zipCode || ''),
@@ -305,6 +313,7 @@ window.KedrixOneMasterDataEntities = (() => {
 
   function buildBusinessDraft() {
     return {
+      id: '',
       value: '',
       shortName: '',
       code: '',
@@ -328,11 +337,93 @@ window.KedrixOneMasterDataEntities = (() => {
     };
   }
 
-  function createFormDraft(entityKey) {
+  function buildSimpleDraft() {
+    return { id: '', value: '', description: '', city: '' };
+  }
+
+  function normalizeDirectoryRecord(entityKey, raw, recordId = '') {
+    if (raw === null || raw === undefined) return null;
+    if (typeof raw === 'string') {
+      const value = cleanText(raw);
+      if (!value) return null;
+      return { id: recordId, value, description: '', city: '', displayValue: value };
+    }
+    if (typeof raw === 'object' && !Array.isArray(raw)) {
+      const value = cleanText(raw.value || raw.code || raw.name || raw.label || raw.displayValue || '');
+      if (!value) return null;
+      const description = cleanText(raw.description || raw.code || raw.vatNumber || '');
+      const city = cleanText(raw.city || raw.locality || '');
+      return {
+        id: recordId,
+        value,
+        description,
+        city,
+        displayValue: cleanText(raw.displayValue || raw.label || [value, description || city].filter(Boolean).join(' · ') || value)
+      };
+    }
+    return null;
+  }
+
+  function buildDirectoryStoredEntry(def, draft) {
+    const value = cleanText(draft.value);
+    const description = cleanText(draft.description);
+    const city = cleanText(draft.city);
+    if (!value) return null;
+    if (!def.supportsDescription && !def.supportsCity && !description && !city) return value;
+    return {
+      value,
+      label: value,
+      description,
+      city,
+      displayValue: [value, description || city].filter(Boolean).join(' · ') || value
+    };
+  }
+
+  function buildDraftFromStructuredRecord(record) {
+    const normalized = normalizeBusinessRecord(record);
+    if (!normalized) return buildBusinessDraft();
+    return {
+      id: normalized.id || '',
+      value: normalized.name,
+      shortName: normalized.shortName,
+      code: normalized.code,
+      vatNumber: normalized.vatNumber,
+      taxCode: normalized.taxCode,
+      address: normalized.address,
+      zipCode: normalized.zipCode,
+      city: normalized.city,
+      province: normalized.province,
+      country: normalized.country,
+      email: normalized.email,
+      phone: normalized.phone,
+      pec: normalized.pec,
+      sdiCode: normalized.sdiCode,
+      notes: normalized.notes,
+      active: normalized.active,
+      vatLookupSource: normalized.vatLookupSource,
+      vatLookupStatus: normalized.vatLookupStatus,
+      vatLookupAt: normalized.vatLookupAt,
+      vatLookupVat: normalized.vatLookupVat
+    };
+  }
+
+  function buildDraftFromDirectoryRecord(record) {
+    const normalized = normalizeDirectoryRecord('', record, record && record.id ? record.id : '');
+    if (!normalized) return buildSimpleDraft();
+    return {
+      id: normalized.id || '',
+      value: normalized.value,
+      description: normalized.description,
+      city: normalized.city
+    };
+  }
+
+  function createFormDraft(entityKey, sourceRecord = null) {
     const defs = allDefinitions();
     const def = defs[entityKey];
-    if (!def) return { value: '', description: '', city: '' };
-    return def.structured ? buildBusinessDraft() : { value: '', description: '', city: '' };
+    if (!def) return buildSimpleDraft();
+    if (!sourceRecord) return def.structured ? buildBusinessDraft() : buildSimpleDraft();
+    return def.structured ? buildDraftFromStructuredRecord(sourceRecord) : buildDraftFromDirectoryRecord(sourceRecord);
   }
 
   function getFormFields(entityKey, i18n) {
@@ -361,11 +452,12 @@ window.KedrixOneMasterDataEntities = (() => {
     ];
   }
 
-  function findStructuredRecord(records, payload) {
+  function findStructuredRecord(records, payload, currentId = '') {
     const name = cleanUpper(payload.value || payload.name || '');
     const vatNumber = cleanUpper(payload.vatNumber || '');
     return (Array.isArray(records) ? records : []).find((record) => {
       if (!record) return false;
+      if (currentId && cleanText(record.id) === cleanText(currentId)) return false;
       if (vatNumber && cleanUpper(record.vatNumber || '') === vatNumber) return true;
       return name && cleanUpper(record.name || '') === name;
     }) || null;
@@ -387,9 +479,10 @@ window.KedrixOneMasterDataEntities = (() => {
       label: value,
       city: cleanText(record.city || ''),
       description: cleanText(record.vatNumber || record.description || ''),
-      displayValue: buildEntityDisplayValue(record)
+      displayValue: buildEntityDisplayValue(record),
+      entityId: cleanText(record.id || '')
     };
-    if (existingIndex >= 0) directory[existingIndex] = { ...directory[existingIndex], ...nextEntry };
+    if (existingIndex >= 0) directory[existingIndex] = { ...(typeof directory[existingIndex] === 'object' ? directory[existingIndex] : {}), ...nextEntry };
     else directory.push(nextEntry);
   }
 
@@ -399,6 +492,7 @@ window.KedrixOneMasterDataEntities = (() => {
     if (!def) return { ok: false, reason: 'invalid-entity' };
 
     const normalized = normalizeBusinessRecord({
+      id: payload.id,
       name: payload.value,
       shortName: payload.shortName,
       code: payload.code,
@@ -425,12 +519,14 @@ window.KedrixOneMasterDataEntities = (() => {
     if (entityKey === 'client') {
       state.clients = Array.isArray(state.clients) ? state.clients : [];
       state.contacts = Array.isArray(state.contacts) ? state.contacts : [];
-      const existingClient = findStructuredRecord(state.clients.map((item) => normalizeBusinessRecord(item)).filter(Boolean), normalized);
+      const existingClient = findStructuredRecord(state.clients.map((item) => normalizeBusinessRecord(item)).filter(Boolean), normalized, normalized.id);
       if (existingClient) {
-        return { ok: true, created: false, value: existingClient.name, relatedId: existingClient.id, record: existingClient };
+        return { ok: true, created: false, updated: false, value: existingClient.name, relatedId: existingClient.id, record: existingClient, duplicate: true };
       }
+      const currentIndex = normalized.id ? state.clients.findIndex((item) => cleanText(item.id) === normalized.id) : -1;
+      const previous = currentIndex >= 0 ? normalizeBusinessRecord(state.clients[currentIndex]) : null;
       const client = {
-        id: nextSequentialId(def.idPrefix, state.clients),
+        id: normalized.id || nextSequentialId(def.idPrefix, state.clients),
         name: normalized.name,
         shortName: normalized.shortName,
         code: normalized.code,
@@ -451,7 +547,7 @@ window.KedrixOneMasterDataEntities = (() => {
         vatLookupStatus: normalized.vatLookupStatus,
         vatLookupAt: normalized.vatLookupAt,
         vatLookupVat: normalized.vatLookupVat,
-        numberingRule: {
+        numberingRule: previous && previous.numberingRule ? { ...previous.numberingRule } : {
           prefix: normalized.code || '',
           separator: '-',
           includeYear: true,
@@ -460,23 +556,27 @@ window.KedrixOneMasterDataEntities = (() => {
           lastYear: new Date().getFullYear()
         }
       };
-      state.clients.push(client);
-      const contactExists = state.contacts.some((item) => cleanUpper(item.name || '') === cleanUpper(client.name));
-      if (!contactExists) {
-        state.contacts.push({ id: nextSequentialId('CNT-', state.contacts), name: client.name, type: 'Cliente', city: client.city, email: client.email, phone: client.phone });
-      }
-      return { ok: true, created: true, value: client.name, relatedId: client.id, record: normalizeBusinessRecord(client) };
+      if (currentIndex >= 0) state.clients[currentIndex] = client;
+      else state.clients.push(client);
+
+      const contactIndex = state.contacts.findIndex((item) => item && (cleanText(item.id) === cleanText(client.id) || cleanUpper(item.name || '') === cleanUpper(previous?.name || client.name)));
+      const contactPayload = { id: client.id, name: client.name, type: 'Cliente', city: client.city, email: client.email, phone: client.phone };
+      if (contactIndex >= 0) state.contacts[contactIndex] = { ...state.contacts[contactIndex], ...contactPayload };
+      else state.contacts.push(contactPayload);
+
+      return { ok: true, created: currentIndex < 0, updated: currentIndex >= 0, value: client.name, relatedId: client.id, record: normalizeBusinessRecord(client) };
     }
 
     seedStructuredEntityRecords(state, entityKey);
     const store = ensureRecordStore(state, entityKey);
-    const existing = findStructuredRecord(store, normalized);
+    const existing = findStructuredRecord(store, normalized, normalized.id);
     if (existing) {
-      return { ok: true, created: false, value: existing.name, relatedId: existing.id, record: normalizeBusinessRecord(existing) };
+      return { ok: true, created: false, updated: false, value: existing.name, relatedId: existing.id, record: normalizeBusinessRecord(existing), duplicate: true };
     }
 
+    const currentIndex = normalized.id ? store.findIndex((item) => cleanText(item.id) === normalized.id) : -1;
     const record = {
-      id: nextSequentialId(def.idPrefix, store),
+      id: normalized.id || nextSequentialId(def.idPrefix, store),
       name: normalized.name,
       shortName: normalized.shortName,
       code: normalized.code,
@@ -499,9 +599,10 @@ window.KedrixOneMasterDataEntities = (() => {
       vatLookupVat: normalized.vatLookupVat,
       displayValue: buildEntityDisplayValue(normalized)
     };
-    store.push(record);
+    if (currentIndex >= 0) store[currentIndex] = record;
+    else store.push(record);
     upsertDirectoryFromRecord(state, entityKey, record);
-    return { ok: true, created: true, value: record.name, relatedId: record.id, record: normalizeBusinessRecord(record) };
+    return { ok: true, created: currentIndex < 0, updated: currentIndex >= 0, value: record.name, relatedId: record.id, record: normalizeBusinessRecord(record) };
   }
 
   function listEntityRecords(state, entityKey) {
@@ -517,7 +618,7 @@ window.KedrixOneMasterDataEntities = (() => {
           id: record.id || record.name,
           primary: record.name,
           secondary: [record.city, record.country].filter(Boolean).join(' · ') || '—',
-          tertiary: record.vatNumber || '—',
+          tertiary: record.vatNumber || record.code || '—',
           value: record.name,
           record
         }));
@@ -532,7 +633,7 @@ window.KedrixOneMasterDataEntities = (() => {
           id: record.id || record.name,
           primary: record.name,
           secondary: [record.city, record.country].filter(Boolean).join(' · ') || '—',
-          tertiary: record.vatNumber || '—',
+          tertiary: record.vatNumber || record.code || '—',
           value: record.name,
           record
         }));
@@ -541,15 +642,17 @@ window.KedrixOneMasterDataEntities = (() => {
     if (def.storageType === 'directory') {
       const raw = ensureDirectory(state, def.directoryKey);
       return raw.map((item, index) => {
-        if (item && typeof item === 'object' && !Array.isArray(item)) {
-          const value = cleanText(item.value || item.code || item.name || item.label || '');
-          const primary = cleanText(item.displayValue || item.label || value);
-          const secondary = cleanText(item.description || item.city || item.code || '') || '—';
-          return { id: `${entityKey}-${index}`, primary, secondary, tertiary: '—', value: value || primary, record: item };
-        }
-        const value = cleanText(item);
-        return { id: `${entityKey}-${index}`, primary: value, secondary: '—', tertiary: '—', value, record: { value } };
-      }).filter((item) => item.primary);
+        const normalized = normalizeDirectoryRecord(entityKey, item, `${entityKey}-${index}`);
+        if (!normalized) return null;
+        return {
+          id: normalized.id,
+          primary: normalized.value,
+          secondary: normalized.description || normalized.city || '—',
+          tertiary: normalized.city || '—',
+          value: normalized.value,
+          record: normalized
+        };
+      }).filter(Boolean);
     }
 
     return [];
@@ -573,7 +676,8 @@ window.KedrixOneMasterDataEntities = (() => {
       label: normalized.name,
       displayValue: buildEntityDisplayValue(normalized),
       description: normalized.vatNumber || normalized.city || '',
-      aliases
+      aliases,
+      entityId: normalized.id || ''
     };
   }
 
@@ -617,6 +721,55 @@ window.KedrixOneMasterDataEntities = (() => {
       if (record && cleanUpper(String(record.vatNumber || '').replace(/[^A-Z0-9]/g, '')) === cleanVat) return record;
     }
     return null;
+  }
+
+  function getEntityRecordById(state, entityKey, recordId) {
+    if (!recordId) return null;
+    const defs = allDefinitions();
+    const def = defs[entityKey];
+    if (!def) return null;
+
+    if (entityKey === 'client') {
+      const match = (Array.isArray(state.clients) ? state.clients : []).find((item) => cleanText(item.id) === cleanText(recordId));
+      return match ? normalizeBusinessRecord(match) : null;
+    }
+
+    if (def.structured) {
+      seedStructuredEntityRecords(state, entityKey);
+      const match = ensureRecordStore(state, entityKey).find((item) => cleanText(item.id) === cleanText(recordId));
+      return match ? normalizeBusinessRecord(match) : null;
+    }
+
+    const entries = listEntityRecords(state, entityKey);
+    return entries.find((entry) => cleanText(entry.id) === cleanText(recordId))?.record || null;
+  }
+
+  function saveDirectoryEntity(state, entityKey, payload = {}) {
+    const defs = allDefinitions();
+    const def = defs[entityKey];
+    if (!def || def.storageType !== 'directory') return { ok: false, reason: 'invalid-entity' };
+    const value = cleanText(entityKey === 'taric' ? String(payload.value || '').replace(/\s+/g, '') : payload.value);
+    if (!value) return { ok: false, reason: 'missing-value' };
+    const draft = { id: cleanText(payload.id), value, description: cleanText(payload.description), city: cleanText(payload.city) };
+    const directory = ensureDirectory(state, def.directoryKey);
+    const currentIndex = draft.id ? directory.findIndex((_, index) => `${entityKey}-${index}` === draft.id) : -1;
+    const duplicateIndex = directory.findIndex((entry, index) => {
+      if (index === currentIndex) return false;
+      const candidate = normalizeDirectoryRecord(entityKey, entry, `${entityKey}-${index}`);
+      return candidate && cleanUpper(candidate.value) === cleanUpper(draft.value);
+    });
+    if (duplicateIndex >= 0) {
+      const existing = normalizeDirectoryRecord(entityKey, directory[duplicateIndex], `${entityKey}-${duplicateIndex}`);
+      return { ok: true, created: false, updated: false, duplicate: true, value: existing.value, relatedId: existing.id, record: existing };
+    }
+
+    const storedEntry = buildDirectoryStoredEntry(def, draft);
+    if (!storedEntry) return { ok: false, reason: 'missing-value' };
+    if (currentIndex >= 0) directory[currentIndex] = storedEntry;
+    else directory.push(storedEntry);
+    const finalIndex = currentIndex >= 0 ? currentIndex : directory.length - 1;
+    const record = normalizeDirectoryRecord(entityKey, directory[finalIndex], `${entityKey}-${finalIndex}`);
+    return { ok: true, created: currentIndex < 0, updated: currentIndex >= 0, value: record.value, relatedId: record.id, record };
   }
 
   function syncDraftRelationField({ state, draft, fieldName, value }) {
@@ -664,7 +817,9 @@ window.KedrixOneMasterDataEntities = (() => {
     getFormFields,
     listEntityRecords,
     getSuggestionOptions,
+    getEntityRecordById,
     saveBusinessEntity,
+    saveDirectoryEntity,
     syncDraftRelationField,
     getLinkedRecordFromDraft,
     buildEntityDisplayValue,

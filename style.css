@@ -1951,3 +1951,114 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 }
+
+.master-data-shell-v2 {
+  align-items: start;
+}
+
+.master-data-list-summary {
+  margin-top: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.master-data-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  max-height: 620px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.master-data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.3);
+  color: inherit;
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.master-data-row:hover {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: rgba(30, 41, 59, 0.48);
+}
+
+.master-data-row.active {
+  border-color: rgba(56, 189, 248, 0.52);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.18);
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.master-data-row-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.master-data-row-main strong,
+.master-data-row-main small,
+.master-data-row-side {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.master-data-row-main strong {
+  font-size: 14px;
+  color: #e5eef8;
+}
+
+.master-data-row-main small,
+.master-data-row-side {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.master-data-row-side {
+  max-width: 40%;
+  text-align: right;
+}
+
+.master-data-empty-state {
+  margin-top: 12px;
+  padding: 18px 16px;
+  border-radius: 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.22);
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.master-data-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .master-data-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .master-data-row-side {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .master-data-list {
+    max-height: none;
+  }
+}

@@ -5,14 +5,18 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   const VatAutofill = window.KedrixOneVatAutofill || null;
 
   function ensureModuleState(state) {
-    if (!state || typeof state !== 'object') return { activeEntity: 'client', quickAddContext: null, formDrafts: {} };
+    if (!state || typeof state !== 'object') {
+      return { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '' };
+    }
     if (!state.masterDataModule || typeof state.masterDataModule !== 'object') {
-      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {} };
+      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '' };
     }
     if (!state.masterDataModule.formDrafts || typeof state.masterDataModule.formDrafts !== 'object') {
       state.masterDataModule.formDrafts = {};
     }
     if (!state.masterDataModule.activeEntity) state.masterDataModule.activeEntity = 'client';
+    if (typeof state.masterDataModule.selectedRecordId !== 'string') state.masterDataModule.selectedRecordId = '';
+    if (typeof state.masterDataModule.searchQuery !== 'string') state.masterDataModule.searchQuery = '';
     return state.masterDataModule;
   }
 
@@ -32,23 +36,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return Boolean(resolveEntityKeyForField(fieldName));
   }
 
-  function ensureDirectory(state, directoryKey) {
-    if (!state.companyConfig || typeof state.companyConfig !== 'object') state.companyConfig = {};
-    if (!state.companyConfig.practiceConfig || typeof state.companyConfig.practiceConfig !== 'object') {
-      state.companyConfig.practiceConfig = { directories: {} };
-    }
-    if (!state.companyConfig.practiceConfig.directories || typeof state.companyConfig.practiceConfig.directories !== 'object') {
-      state.companyConfig.practiceConfig.directories = {};
-    }
-    if (!Array.isArray(state.companyConfig.practiceConfig.directories[directoryKey])) {
-      state.companyConfig.practiceConfig.directories[directoryKey] = [];
-    }
-    return state.companyConfig.practiceConfig.directories[directoryKey];
-  }
-
-  function getEntries(state, entityKey, i18n) {
+  function getEntries(state, entityKey) {
     if (MasterDataEntities && typeof MasterDataEntities.listEntityRecords === 'function') {
-      return MasterDataEntities.listEntityRecords(state, entityKey, i18n);
+      return MasterDataEntities.listEntityRecords(state, entityKey);
     }
     return [];
   }
@@ -58,8 +48,17 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     if (!moduleState.formDrafts[entityKey] || typeof moduleState.formDrafts[entityKey] !== 'object') {
       moduleState.formDrafts[entityKey] = MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
         ? MasterDataEntities.createFormDraft(entityKey)
-        : { value: '', description: '', city: '' };
+        : { id: '', value: '', description: '', city: '' };
     }
+    return moduleState.formDrafts[entityKey];
+  }
+
+  function resetEntityDraft(state, entityKey) {
+    const moduleState = ensureModuleState(state);
+    moduleState.formDrafts[entityKey] = MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
+      ? MasterDataEntities.createFormDraft(entityKey)
+      : { id: '', value: '', description: '', city: '' };
+    moduleState.selectedRecordId = '';
     return moduleState.formDrafts[entityKey];
   }
 
@@ -67,6 +66,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const moduleState = ensureModuleState(state);
     if (!entityKey) return;
     moduleState.activeEntity = entityKey;
+    moduleState.selectedRecordId = '';
+    moduleState.searchQuery = '';
+    getFormDraft(state, entityKey);
   }
 
   function prepareQuickAdd(state, context = {}) {
@@ -74,6 +76,8 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     if (!entityKey) return null;
     const moduleState = ensureModuleState(state);
     moduleState.activeEntity = entityKey;
+    moduleState.selectedRecordId = '';
+    moduleState.searchQuery = '';
     moduleState.quickAddContext = {
       entityKey,
       fieldName: String(context.fieldName || '').trim(),
@@ -108,48 +112,6 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     }
   }
 
-  function addEntry(state, entityKey, payload = {}, i18n) {
-    const defs = getEntityDefinitions(i18n);
-    const def = defs[entityKey];
-    if (!def) return { ok: false, reason: 'invalid-entity' };
-
-    if (def.structured && MasterDataEntities && typeof MasterDataEntities.saveBusinessEntity === 'function') {
-      return MasterDataEntities.saveBusinessEntity(state, entityKey, payload, i18n);
-    }
-
-    let value = String(payload.value || '').trim();
-    const description = String(payload.description || '').trim();
-    const city = String(payload.city || '').trim();
-    if (entityKey === 'taric') value = value.replace(/\s+/g, '');
-    if (!value) return { ok: false, reason: 'missing-value' };
-
-    const directory = ensureDirectory(state, def.directoryKey);
-    if (entityKey === 'taric' || def.supportsDescription) {
-      const existingComplex = directory.find((item) => String((item && (item.value || item.code || item.name)) || '').trim().toUpperCase() === value.toUpperCase());
-      if (existingComplex) {
-        return {
-          ok: true,
-          created: false,
-          value: String(existingComplex.value || existingComplex.code || value).trim(),
-          relatedId: String(existingComplex.value || existingComplex.code || value).trim()
-        };
-      }
-      directory.push({
-        value,
-        label: value,
-        description,
-        city,
-        displayValue: description ? `${value} · ${description}` : (city ? `${value} · ${city}` : value)
-      });
-      return { ok: true, created: true, value, relatedId: value };
-    }
-
-    const existing = directory.find((item) => String(item && item.value !== undefined ? item.value : item || '').trim().toUpperCase() === value.toUpperCase());
-    if (existing) return { ok: true, created: false, value: String(existing.value !== undefined ? existing.value : existing).trim(), relatedId: value };
-    directory.push(value);
-    return { ok: true, created: true, value, relatedId: value };
-  }
-
   function buildQuickAddButton(fieldName, i18n) {
     const entityKey = resolveEntityKeyForField(fieldName);
     if (!entityKey) return '';
@@ -181,7 +143,27 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return draft;
   }
 
-  function renderEntryFormFields({ state, activeDef, formDraft, t }) {
+  function getFilteredEntries(entries, query) {
+    const clean = String(query || '').trim().toLowerCase();
+    if (!clean) return entries;
+    return entries.filter((entry) => [entry.primary, entry.secondary, entry.tertiary, entry.value].some((part) => String(part || '').toLowerCase().includes(clean)));
+  }
+
+  function openExistingRecord(state, entityKey, recordId) {
+    const moduleState = ensureModuleState(state);
+    if (!recordId || !MasterDataEntities || typeof MasterDataEntities.getEntityRecordById !== 'function') {
+      moduleState.selectedRecordId = '';
+      resetEntityDraft(state, entityKey);
+      return null;
+    }
+    const record = MasterDataEntities.getEntityRecordById(state, entityKey, recordId);
+    if (!record) return null;
+    moduleState.selectedRecordId = recordId;
+    moduleState.formDrafts[entityKey] = MasterDataEntities.createFormDraft(entityKey, record);
+    return record;
+  }
+
+  function renderEntryFormFields({ activeDef, formDraft, t }) {
     const structuredFields = MasterDataEntities && typeof MasterDataEntities.getFormFields === 'function'
       ? MasterDataEntities.getFormFields(activeDef.key, t)
       : [];
@@ -212,6 +194,27 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return `<div class="form-grid two"><div class="field ${activeDef.supportsDescription ? '' : (activeDef.supportsCity ? '' : 'full')}"><label for="masterDataValue">${escapeHtml(activeDef.valueLabel)}</label><input id="masterDataValue" name="value" type="text" value="${currentValue}" autocomplete="off" /></div>${activeDef.supportsDescription ? `<div class="field"><label for="masterDataDescription">${escapeHtml(t.t('ui.masterDataDescription', 'Descrizione'))}</label><input id="masterDataDescription" name="description" type="text" value="${currentDescription}" autocomplete="off" /></div>` : ''}${activeDef.supportsCity ? `<div class="field"><label for="masterDataCity">${escapeHtml(t.t('ui.city', 'Città'))}</label><input id="masterDataCity" name="city" type="text" value="${currentCity}" autocomplete="off" /></div>` : ''}</div>`;
   }
 
+  function renderRecordMeta(formDraft, t) {
+    const chips = [];
+    if (formDraft.id) chips.push(`<span class="badge">${escapeHtml(t.t('ui.masterDataRecordCode', 'Codice scheda'))}: ${escapeHtml(formDraft.id)}</span>`);
+    if (formDraft.vatLookupSource) chips.push(`<span class="badge info">${escapeHtml(formDraft.vatLookupSource)}</span>`);
+    if (formDraft.vatLookupAt) chips.push(`<span class="badge">${escapeHtml(t.t('ui.masterDataLastLookup', 'Ultimo lookup'))}: ${escapeHtml(new Date(formDraft.vatLookupAt).toLocaleDateString('it-IT'))}</span>`);
+    if (!chips.length) return '';
+    return `<div class="master-data-meta-strip">${chips.join('')}</div>`;
+  }
+
+  function renderList(entries, filteredEntries, activeRecordId, t) {
+    if (!entries.length) {
+      return `<div class="master-data-empty-state">${escapeHtml(t.t('ui.masterDataNoEntries', 'Nessun valore presente in questa anagrafica.'))}</div>`;
+    }
+    if (!filteredEntries.length) {
+      return `<div class="master-data-empty-state">${escapeHtml(t.t('ui.masterDataSearchNoResults', 'Nessun risultato per questa ricerca.'))}</div>`;
+    }
+    return `<div class="master-data-list">${filteredEntries.map((entry) => {
+      const active = String(activeRecordId || '') === String(entry.id || '');
+      return `<button type="button" class="master-data-row ${active ? 'active' : ''}" data-master-record-id="${escapeHtml(entry.id || '')}"><span class="master-data-row-main"><strong>${escapeHtml(entry.primary)}</strong><small>${escapeHtml(entry.secondary || '—')}</small></span><span class="master-data-row-side">${escapeHtml(entry.tertiary || '—')}</span></button>`;
+    }).join('')}</div>`;
+  }
 
   function renderPanel({ state, module, t }) {
     const defs = getEntityDefinitions(t);
@@ -219,8 +222,10 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const quickAddContext = moduleState.quickAddContext;
     const activeEntity = quickAddContext?.entityKey || moduleState.activeEntity || 'client';
     const activeDef = defs[activeEntity] || defs.client;
-    const entries = getEntries(state, activeEntity, t);
+    const entries = getEntries(state, activeEntity);
+    const filteredEntries = getFilteredEntries(entries, moduleState.searchQuery);
     const formDraft = getFormDraft(state, activeEntity);
+    const isEditing = Boolean(formDraft.id);
     const familyOptions = Object.values(defs);
 
     return `
@@ -230,13 +235,14 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         <p>${escapeHtml(t.t('ui.masterDataIntro', 'Gestisci anagrafiche e directory operative condivise tra pratiche e moduli collegati.'))}</p>
       </section>
 
-      <section class="master-data-shell two-col">
+      <section class="master-data-shell two-col master-data-shell-v2">
         <article class="panel">
           <div class="panel-head">
             <div>
-              <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataQuickAddTitle', 'Inserimento rapido anagrafica'))}</h3>
-              <p class="panel-subtitle">${escapeHtml(quickAddContext ? t.t('ui.masterDataReturnHint', 'Stai aggiungendo un valore da una pratica: al salvataggio tornerai automaticamente al punto di origine.') : t.t('ui.masterDataManualHint', 'Puoi popolare manualmente le directory operative e riutilizzarle nelle pratiche.'))}</p>
+              <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataCurrentList', 'Elenco corrente'))}</h3>
+              <p class="panel-subtitle">${escapeHtml(activeDef.familyLabel)}</p>
             </div>
+            <button class="btn secondary" type="button" id="masterDataNewButton">${escapeHtml(t.t('ui.masterDataNewEntry', 'Nuova scheda'))}</button>
           </div>
 
           ${quickAddContext ? `<div class="master-data-return-banner"><span class="badge info">${escapeHtml(t.t('ui.quickAdd', 'Quick add'))}</span><span>${escapeHtml(activeDef.singleLabel)}</span></div>` : ''}
@@ -248,38 +254,34 @@ window.KedrixOneMasterDataQuickAdd = (() => {
                 ${familyOptions.map((item) => `<option value="${escapeHtml(item.key)}" ${item.key === activeEntity ? 'selected' : ''}>${escapeHtml(item.familyLabel)}</option>`).join('')}
               </select>
             </div>
+            <div class="field full">
+              <label for="masterDataSearchInput">${escapeHtml(t.t('ui.search', 'Cerca'))}</label>
+              <input id="masterDataSearchInput" type="search" value="${escapeHtml(moduleState.searchQuery || '')}" placeholder="${escapeHtml(t.t('ui.masterDataSearchPlaceholder', 'Cerca per nome, città, P.IVA o codice'))}" autocomplete="off" />
+            </div>
           </div>
 
-          <form id="masterDataEntryForm" class="master-data-form-stack">
-            ${renderEntryFormFields({ state, activeDef, formDraft, t })}
-            <div class="form-actions master-data-actions">
-              <button class="btn" type="submit">${escapeHtml(t.t('ui.masterDataSaveEntry', 'Salva anagrafica'))}</button>
-              ${quickAddContext ? `<button class="btn secondary" id="masterDataReturnButton" type="button">${escapeHtml(t.t('ui.masterDataBackToPractice', 'Torna alla pratica'))}</button>` : ''}
-            </div>
-          </form>
+          <div class="master-data-list-summary">${escapeHtml(`${filteredEntries.length} / ${entries.length}`)} ${escapeHtml(t.t('ui.masterDataVisibleRecords', 'schede visibili'))}</div>
+          ${renderList(entries, filteredEntries, moduleState.selectedRecordId, t)}
         </article>
 
         <article class="panel">
           <div class="panel-head">
             <div>
-              <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataCurrentList', 'Elenco corrente'))}</h3>
-              <p class="panel-subtitle">${escapeHtml(activeDef.familyLabel)}</p>
+              <h3 class="panel-title">${escapeHtml(isEditing ? t.t('ui.masterDataEditTitle', 'Scheda anagrafica') : t.t('ui.masterDataCreateTitle', 'Nuova anagrafica'))}</h3>
+              <p class="panel-subtitle">${escapeHtml(isEditing ? t.t('ui.masterDataEditHint', 'Apri, modifica e salva la scheda selezionata.') : t.t('ui.masterDataCreateHint', 'Compila una nuova scheda completa per questa famiglia anagrafica.'))}</p>
             </div>
           </div>
-          <div class="table-wrap master-data-table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>${escapeHtml(activeDef.singleLabel)}</th>
-                  <th>${escapeHtml(t.t('ui.details', 'Dettagli'))}</th>
-                  <th>${escapeHtml(t.t('ui.masterDataListThirdColumn', 'P.IVA / Codice'))}</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${entries.length ? entries.map((entry) => `<tr><td>${escapeHtml(entry.primary)}</td><td>${escapeHtml(entry.secondary || '—')}</td><td>${escapeHtml(entry.tertiary || '—')}</td></tr>`).join('') : `<tr><td colspan="3">${escapeHtml(t.t('ui.masterDataNoEntries', 'Nessun valore presente in questa anagrafica.'))}</td></tr>`}
-              </tbody>
-            </table>
-          </div>
+
+          ${renderRecordMeta(formDraft, t)}
+
+          <form id="masterDataEntryForm" class="master-data-form-stack">
+            ${renderEntryFormFields({ activeDef, formDraft, t })}
+            <div class="form-actions master-data-actions">
+              <button class="btn" type="submit">${escapeHtml(isEditing ? t.t('ui.masterDataUpdateEntry', 'Salva modifiche') : t.t('ui.masterDataSaveEntry', 'Salva anagrafica'))}</button>
+              ${isEditing ? `<button class="btn secondary" id="masterDataResetButton" type="button">${escapeHtml(t.t('ui.masterDataResetForm', 'Nuova scheda'))}</button>` : ''}
+              ${quickAddContext ? `<button class="btn secondary" id="masterDataReturnButton" type="button">${escapeHtml(t.t('ui.masterDataBackToPractice', 'Torna alla pratica'))}</button>` : ''}
+            </div>
+          </form>
         </article>
       </section>
 
@@ -289,13 +291,43 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   function bind({ state, root, save, render, navigate, toast, buildCurrentPracticeReference, i18n }) {
     const moduleState = ensureModuleState(state);
     const familySelect = root.querySelector('#masterDataFamilySelect');
+    const searchInput = root.querySelector('#masterDataSearchInput');
     const form = root.querySelector('#masterDataEntryForm');
     const returnButton = root.querySelector('#masterDataReturnButton');
+    const resetButton = root.querySelector('#masterDataResetButton');
+    const newButton = root.querySelector('#masterDataNewButton');
     const vatLookupButton = root.querySelector('#masterDataVatLookupButton');
     const activeEntity = moduleState.quickAddContext?.entityKey || moduleState.activeEntity || 'client';
 
     familySelect?.addEventListener('change', (event) => {
       setActiveEntity(state, event.target.value || 'client');
+      resetEntityDraft(state, event.target.value || 'client');
+      save();
+      render();
+    });
+
+    searchInput?.addEventListener('input', (event) => {
+      moduleState.searchQuery = String(event.target.value || '');
+      save();
+      render();
+    });
+
+    root.querySelectorAll('[data-master-record-id]').forEach((button) => {
+      button.addEventListener('click', () => {
+        openExistingRecord(state, activeEntity, button.dataset.masterRecordId || '');
+        save();
+        render();
+      });
+    });
+
+    newButton?.addEventListener('click', () => {
+      resetEntityDraft(state, activeEntity);
+      save();
+      render();
+    });
+
+    resetButton?.addEventListener('click', () => {
+      resetEntityDraft(state, activeEntity);
       save();
       render();
     });
@@ -345,18 +377,21 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       event.preventDefault();
       const targetEntity = moduleState.quickAddContext?.entityKey || activeEntity;
       const currentDraft = getFormDraft(state, targetEntity);
-
       syncDraftFromForm(form, currentDraft);
 
-      const result = addEntry(state, targetEntity, currentDraft, i18n);
+      const defs = getEntityDefinitions(i18n);
+      const def = defs[targetEntity];
+      const payload = { ...currentDraft };
+      const result = def && def.structured && MasterDataEntities && typeof MasterDataEntities.saveBusinessEntity === 'function'
+        ? MasterDataEntities.saveBusinessEntity(state, targetEntity, payload, i18n)
+        : (MasterDataEntities && typeof MasterDataEntities.saveDirectoryEntity === 'function'
+          ? MasterDataEntities.saveDirectoryEntity(state, targetEntity, payload, i18n)
+          : { ok: false, reason: 'invalid-entity' });
+
       if (!result.ok) {
         toast(i18n.t('ui.masterDataMissingValue', 'Compila il valore da inserire.'), 'warning');
         return;
       }
-
-      Object.assign(currentDraft, MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
-        ? MasterDataEntities.createFormDraft(targetEntity)
-        : { value: '', description: '', city: '' });
 
       const context = moduleState.quickAddContext;
       if (context) {
@@ -365,24 +400,37 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           state.draftPractice.generatedReference = buildCurrentPracticeReference();
         }
         clearQuickAdd(state);
+        moduleState.selectedRecordId = result.relatedId || '';
+        moduleState.formDrafts[targetEntity] = MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
+          ? MasterDataEntities.createFormDraft(targetEntity, result.record || null)
+          : { id: '', value: '', description: '', city: '' };
         save();
         navigate(context.returnRoute || 'practices');
         toast(
-          result.created
-            ? i18n.t('ui.masterDataQuickAddSaved', 'Anagrafica salvata e riportata nella pratica.')
-            : i18n.t('ui.masterDataQuickAddSelected', 'Valore già presente: selezionato nella pratica.'),
-          result.created ? 'success' : 'info'
+          result.updated
+            ? i18n.t('ui.masterDataQuickAddUpdated', 'Anagrafica aggiornata e riportata nella pratica.')
+            : (result.created
+              ? i18n.t('ui.masterDataQuickAddSaved', 'Anagrafica salvata e riportata nella pratica.')
+              : i18n.t('ui.masterDataQuickAddSelected', 'Valore già presente: selezionato nella pratica.')),
+          result.updated || result.created ? 'success' : 'info'
         );
         return;
       }
 
+      moduleState.selectedRecordId = result.relatedId || '';
+      moduleState.formDrafts[targetEntity] = MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
+        ? MasterDataEntities.createFormDraft(targetEntity, result.record || null)
+        : { id: '', value: '', description: '', city: '' };
+
       save();
       render();
       toast(
-        result.created
-          ? i18n.t('ui.masterDataSaved', 'Anagrafica salvata correttamente.')
-          : i18n.t('ui.masterDataAlreadyPresent', 'Valore già presente in anagrafica.'),
-        result.created ? 'success' : 'info'
+        result.updated
+          ? i18n.t('ui.masterDataUpdated', 'Anagrafica aggiornata correttamente.')
+          : (result.created
+            ? i18n.t('ui.masterDataSaved', 'Anagrafica salvata correttamente.')
+            : i18n.t('ui.masterDataAlreadyPresent', 'Valore già presente in anagrafica.')),
+        result.updated || result.created ? 'success' : 'info'
       );
     });
   }

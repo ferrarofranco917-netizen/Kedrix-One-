@@ -750,7 +750,21 @@ Object.assign(dictionary.it.ui, {
   masterDataVatLookupConfigNote: 'In staging puoi usare un endpoint personalizzato oppure riutilizzare i dati già presenti in Kedrix.',
   masterDataVatLookupConfigSave: 'Salva configurazione lookup',
   masterDataVatLookupConfigSaved: 'Configurazione recupero partita IVA salvata.',
-  masterDataListThirdColumn: 'P.IVA / Codice'
+  masterDataListThirdColumn: 'P.IVA / Codice',
+  masterDataSearchPlaceholder: 'Cerca per nome, città, P.IVA o codice',
+  masterDataSearchNoResults: 'Nessun risultato per questa ricerca.',
+  masterDataVisibleRecords: 'schede visibili',
+  masterDataNewEntry: 'Nuova scheda',
+  masterDataCreateTitle: 'Nuova anagrafica',
+  masterDataCreateHint: 'Compila una nuova scheda completa per questa famiglia anagrafica.',
+  masterDataEditTitle: 'Scheda anagrafica',
+  masterDataEditHint: 'Apri, modifica e salva la scheda selezionata.',
+  masterDataUpdateEntry: 'Salva modifiche',
+  masterDataResetForm: 'Nuova scheda',
+  masterDataUpdated: 'Anagrafica aggiornata correttamente.',
+  masterDataQuickAddUpdated: 'Anagrafica aggiornata e riportata nella pratica.',
+  masterDataRecordCode: 'Codice scheda',
+  masterDataLastLookup: 'Ultimo lookup'
 });
 
 Object.assign(dictionary.en.ui, {
@@ -798,7 +812,21 @@ Object.assign(dictionary.en.ui, {
   masterDataVatLookupConfigNote: 'In staging you can use a custom endpoint or reuse data already present in Kedrix.',
   masterDataVatLookupConfigSave: 'Save lookup configuration',
   masterDataVatLookupConfigSaved: 'VAT lookup configuration saved.',
-  masterDataListThirdColumn: 'VAT / Code'
+  masterDataListThirdColumn: 'VAT / Code',
+  masterDataSearchPlaceholder: 'Search by name, city, VAT number or code',
+  masterDataSearchNoResults: 'No records match this search.',
+  masterDataVisibleRecords: 'visible records',
+  masterDataNewEntry: 'New record',
+  masterDataCreateTitle: 'New master data record',
+  masterDataCreateHint: 'Fill a complete new record for this master data family.',
+  masterDataEditTitle: 'Master data record',
+  masterDataEditHint: 'Open, edit and save the selected record.',
+  masterDataUpdateEntry: 'Save changes',
+  masterDataResetForm: 'New record',
+  masterDataUpdated: 'Master data updated successfully.',
+  masterDataQuickAddUpdated: 'Master data updated and applied back to the practice.',
+  masterDataRecordCode: 'Record code',
+  masterDataLastLookup: 'Last lookup'
 });
 
   let currentLanguage = 'it';
