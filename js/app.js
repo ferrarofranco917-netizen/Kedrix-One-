@@ -31,6 +31,7 @@
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
+  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -93,6 +94,7 @@
       status: 'In attesa documenti',
       generatedReference: '',
       attachmentOwnerKey: overrides.attachmentOwnerKey || '',
+      linkedEntities: { ...((overrides && overrides.linkedEntities) || {}) },
       dynamicData: { ...((overrides && overrides.dynamicData) || {}) },
       ...overrides
     };
@@ -131,6 +133,9 @@
       status: practice.status || 'Operativa',
       generatedReference: practice.reference || '',
       attachmentOwnerKey: practice.attachmentOwnerKey || practice.id || '',
+      linkedEntities: MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
+        ? MasterDataEntities.hydratePracticeLinkedEntities(state, practice)
+        : { ...((practice && practice.linkedEntities) || {}) },
       dynamicData: extractPracticeDynamicData(practice)
     });
   }
@@ -451,9 +456,14 @@
       if (normalizedPortDischarge && String(practice.practiceType || '').startsWith('sea_')) dynamicData.portDischarge = normalizedPortDischarge;
       if (normalizedCustomsOffice) dynamicData.customsOffice = normalizedCustomsOffice;
 
+      const linkedEntities = MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
+        ? MasterDataEntities.hydratePracticeLinkedEntities(state, { ...practice, dynamicData })
+        : { ...((practice && practice.linkedEntities) || {}) };
+
       const next = {
         ...practice,
         dynamicData,
+        linkedEntities,
         dynamicLabels,
         portLoading: normalizedPortLoading,
         portDischarge: normalizedPortDischarge,
@@ -655,6 +665,7 @@
         category: '',
         status: 'In attesa documenti',
         generatedReference: '',
+        linkedEntities: {},
         dynamicData: {}
       }));
   }
@@ -686,6 +697,7 @@
       status: 'In attesa documenti',
       generatedReference: '',
       attachmentOwnerKey: PracticeAttachments && typeof PracticeAttachments.createDraftOwnerKey === 'function' ? PracticeAttachments.createDraftOwnerKey() : '',
+      linkedEntities: {},
       dynamicData: {},
       ...overrides
     };
@@ -704,6 +716,16 @@
     const clean = String(clientName || '').trim().toUpperCase();
     const match = (state.clients || []).find((client) => String(client.name || '').trim().toUpperCase() === clean) || null;
     const draft = ensureDraftPractice();
+    if (MasterDataEntities && typeof MasterDataEntities.applyLinkedRecordToDraft === 'function') {
+      return MasterDataEntities.applyLinkedRecordToDraft({
+        state,
+        draft,
+        fieldName: 'clientName',
+        entityKey: 'client',
+        record: match,
+        value: clientName
+      });
+    }
     draft.clientId = match ? match.id : '';
     draft.clientName = clientName;
     return match;
@@ -761,6 +783,9 @@
       status: practice.status || 'Operativa',
       generatedReference: practice.reference || '',
       attachmentOwnerKey: practice.attachmentOwnerKey || practice.id || (PracticeAttachments && typeof PracticeAttachments.createDraftOwnerKey === 'function' ? PracticeAttachments.createDraftOwnerKey() : ''),
+      linkedEntities: MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
+        ? MasterDataEntities.hydratePracticeLinkedEntities(state, practice)
+        : { ...((practice && practice.linkedEntities) || {}) },
       dynamicData: extractPracticeDynamicData(practice)
     };
   }

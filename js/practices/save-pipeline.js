@@ -3,6 +3,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
 
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
+  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
   const preSaveHooks = [];
 
@@ -153,6 +154,9 @@ window.KedrixOnePracticeSavePipeline = (() => {
         billingLinkStatus: existingRecord?.billingLinkStatus || 'Da collegare',
         sourceModule: 'practices',
         dynamicData: { ...(draft.dynamicData || {}) },
+        linkedEntities: MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
+          ? MasterDataEntities.hydratePracticeLinkedEntities(state, draft)
+          : { ...((draft && draft.linkedEntities) || {}) },
         dynamicLabels,
         attachmentOwnerKey,
         attachmentCount: attachmentItems.length,
@@ -189,6 +193,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
         category: record.category || '',
         status: record.status || 'In attesa documenti',
         generatedReference: '',
+        linkedEntities: { ...((record && record.linkedEntities) || {}) },
         dynamicData: normalizedDynamicData
       })
       : null;

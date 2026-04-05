@@ -94,8 +94,21 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
   function applyEntryToDraft(state, context, result) {
     if (!state || !context || !result) return;
-    const draft = state.draftPractice || (state.draftPractice = { dynamicData: {} });
+    const draft = state.draftPractice || (state.draftPractice = { dynamicData: {}, linkedEntities: {} });
     if (!draft.dynamicData || typeof draft.dynamicData !== 'object') draft.dynamicData = {};
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
+
+    if (MasterDataEntities && typeof MasterDataEntities.applyLinkedRecordToDraft === 'function' && context.fieldName) {
+      MasterDataEntities.applyLinkedRecordToDraft({
+        state,
+        draft,
+        fieldName: context.fieldName,
+        entityKey: context.entityKey,
+        record: result.record || null,
+        value: result.value || ''
+      });
+      return;
+    }
 
     if (context.entityKey === 'client' || context.fieldName === 'clientName') {
       draft.clientName = result.value;

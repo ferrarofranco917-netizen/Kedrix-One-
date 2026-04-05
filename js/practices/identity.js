@@ -2,6 +2,7 @@ window.KedrixOnePracticeIdentity = (() => {
   'use strict';
 
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
+  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -30,9 +31,11 @@ window.KedrixOnePracticeIdentity = (() => {
       status: 'In attesa documenti',
       generatedReference: '',
       attachmentOwnerKey: resolveAttachmentOwnerKey(overrides),
+      linkedEntities: {},
       dynamicData: {},
       ...overrides,
       attachmentOwnerKey: resolveAttachmentOwnerKey(overrides),
+      linkedEntities: { ...((overrides && overrides.linkedEntities) || {}) },
       dynamicData: {
         ...((overrides && overrides.dynamicData) || {})
       }
@@ -70,6 +73,16 @@ window.KedrixOnePracticeIdentity = (() => {
     const clean = String(clientName || '').trim().toUpperCase();
     const match = ((state && state.clients) || []).find((client) => String(client.name || '').trim().toUpperCase() === clean) || null;
     const draft = ensureDraft(state);
+    if (MasterDataEntities && typeof MasterDataEntities.applyLinkedRecordToDraft === 'function') {
+      return MasterDataEntities.applyLinkedRecordToDraft({
+        state,
+        draft,
+        fieldName: 'clientName',
+        entityKey: 'client',
+        record: match,
+        value: clientName
+      });
+    }
     draft.clientId = match ? match.id : '';
     draft.clientName = clientName;
     return match;
@@ -113,6 +126,9 @@ window.KedrixOnePracticeIdentity = (() => {
       status: practice.status || 'Operativa',
       generatedReference: practice.reference || '',
       attachmentOwnerKey: practice.attachmentOwnerKey || practice.id || createAttachmentOwnerKey(),
+      linkedEntities: MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
+        ? MasterDataEntities.hydratePracticeLinkedEntities(state, practice)
+        : { ...((practice && practice.linkedEntities) || {}) },
       dynamicData: typeof extractPracticeDynamicData === 'function' ? extractPracticeDynamicData(practice) : { ...((practice && practice.dynamicData) || {}) }
     });
 
@@ -137,6 +153,9 @@ window.KedrixOnePracticeIdentity = (() => {
       status: practice.status || 'In attesa documenti',
       generatedReference: '',
       attachmentOwnerKey: createAttachmentOwnerKey(),
+      linkedEntities: MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
+        ? MasterDataEntities.hydratePracticeLinkedEntities(state, practice)
+        : { ...((practice && practice.linkedEntities) || {}) },
       dynamicData: typeof extractPracticeDynamicData === 'function' ? extractPracticeDynamicData(practice) : { ...((practice && practice.dynamicData) || {}) }
     });
 

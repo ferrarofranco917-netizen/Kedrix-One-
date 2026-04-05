@@ -211,6 +211,43 @@ window.KedrixOneMasterDataEntities = (() => {
     return `${clean}EntityId`;
   }
 
+  function ensureDraftLinkedEntities(draft) {
+    if (!draft || typeof draft !== 'object') return {};
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object' || Array.isArray(draft.linkedEntities)) {
+      draft.linkedEntities = {};
+    }
+    return draft.linkedEntities;
+  }
+
+  function sanitizeRelationSnapshot(raw, fallback = {}) {
+    if (!raw || typeof raw !== 'object') return null;
+    const snapshot = {
+      fieldName: cleanText(raw.fieldName || fallback.fieldName || ''),
+      entityKey: cleanText(raw.entityKey || fallback.entityKey || ''),
+      recordId: cleanText(raw.recordId || raw.entityId || raw.id || fallback.recordId || ''),
+      value: cleanText(raw.value || raw.name || raw.label || raw.displayValue || fallback.value || ''),
+      displayValue: cleanText(raw.displayValue || fallback.displayValue || ''),
+      city: cleanText(raw.city || fallback.city || ''),
+      vatNumber: cleanText(raw.vatNumber || fallback.vatNumber || ''),
+      code: cleanText(raw.code || fallback.code || ''),
+      taxCode: cleanText(raw.taxCode || fallback.taxCode || ''),
+      description: cleanText(raw.description || fallback.description || ''),
+      country: cleanText(raw.country || fallback.country || ''),
+      shortName: cleanText(raw.shortName || fallback.shortName || ''),
+      active: raw.active !== undefined ? Boolean(raw.active) : (fallback.active !== undefined ? Boolean(fallback.active) : true)
+    };
+    if (!snapshot.displayValue) {
+      snapshot.displayValue = [snapshot.value, snapshot.city || snapshot.vatNumber || snapshot.code || snapshot.description].filter(Boolean).join(' · ') || snapshot.value;
+    }
+    if (!snapshot.value && !snapshot.displayValue && !snapshot.recordId) return null;
+    return snapshot;
+  }
+
+  function isStructuredEntityKey(entityKey) {
+    const defs = allDefinitions();
+    return Boolean(defs[entityKey] && defs[entityKey].structured);
+  }
+
   function ensurePracticeConfig(companyConfig) {
     if (!companyConfig || typeof companyConfig !== 'object') return { directories: {}, masterDataRecords: {} };
     if (!companyConfig.practiceConfig || typeof companyConfig.practiceConfig !== 'object') {
@@ -723,6 +760,126 @@ window.KedrixOneMasterDataEntities = (() => {
     return null;
   }
 
+  function buildRelationSnapshot(entityKey, record, fieldName = '') {
+    const defs = allDefinitions();
+    const def = defs[entityKey];
+    if (!def) return null;
+
+    if (def.structured) {
+      const normalized = normalizeBusinessRecord(record);
+      if (!normalized) return null;
+      return sanitizeRelationSnapshot({
+        fieldName,
+        entityKey,
+        recordId: normalized.id || '',
+        value: normalized.name,
+        displayValue: normalized.displayValue || buildEntityDisplayValue(normalized),
+        city: normalized.city,
+        vatNumber: normalized.vatNumber,
+        code: normalized.code,
+        taxCode: normalized.taxCode,
+        country: normalized.country,
+        shortName: normalized.shortName,
+        active: normalized.active
+      });
+    }
+
+    const normalizedDirectory = normalizeDirectoryRecord(entityKey, record, record && record.id ? record.id : '');
+    if (!normalizedDirectory) return null;
+    return sanitizeRelationSnapshot({
+      fieldName,
+      entityKey,
+      recordId: normalizedDirectory.id || '',
+      value: normalizedDirectory.value,
+      displayValue: normalizedDirectory.displayValue || normalizedDirectory.value,
+      city: normalizedDirectory.city,
+      description: normalizedDirectory.description
+    });
+  }
+
+  function getLinkedSnapshotFromDraft({ draft, fieldName }) {
+    if (!draft || !fieldName) return null;
+    const linkedEntities = draft.linkedEntities && typeof draft.linkedEntities === 'object' ? draft.linkedEntities : null;
+    if (!linkedEntities) return null;
+    return sanitizeRelationSnapshot(linkedEntities[fieldName], { fieldName, entityKey: resolveEntityKeyForField(fieldName) });
+  }
+
+  function applyLinkedRecordToDraft({ state, draft, fieldName, entityKey = '', record = null, value = '' }) {
+    const resolvedField = cleanText(fieldName);
+    const resolvedEntityKey = entityKey || resolveEntityKeyForField(resolvedField);
+    if (!draft || !resolvedEntityKey) return null;
+
+    const defs = allDefinitions();
+    const def = defs[resolvedEntityKey];
+    const rawValue = cleanText(value || (record && (record.name || record.value || record.label || '')) || '');
+    let linkedRecord = record;
+
+    if (!linkedRecord && def && def.structured) {
+      linkedRecord = findStructuredEntityRecordByValue(state, resolvedEntityKey, rawValue);
+    }
+
+    const linkedEntities = ensureDraftLinkedEntities(draft);
+
+    if (resolvedEntityKey === 'client' || resolvedField === 'clientName') {
+      draft.clientName = rawValue || cleanText(draft.clientName);
+      draft.clientId = def && def.structured && linkedRecord ? cleanText(linkedRecord.id) : '';
+      if (linkedRecord && def && def.structured) linkedEntities.clientName = buildRelationSnapshot('client', linkedRecord, 'clientName');
+      else delete linkedEntities.clientName;
+      return linkedRecord;
+    }
+
+    if (!draft.dynamicData || typeof draft.dynamicData !== 'object') draft.dynamicData = {};
+    if (resolvedField) draft.dynamicData[resolvedField] = rawValue;
+
+    const relationField = getRelationFieldName(resolvedField);
+    if (def && def.structured && linkedRecord) {
+      if (relationField) draft.dynamicData[relationField] = cleanText(linkedRecord.id);
+      linkedEntities[resolvedField] = buildRelationSnapshot(resolvedEntityKey, linkedRecord, resolvedField);
+      return linkedRecord;
+    }
+
+    if (relationField) draft.dynamicData[relationField] = '';
+    delete linkedEntities[resolvedField];
+    return null;
+  }
+
+  function hydratePracticeLinkedEntities(state, source) {
+    const practice = source && typeof source === 'object' ? source : {};
+    const linked = {};
+    const dynamicData = practice.dynamicData && typeof practice.dynamicData === 'object' ? practice.dynamicData : {};
+    const existing = practice.linkedEntities && typeof practice.linkedEntities === 'object' ? practice.linkedEntities : {};
+    const defs = allDefinitions();
+
+    Object.values(defs).forEach((def) => {
+      if (!def || !def.structured) return;
+      (def.fieldNames || []).forEach((fieldName) => {
+        const relationField = getRelationFieldName(fieldName);
+        const relationId = fieldName === 'clientName'
+          ? cleanText(practice.clientId || practice.linkedClientId || existing.clientName?.recordId || '')
+          : cleanText(dynamicData[relationField] || practice[relationField] || existing[fieldName]?.recordId || '');
+        const fieldValue = fieldName === 'clientName'
+          ? cleanText(practice.clientName || practice.client || existing.clientName?.value || '')
+          : cleanText(dynamicData[fieldName] || practice[fieldName] || existing[fieldName]?.value || '');
+
+        let snapshot = null;
+        if (relationId) {
+          const record = getEntityRecordById(state, def.key, relationId);
+          if (record) snapshot = buildRelationSnapshot(def.key, record, fieldName);
+        }
+        if (!snapshot && fieldValue) {
+          const record = findStructuredEntityRecordByValue(state, def.key, fieldValue);
+          if (record) snapshot = buildRelationSnapshot(def.key, record, fieldName);
+        }
+        if (!snapshot) {
+          snapshot = sanitizeRelationSnapshot(existing[fieldName], { fieldName, entityKey: def.key, value: fieldValue, recordId: relationId });
+        }
+        if (snapshot) linked[fieldName] = snapshot;
+      });
+    });
+
+    return linked;
+  }
+
   function getEntityRecordById(state, entityKey, recordId) {
     if (!recordId) return null;
     const defs = allDefinitions();
@@ -775,37 +932,40 @@ window.KedrixOneMasterDataEntities = (() => {
   function syncDraftRelationField({ state, draft, fieldName, value }) {
     const entityKey = resolveEntityKeyForField(fieldName);
     if (!entityKey || !draft) return null;
-
-    if (entityKey === 'client' || fieldName === 'clientName') {
-      const record = findStructuredEntityRecordByValue(state, 'client', value);
-      draft.clientId = record ? record.id : '';
-      draft.clientName = cleanText(value);
-      return record;
-    }
-
-    if (!draft.dynamicData || typeof draft.dynamicData !== 'object') draft.dynamicData = {};
-    const relationField = getRelationFieldName(fieldName);
-    if (!relationField) return null;
-    const record = findStructuredEntityRecordByValue(state, entityKey, value);
-    draft.dynamicData[relationField] = record ? record.id : '';
-    return record;
+    return applyLinkedRecordToDraft({ state, draft, fieldName, entityKey, value });
   }
 
   function getLinkedRecordFromDraft({ state, draft, fieldName }) {
     if (!draft) return null;
     const entityKey = resolveEntityKeyForField(fieldName);
     if (!entityKey) return null;
+
     if (entityKey === 'client' || fieldName === 'clientName') {
+      const relationId = cleanText(draft.clientId || draft.linkedClientId || '');
+      if (relationId) {
+        const record = getEntityRecordById(state, 'client', relationId);
+        if (record) return record;
+      }
+      const snapshot = getLinkedSnapshotFromDraft({ draft, fieldName: 'clientName' });
+      if (snapshot) return snapshot;
       return findStructuredEntityRecordByValue(state, 'client', draft.clientName || '') || null;
     }
+
     const relationField = getRelationFieldName(fieldName);
     const relationId = relationField && draft.dynamicData ? cleanText(draft.dynamicData[relationField]) : '';
-    if (!relationId) return null;
+    if (relationId) {
+      const record = getEntityRecordById(state, entityKey, relationId);
+      if (record) return record;
+    }
+
+    const snapshot = getLinkedSnapshotFromDraft({ draft, fieldName });
+    if (snapshot) return snapshot;
+
     const defs = allDefinitions();
     const def = defs[entityKey];
     if (!def || !def.structured) return null;
-    const records = ensureRecordStore(state, entityKey).map((record) => normalizeBusinessRecord(record)).filter(Boolean);
-    return records.find((record) => cleanText(record.id) === relationId) || null;
+    const fieldValue = draft.dynamicData && typeof draft.dynamicData === 'object' ? draft.dynamicData[fieldName] : '';
+    return findStructuredEntityRecordByValue(state, entityKey, fieldValue || '') || null;
   }
 
   return {
@@ -822,8 +982,13 @@ window.KedrixOneMasterDataEntities = (() => {
     saveDirectoryEntity,
     syncDraftRelationField,
     getLinkedRecordFromDraft,
+    getLinkedSnapshotFromDraft,
+    applyLinkedRecordToDraft,
+    buildRelationSnapshot,
+    hydratePracticeLinkedEntities,
     buildEntityDisplayValue,
     normalizeBusinessRecord,
-    findStructuredEntityRecordByVat
+    findStructuredEntityRecordByVat,
+    isStructuredEntityKey
   };
 })();

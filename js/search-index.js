@@ -101,15 +101,36 @@ window.KedrixOneSearchIndex = (() => {
     }).filter(Boolean);
   }
 
+  function collectLinkedEntityFields(practice) {
+    const linkedEntities = practice && practice.linkedEntities && typeof practice.linkedEntities === 'object'
+      ? practice.linkedEntities
+      : {};
+
+    return Object.entries(linkedEntities).flatMap(([fieldName, snapshot]) => {
+      if (!snapshot || typeof snapshot !== 'object') return [];
+      const displayLabel = snapshot.entityKey === 'client' || fieldName === 'clientName'
+        ? 'Cliente collegato'
+        : `${fieldName} collegato`;
+      const fields = [
+        makeField(`${fieldName}:display`, displayLabel, snapshot.displayValue || snapshot.value || '', 92),
+        makeField(`${fieldName}:vat`, `${displayLabel} P.IVA`, snapshot.vatNumber || '', 86),
+        makeField(`${fieldName}:code`, `${displayLabel} Codice`, snapshot.code || '', 82),
+        makeField(`${fieldName}:city`, `${displayLabel} Città`, snapshot.city || '', 78)
+      ].filter(Boolean);
+      return fields;
+    });
+  }
+
   function buildEntry(practice) {
     const baseFields = BASE_FIELD_DEFS
       .map((definition) => makeField(definition.key, definition.label, definition.getter(practice), definition.weight))
       .filter(Boolean);
 
     const dynamicFields = collectDynamicFields(practice);
+    const linkedEntityFields = collectLinkedEntityFields(practice);
     const fieldMap = new Map();
 
-    [...baseFields, ...dynamicFields].forEach((field) => {
+    [...baseFields, ...dynamicFields, ...linkedEntityFields].forEach((field) => {
       const dedupeKey = `${field.key}:${field.normalized}`;
       if (!fieldMap.has(dedupeKey)) fieldMap.set(dedupeKey, field);
     });
