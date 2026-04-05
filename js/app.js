@@ -1586,6 +1586,10 @@ function renderDocumentPreviewPanel() {
       navigate,
       toast,
       buildCurrentPracticeReference,
+      restorePracticeContext: (tab = 'practice') => {
+        state.practiceTab = String(tab || 'practice').trim() || 'practice';
+        setActivePracticeSessionTab(state.practiceTab);
+      },
       i18n: I18N
     });
   }

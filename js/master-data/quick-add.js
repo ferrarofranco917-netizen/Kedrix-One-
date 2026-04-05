@@ -301,7 +301,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       ${activeDef.structured && !quickAddContext && VatAutofill && typeof VatAutofill.renderConfigPanel === 'function' ? VatAutofill.renderConfigPanel(state, t) : ''}`;
   }
 
-  function bind({ state, root, save, render, navigate, toast, buildCurrentPracticeReference, i18n }) {
+  function bind({ state, root, save, render, navigate, toast, buildCurrentPracticeReference, restorePracticeContext, i18n }) {
     const moduleState = ensureModuleState(state);
     const familySelect = root.querySelector('#masterDataFamilySelect');
     const searchInput = root.querySelector('#masterDataSearchInput');
@@ -347,6 +347,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
     returnButton?.addEventListener('click', () => {
       const context = moduleState.quickAddContext;
+      if (typeof restorePracticeContext === 'function') {
+        restorePracticeContext(context?.returnTab || 'practice');
+      }
       clearQuickAdd(state);
       save();
       navigate(context?.returnRoute || 'practices');
@@ -411,6 +414,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         applyEntryToDraft(state, context, result);
         if (context.entityKey === 'client' && typeof buildCurrentPracticeReference === 'function' && state.draftPractice) {
           state.draftPractice.generatedReference = buildCurrentPracticeReference();
+        }
+        if (typeof restorePracticeContext === 'function') {
+          restorePracticeContext(context.returnTab || 'practice');
         }
         clearQuickAdd(state);
         moduleState.selectedRecordId = result.relatedId || '';
