@@ -3,6 +3,7 @@ window.KedrixOnePracticeOverview = (() => {
 
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
   const LinkedPartiesBoard = window.KedrixOneLinkedPartiesBoard;
+  const PracticeReadinessBoard = window.KedrixOnePracticeReadinessBoard;
 
   function escape(utils, value) {
     return utils && typeof utils.escapeHtml === 'function'
@@ -139,6 +140,9 @@ window.KedrixOnePracticeOverview = (() => {
     const clientName = String(draft.clientName || '').trim() || t(i18n, 'ui.clientRequired', 'Cliente');
     const cards = buildSummaryCards(options.state || null, draft, options.type, options.companyConfig, i18n);
     const badges = buildBadges(draft, i18n);
+    const readinessBoardHtml = PracticeReadinessBoard && typeof PracticeReadinessBoard.render === 'function'
+      ? PracticeReadinessBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
+      : '';
     const linkedPartiesBoardHtml = LinkedPartiesBoard && typeof LinkedPartiesBoard.render === 'function'
       ? LinkedPartiesBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
@@ -155,6 +159,7 @@ window.KedrixOnePracticeOverview = (() => {
             ${badges.map((badge) => `<span class="badge ${badge.kind === 'info' ? 'info' : ''}">${escape(utils, badge.value)}</span>`).join('')}
           </div>
         </div>
+        ${readinessBoardHtml}
         ${linkedPartiesBoardHtml}
         <div class="practice-overview-grid">
           ${cards.map((card) => `

@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepaa-linked-parties-actions-v1';
+const CACHE = 'kedrix-one-stepac-practice-readiness-v1';
 const FILES = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const FILES = [
   './js/wisemind.js',
   './js/i18n.js',
   './js/practice-schemas.js',
+  './js/practices/practice-readiness-board.js',
   './js/practices/linked-entity-summary.js',
   './js/practices/sea-schema-cleanup.js',
   './js/practices/reference-normalizer.js',
@@ -24,6 +25,7 @@ const FILES = [
   './js/practices/draft-validator.js',
   './js/practices/form-layout.js',
   './js/practices/linked-parties-board.js',
+  './js/practices/practice-overview.js',
   './js/practices/form-renderer.js',
   './js/practices/open-edit.js',
   './js/practices/identity.js',

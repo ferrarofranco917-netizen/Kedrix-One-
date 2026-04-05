@@ -56,6 +56,10 @@ window.KedrixOneLinkedPartiesBoard = (() => {
     return text(draft?.dynamicData?.[fieldName], '');
   }
 
+  function isCorePartyField(fieldName = '', entityKey = '') {
+    return fieldName === 'clientName' || STRUCTURED_ENTITY_KEYS.has(entityKey);
+  }
+
   function getCandidateFields(type) {
     if (!PracticeSchemas || typeof PracticeSchemas.getSchema !== 'function') return [];
     const schema = PracticeSchemas.getSchema(type);
@@ -75,10 +79,50 @@ window.KedrixOneLinkedPartiesBoard = (() => {
           fieldName: normalizedFieldName,
           entityKey,
           labelKey: field.labelKey,
-          fallbackLabel: field.labelKey || normalizedFieldName
+          fallbackLabel: field.labelKey || normalizedFieldName,
+          required: Boolean(field.required || normalizedFieldName === 'clientName'),
+          coreParty: isCorePartyField(normalizedFieldName, entityKey)
         };
       })
       .filter(Boolean);
+  }
+
+  function buildPriorityMeta(entry, i18n) {
+    const coverageReady = Boolean(entry.linkedRecord || entry.manualValue);
+    const isBlocking = entry.required && !coverageReady;
+    const isToLink = entry.required && Boolean(entry.manualValue) && !entry.linkedRecord;
+    const isRecommended = !entry.required && (Boolean(entry.manualValue) || entry.statusKey === 'missing');
+
+    if (isBlocking) {
+      return {
+        key: 'high',
+        className: 'danger',
+        label: t(i18n, 'ui.linkedPartiesBoardPriorityHigh', 'Priorità alta'),
+        helper: t(i18n, 'ui.linkedPartiesBoardPriorityHighHint', 'Completa questo soggetto per avere una pratica operativa più solida.')
+      };
+    }
+    if (isToLink) {
+      return {
+        key: 'high',
+        className: 'danger',
+        label: t(i18n, 'ui.linkedPartiesBoardPriorityToLink', 'Da collegare ora'),
+        helper: t(i18n, 'ui.linkedPartiesBoardPriorityToLinkHint', 'Il dato esiste ma va trasformato in collegamento anagrafico stabile.')
+      };
+    }
+    if (isRecommended) {
+      return {
+        key: 'medium',
+        className: 'warning',
+        label: t(i18n, 'ui.linkedPartiesBoardPriorityMedium', 'Priorità media'),
+        helper: t(i18n, 'ui.linkedPartiesBoardPriorityMediumHint', 'Utile da completare per migliorare qualità dati e riuso operativo.')
+      };
+    }
+    return {
+      key: 'low',
+      className: 'success',
+      label: t(i18n, 'ui.linkedPartiesBoardPriorityLow', 'Pronto'),
+      helper: t(i18n, 'ui.linkedPartiesBoardPriorityLowHint', 'Questo soggetto è già pronto per il flusso operativo corrente.')
+    };
   }
 
   function buildEntries(options = {}) {
@@ -124,6 +168,11 @@ window.KedrixOneLinkedPartiesBoard = (() => {
           : t(i18n, 'ui.linkedPartiesBoardManualHint', 'Valore presente ma non ancora collegato a una scheda anagrafica.');
       }
 
+      const priority = buildPriorityMeta({ ...field, linkedRecord, manualValue, statusKey }, i18n);
+      const readinessLabel = field.required
+        ? t(i18n, 'ui.linkedPartiesBoardRequiredLabel', 'Essenziale')
+        : t(i18n, 'ui.linkedPartiesBoardOptionalLabel', 'Supporto');
+
       return {
         ...field,
         label: t(i18n, field.labelKey, field.fallbackLabel),
@@ -138,6 +187,9 @@ window.KedrixOneLinkedPartiesBoard = (() => {
         statusClass,
         value,
         helper,
+        priority,
+        readinessLabel,
+        isCovered: Boolean(linkedRecord || manualValue),
         canOpen: Boolean(linkedRecord),
         canLink: Boolean(exactMatchRecord && exactMatchRecord.id),
         canCreate: supportsQuickAdd,
@@ -151,8 +203,59 @@ window.KedrixOneLinkedPartiesBoard = (() => {
       if (entry.statusKey === 'linked') acc.linked += 1;
       else if (entry.statusKey === 'manual') acc.manual += 1;
       else acc.missing += 1;
+      if (entry.required) {
+        acc.requiredTotal += 1;
+        if (entry.isCovered) acc.requiredCovered += 1;
+        if (entry.statusKey === 'linked') acc.requiredLinked += 1;
+      }
+      if (entry.priority?.key === 'high') acc.highPriority += 1;
+      else if (entry.priority?.key === 'medium') acc.mediumPriority += 1;
       return acc;
-    }, { linked: 0, manual: 0, missing: 0 });
+    }, {
+      linked: 0,
+      manual: 0,
+      missing: 0,
+      requiredTotal: 0,
+      requiredCovered: 0,
+      requiredLinked: 0,
+      highPriority: 0,
+      mediumPriority: 0
+    });
+  }
+
+  function buildOperationalOverview(entries = [], counts, i18n) {
+    const blockingEntries = entries.filter((entry) => entry.required && !entry.isCovered);
+    const toLinkEntries = entries.filter((entry) => entry.required && entry.statusKey === 'manual');
+    const recommendedEntries = entries.filter((entry) => !entry.required && entry.priority?.key === 'medium');
+    const topEntry = blockingEntries[0] || toLinkEntries[0] || recommendedEntries[0] || null;
+
+    let statusClass = 'success';
+    let title = t(i18n, 'ui.linkedPartiesBoardOverviewReadyTitle', 'Base soggetti pronta');
+    let detail = counts.requiredTotal
+      ? t(i18n, 'ui.linkedPartiesBoardOverviewReadyDetail', 'Essenziali coperti {{covered}}/{{total}} · collegati {{linked}}/{{total}}')
+        .replace('{{covered}}', String(counts.requiredCovered))
+        .replace('{{linked}}', String(counts.requiredLinked))
+        .replace('{{total}}', String(counts.requiredTotal))
+      : t(i18n, 'ui.linkedPartiesBoardOverviewNoEssentials', 'Nessun soggetto essenziale rilevato per questo schema.');
+
+    if (blockingEntries.length) {
+      statusClass = 'danger';
+      title = t(i18n, 'ui.linkedPartiesBoardOverviewBlockingTitle', 'Priorità alta: completa i soggetti essenziali');
+      detail = t(i18n, 'ui.linkedPartiesBoardOverviewBlockingDetail', 'Mancano ancora: {{items}}')
+        .replace('{{items}}', blockingEntries.slice(0, 3).map((entry) => entry.label).join(', '));
+    } else if (toLinkEntries.length) {
+      statusClass = 'warning';
+      title = t(i18n, 'ui.linkedPartiesBoardOverviewToLinkTitle', 'Buona base, ma alcuni soggetti vanno collegati');
+      detail = t(i18n, 'ui.linkedPartiesBoardOverviewToLinkDetail', 'Trasforma in schede collegate: {{items}}')
+        .replace('{{items}}', toLinkEntries.slice(0, 3).map((entry) => entry.label).join(', '));
+    } else if (recommendedEntries.length) {
+      statusClass = 'default';
+      title = t(i18n, 'ui.linkedPartiesBoardOverviewRecommendedTitle', 'Pratica leggibile: puoi rafforzare i soggetti di supporto');
+      detail = t(i18n, 'ui.linkedPartiesBoardOverviewRecommendedDetail', 'Da completare in seconda battuta: {{items}}')
+        .replace('{{items}}', recommendedEntries.slice(0, 3).map((entry) => entry.label).join(', '));
+    }
+
+    return { statusClass, title, detail, topEntry };
   }
 
   function renderCountChip(utils, label, value, className = 'default') {
@@ -177,13 +280,46 @@ window.KedrixOneLinkedPartiesBoard = (() => {
     return `<div class="linked-parties-board-card-actions">${actions.join('')}</div>`;
   }
 
+  function renderCardMeta(entry, i18n, utils) {
+    const chips = [
+      `<span class="linked-entity-summary-chip ${escape(utils, entry.priority.className)}">${escape(utils, entry.priority.label)}</span>`,
+      `<span class="linked-entity-summary-chip default">${escape(utils, entry.readinessLabel)}</span>`
+    ];
+    return `<div class="linked-parties-board-card-meta">${chips.join('')}</div>`;
+  }
+
+  function renderOverviewPanel(overview, counts, i18n, utils) {
+    const chips = [
+      renderCountChip(utils, t(i18n, 'ui.linkedPartiesBoardCountHighPriority', 'priorità alta'), counts.highPriority, counts.highPriority ? 'danger' : 'success'),
+      renderCountChip(utils, t(i18n, 'ui.linkedPartiesBoardCountMediumPriority', 'priorità media'), counts.mediumPriority, counts.mediumPriority ? 'warning' : 'default'),
+      renderCountChip(utils, t(i18n, 'ui.linkedPartiesBoardCountEssentialCovered', 'essenziali coperti'), `${counts.requiredCovered}/${counts.requiredTotal || 0}`, counts.requiredCovered === counts.requiredTotal ? 'success' : 'warning')
+    ].join('');
+
+    const actionHtml = overview.topEntry
+      ? `<button type="button" class="btn secondary linked-parties-board-priority-btn" data-focus-practice-field="${escape(utils, overview.topEntry.fieldName)}" data-focus-practice-tab="practice">${escape(utils, t(i18n, 'ui.linkedPartiesBoardPriorityAction', 'Vai alla priorità principale'))}</button>`
+      : '';
+
+    return `
+      <div class="linked-parties-board-overview ${escape(utils, overview.statusClass)}">
+        <div class="linked-parties-board-overview-main">
+          <div class="linked-parties-board-overview-title">${escape(utils, overview.title)}</div>
+          <div class="linked-parties-board-overview-detail">${escape(utils, overview.detail)}</div>
+        </div>
+        <div class="linked-parties-board-overview-side">
+          <div class="linked-parties-board-overview-chips">${chips}</div>
+          ${actionHtml}
+        </div>
+      </div>`;
+  }
+
   function render(options = {}) {
     const { state, draft = {}, type, i18n, utils } = options;
     if (!draft || !String(draft.practiceType || '').trim()) return '';
-    const entries = buildEntries({ state, draft, type: type || draft.practiceType, i18n }).filter((entry) => entry.statusKey !== 'missing' || entry.manualValue || entry.linkedRecord || entry.label);
+    const entries = buildEntries({ state, draft, type: type || draft.practiceType, i18n }).filter((entry) => entry.coreParty || entry.statusKey !== 'missing' || entry.manualValue || entry.linkedRecord || entry.label);
     if (!entries.length) return '';
 
     const counts = buildCounts(entries);
+    const overview = buildOperationalOverview(entries, counts, i18n);
     const headerCounts = [
       renderCountChip(utils, t(i18n, 'ui.linkedPartiesBoardCountLinked', 'collegati'), counts.linked, 'success'),
       renderCountChip(utils, t(i18n, 'ui.linkedPartiesBoardCountManual', 'manuali'), counts.manual, 'warning'),
@@ -200,15 +336,17 @@ window.KedrixOneLinkedPartiesBoard = (() => {
           </div>
           <div class="linked-parties-board-counts">${headerCounts}</div>
         </div>
+        ${renderOverviewPanel(overview, counts, i18n, utils)}
         <div class="linked-parties-board-grid">
           ${entries.map((entry) => `
-            <article class="linked-parties-board-card" data-linked-parties-card="${escape(utils, entry.fieldName)}" data-status="${escape(utils, entry.statusKey)}">
+            <article class="linked-parties-board-card" data-linked-parties-card="${escape(utils, entry.fieldName)}" data-status="${escape(utils, entry.statusKey)}" data-priority="${escape(utils, entry.priority.key)}">
               <div class="linked-parties-board-card-head">
                 <div class="linked-parties-board-card-label">${escape(utils, entry.label)}</div>
                 <span class="linked-entity-summary-chip ${escape(utils, entry.statusClass)}">${escape(utils, entry.statusLabel)}</span>
               </div>
+              ${renderCardMeta(entry, i18n, utils)}
               <div class="linked-parties-board-card-value">${escape(utils, entry.value)}</div>
-              <div class="linked-parties-board-card-helper">${escape(utils, entry.helper || t(i18n, 'ui.linkedPartiesBoardMissingHint', 'Nessuna scheda collegata ancora disponibile.'))}</div>
+              <div class="linked-parties-board-card-helper">${escape(utils, entry.helper || entry.priority.helper || t(i18n, 'ui.linkedPartiesBoardMissingHint', 'Nessuna scheda collegata ancora disponibile.'))}</div>
               ${renderCardActions(entry, i18n, utils)}
             </article>`).join('')}
         </div>
