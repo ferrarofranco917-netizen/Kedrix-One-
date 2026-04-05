@@ -330,7 +330,18 @@ window.KedrixOneTemplates = (() => {
               <div class="field" data-practice-dependent data-field-wrap="clientName">
                 <div class="field-label-row">
                   <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} <span class="required-mark">*</span></label>
-                  ${(() => { const MasterDataQuickAdd = getMasterDataQuickAdd(); return MasterDataQuickAdd && typeof MasterDataQuickAdd.buildQuickAddButton === 'function' ? MasterDataQuickAdd.buildQuickAddButton('clientName', T) : ''; })()}
+                  ${(() => {
+                    const MasterDataQuickAdd = getMasterDataQuickAdd();
+                    if (!MasterDataQuickAdd) return '';
+                    const openLinkedButton = typeof MasterDataQuickAdd.buildOpenLinkedButton === 'function'
+                      ? MasterDataQuickAdd.buildOpenLinkedButton({ state, draft, fieldName: 'clientName', i18n: T })
+                      : '';
+                    const quickAddButton = typeof MasterDataQuickAdd.buildQuickAddButton === 'function'
+                      ? MasterDataQuickAdd.buildQuickAddButton('clientName', T)
+                      : '';
+                    const fieldActionsHtml = [openLinkedButton, quickAddButton].filter(Boolean).join('');
+                    return fieldActionsHtml ? `<div class="field-label-actions">${fieldActionsHtml}</div>` : '';
+                  })()}
                 </div>
                 <input id="clientName" name="clientName" list="clientSuggestions" value="${U.escapeHtml(draft.clientName || '')}" autocomplete="off" ${draft.practiceType ? '' : 'disabled'} />
                 <datalist id="clientSuggestions">
