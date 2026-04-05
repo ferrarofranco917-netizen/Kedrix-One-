@@ -1667,7 +1667,15 @@ Object.assign(dictionary.it.ui, {
   linkedEntitySummaryCopyAction: 'Copia dati',
   linkedEntitySummaryCopySuccess: 'Dati anagrafici copiati negli appunti.',
   linkedEntitySummaryCopyUnavailable: 'Nessun dato collegato da copiare per questo campo.',
-  linkedEntitySummaryCopyError: 'Impossibile copiare i dati anagrafici.'
+  linkedEntitySummaryCopyError: 'Impossibile copiare i dati anagrafici.',
+  linkedEntitySummaryQualityComplete: 'Qualità alta',
+  linkedEntitySummaryQualityPartial: 'Qualità media',
+  linkedEntitySummaryQualityBasic: 'Qualità base',
+  linkedEntitySummaryQualityCoverage: '{{count}}/4 aree complete',
+  linkedEntitySummaryMissingHint: 'Mancano: {{items}}',
+  linkedEntitySummaryMissingFiscal: 'dati fiscali',
+  linkedEntitySummaryMissingLocation: 'località',
+  linkedEntitySummaryMissingContact: 'contatto'
 });
 
 Object.assign(dictionary.en.ui, {
@@ -1716,7 +1724,15 @@ Object.assign(dictionary.en.ui, {
   linkedEntitySummaryCopyAction: 'Copy data',
   linkedEntitySummaryCopySuccess: 'Master data copied to clipboard.',
   linkedEntitySummaryCopyUnavailable: 'No linked data available to copy for this field.',
-  linkedEntitySummaryCopyError: 'Unable to copy linked data.'
+  linkedEntitySummaryCopyError: 'Unable to copy linked data.',
+  linkedEntitySummaryQualityComplete: 'High quality',
+  linkedEntitySummaryQualityPartial: 'Medium quality',
+  linkedEntitySummaryQualityBasic: 'Base quality',
+  linkedEntitySummaryQualityCoverage: '{{count}}/4 areas complete',
+  linkedEntitySummaryMissingHint: 'Missing: {{items}}',
+  linkedEntitySummaryMissingFiscal: 'fiscal data',
+  linkedEntitySummaryMissingLocation: 'location',
+  linkedEntitySummaryMissingContact: 'contact'
 });
 
   return {

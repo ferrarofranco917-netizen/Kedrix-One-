@@ -2105,6 +2105,52 @@ body.dialog-open {
   flex-wrap: wrap;
 }
 
+.linked-entity-summary-head-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.linked-entity-summary-microhead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.linked-entity-summary-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.24);
+  color: var(--text2);
+}
+
+.linked-entity-summary-chip.success {
+  border-color: rgba(95, 143, 118, 0.28);
+  background: rgba(95, 143, 118, 0.14);
+  color: #d7f2e1;
+}
+
+.linked-entity-summary-chip.warning {
+  border-color: rgba(245, 158, 11, 0.26);
+  background: rgba(245, 158, 11, 0.12);
+  color: #ffe3ad;
+}
+
+.linked-entity-summary-chip.default {
+  color: var(--text);
+}
+
+.linked-entity-summary-quality-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
 .linked-entity-summary-title {
   font-size: 12px;
   font-weight: 700;

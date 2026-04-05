@@ -3,6 +3,12 @@ window.KedrixOneLinkedEntitySummary = (() => {
 
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
+  const QUALITY_CLASS_BY_KEY = {
+    complete: 'success',
+    partial: 'warning',
+    basic: 'default'
+  };
+
   function text(source, fallback = '') {
     if (source === null || source === undefined) return String(fallback || '').trim();
     if (typeof source === 'string' || typeof source === 'number' || typeof source === 'boolean') return String(source).trim();
@@ -49,6 +55,43 @@ window.KedrixOneLinkedEntitySummary = (() => {
   function resolveFieldName(fieldName = '') {
     const clean = text(fieldName, '');
     return clean === 'client' ? 'clientName' : clean;
+  }
+
+  function getEntityDefinition(i18n, fieldName = '') {
+    if (!MasterDataEntities || typeof MasterDataEntities.resolveEntityKeyForField !== 'function' || typeof MasterDataEntities.getEntityDefinitions !== 'function') return null;
+    const entityKey = MasterDataEntities.resolveEntityKeyForField(resolveFieldName(fieldName));
+    if (!entityKey) return null;
+    const definitions = MasterDataEntities.getEntityDefinitions(i18n) || {};
+    return definitions[entityKey] || null;
+  }
+
+  function buildDataQuality(record, i18n) {
+    if (!record || typeof record !== 'object') return null;
+
+    const qualityAreas = {
+      fiscal: Boolean(text([record.vatNumber, record.taxCode, record.code], '')),
+      location: Boolean(text([record.address, record.zipCode, record.city, record.province, record.country], '')),
+      contact: Boolean(text([record.email, record.phone, record.pec], '')),
+      admin: Boolean(text([record.sdiCode, record.sdi, record.shortName, record.description, record.notes], ''))
+    };
+
+    const score = Object.values(qualityAreas).filter(Boolean).length;
+    let key = 'basic';
+    if (score >= 3) key = 'complete';
+    else if (score >= 2) key = 'partial';
+
+    const missing = [];
+    if (!qualityAreas.fiscal) missing.push(t(i18n, 'ui.linkedEntitySummaryMissingFiscal', 'dati fiscali'));
+    if (!qualityAreas.location) missing.push(t(i18n, 'ui.linkedEntitySummaryMissingLocation', 'località'));
+    if (!qualityAreas.contact) missing.push(t(i18n, 'ui.linkedEntitySummaryMissingContact', 'contatto'));
+
+    return {
+      key,
+      className: QUALITY_CLASS_BY_KEY[key] || 'default',
+      label: t(i18n, `ui.linkedEntitySummaryQuality${key.charAt(0).toUpperCase()}${key.slice(1)}`, key),
+      coverageLabel: t(i18n, 'ui.linkedEntitySummaryQualityCoverage', '{{count}}/4 aree complete').replace('{{count}}', String(score)),
+      missingLabel: missing.length ? t(i18n, 'ui.linkedEntitySummaryMissingHint', 'Mancano: {{items}}').replace('{{items}}', missing.join(', ')) : ''
+    };
   }
 
   function getLinkedRecord(options = {}) {
@@ -149,6 +192,13 @@ window.KedrixOneLinkedEntitySummary = (() => {
     if (!summary || (!summary.facts.length && !summary.detailRows.length)) return '';
 
     const resolvedFieldName = resolveFieldName(options.fieldName || '');
+    const entityDefinition = getEntityDefinition(options.i18n, resolvedFieldName);
+    const dataQuality = buildDataQuality(record, options.i18n);
+    const subjectLabel = entityDefinition ? text(entityDefinition.singleLabel || entityDefinition.familyLabel, '') : '';
+    const microHeader = [
+      subjectLabel ? `<span class="linked-entity-summary-chip default">${escape(options.utils, subjectLabel)}</span>` : '',
+      dataQuality ? `<span class="linked-entity-summary-chip ${escape(options.utils, dataQuality.className)}" title="${escape(options.utils, dataQuality.coverageLabel)}">${escape(options.utils, dataQuality.label)}</span>` : ''
+    ].filter(Boolean).join('');
     const htmlFacts = summary.facts.length
       ? `<div class="linked-entity-summary-facts">${summary.facts.map((fact) => `
           <span class="linked-entity-summary-fact"><strong>${escape(options.utils, fact.label)}:</strong> ${escape(options.utils, fact.value)}</span>`).join('')}
@@ -158,6 +208,10 @@ window.KedrixOneLinkedEntitySummary = (() => {
     const htmlInactive = summary.isInactive
       ? `<span class="linked-entity-summary-status">${escape(options.utils, t(options.i18n, 'ui.linkedEntitySummaryInactive', 'Anagrafica non attiva'))}</span>`
       : '';
+
+    const htmlQualityMeta = dataQuality && dataQuality.missingLabel
+      ? `<div class="linked-entity-summary-quality-meta">${escape(options.utils, dataQuality.coverageLabel)} · ${escape(options.utils, dataQuality.missingLabel)}</div>`
+      : (dataQuality && dataQuality.coverageLabel ? `<div class="linked-entity-summary-quality-meta">${escape(options.utils, dataQuality.coverageLabel)}</div>` : '');
 
     const actionDetailLabel = t(options.i18n, 'ui.linkedEntitySummaryDetailAction', 'Dettaglio');
     const actionOpenLabel = t(options.i18n, 'ui.linkedEntitySummaryOpenAction', 'Apri scheda');
@@ -172,9 +226,13 @@ window.KedrixOneLinkedEntitySummary = (() => {
     return `
       <div class="linked-entity-summary-card" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}">
         <div class="linked-entity-summary-head">
-          <div class="linked-entity-summary-title">${escape(options.utils, summary.title)}</div>
+          <div class="linked-entity-summary-head-main">
+            ${microHeader ? `<div class="linked-entity-summary-microhead">${microHeader}</div>` : ''}
+            <div class="linked-entity-summary-title">${escape(options.utils, summary.title)}</div>
+          </div>
           ${htmlInactive}
         </div>
+        ${htmlQualityMeta}
         ${htmlFacts}
         <div class="linked-entity-summary-actions">
           <button type="button" class="linked-entity-summary-action" data-linked-summary-action="toggle" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}" data-expand-label="${escape(options.utils, actionDetailLabel)}" data-collapse-label="${escape(options.utils, collapseLabel)}">${escape(options.utils, actionDetailLabel)}</button>
@@ -190,6 +248,7 @@ window.KedrixOneLinkedEntitySummary = (() => {
     buildSummaryData,
     buildCompactText,
     buildCopyText,
-    renderInlineSummary
+    renderInlineSummary,
+    buildDataQuality
   };
 })();

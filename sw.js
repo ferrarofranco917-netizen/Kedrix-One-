@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepx-linked-summary-actions-v1';
+const CACHE = 'kedrix-one-stepy-linked-quality-header-v1';
 const FILES = [
   './',
   './index.html',
