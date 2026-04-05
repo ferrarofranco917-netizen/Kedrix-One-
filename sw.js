@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepy-linked-quality-header-v1';
+const CACHE = 'kedrix-one-stepz-linked-parties-board-v1';
 const FILES = [
   './',
   './index.html',
@@ -23,6 +23,7 @@ const FILES = [
   './js/practices/verification.js',
   './js/practices/draft-validator.js',
   './js/practices/form-layout.js',
+  './js/practices/linked-parties-board.js',
   './js/practices/form-renderer.js',
   './js/practices/open-edit.js',
   './js/practices/identity.js',

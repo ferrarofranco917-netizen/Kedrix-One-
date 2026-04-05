@@ -1735,6 +1735,36 @@ Object.assign(dictionary.en.ui, {
   linkedEntitySummaryMissingContact: 'contact'
 });
 
+
+Object.assign(dictionary.it.ui, {
+  linkedPartiesBoardKicker: 'Soggetti in pratica',
+  linkedPartiesBoardTitle: 'Quadro soggetti collegati',
+  linkedPartiesBoardSubtitle: 'Confronto rapido tra anagrafiche collegate, valori manuali e punti ancora da completare.',
+  linkedPartiesBoardCountLinked: 'collegati',
+  linkedPartiesBoardCountManual: 'manuali',
+  linkedPartiesBoardCountMissing: 'da completare',
+  linkedPartiesBoardStatusLinked: 'Collegato',
+  linkedPartiesBoardStatusManual: 'Manuale',
+  linkedPartiesBoardStatusMissing: 'Da completare',
+  linkedPartiesBoardManualHint: 'Valore presente ma non ancora collegato a una scheda anagrafica.',
+  linkedPartiesBoardMissingHint: 'Nessuna scheda collegata ancora disponibile.'
+});
+
+Object.assign(dictionary.en.ui, {
+  linkedPartiesBoardKicker: 'Parties in practice',
+  linkedPartiesBoardTitle: 'Linked parties board',
+  linkedPartiesBoardSubtitle: 'Quick comparison between linked master data, manual values and remaining missing points.',
+  linkedPartiesBoardCountLinked: 'linked',
+  linkedPartiesBoardCountManual: 'manual',
+  linkedPartiesBoardCountMissing: 'to complete',
+  linkedPartiesBoardStatusLinked: 'Linked',
+  linkedPartiesBoardStatusManual: 'Manual',
+  linkedPartiesBoardStatusMissing: 'To complete',
+  linkedPartiesBoardManualHint: 'Value present but not yet linked to a master data record.',
+  linkedPartiesBoardMissingHint: 'No linked record available yet.'
+});
+
+
   return {
     dictionary,
     setLanguage,

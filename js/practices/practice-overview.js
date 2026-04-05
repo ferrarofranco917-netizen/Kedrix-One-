@@ -2,6 +2,7 @@ window.KedrixOnePracticeOverview = (() => {
   'use strict';
 
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
+  const LinkedPartiesBoard = window.KedrixOneLinkedPartiesBoard;
 
   function escape(utils, value) {
     return utils && typeof utils.escapeHtml === 'function'
@@ -138,6 +139,9 @@ window.KedrixOnePracticeOverview = (() => {
     const clientName = String(draft.clientName || '').trim() || t(i18n, 'ui.clientRequired', 'Cliente');
     const cards = buildSummaryCards(options.state || null, draft, options.type, options.companyConfig, i18n);
     const badges = buildBadges(draft, i18n);
+    const linkedPartiesBoardHtml = LinkedPartiesBoard && typeof LinkedPartiesBoard.render === 'function'
+      ? LinkedPartiesBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
+      : '';
 
     return `
       <section class="practice-overview-shell" data-practice-overview>
@@ -151,6 +155,7 @@ window.KedrixOnePracticeOverview = (() => {
             ${badges.map((badge) => `<span class="badge ${badge.kind === 'info' ? 'info' : ''}">${escape(utils, badge.value)}</span>`).join('')}
           </div>
         </div>
+        ${linkedPartiesBoardHtml}
         <div class="practice-overview-grid">
           ${cards.map((card) => `
             <article class="practice-overview-card" data-overview-key="${escape(utils, card.key)}">
