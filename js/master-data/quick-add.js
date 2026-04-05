@@ -78,11 +78,18 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     moduleState.activeEntity = entityKey;
     moduleState.selectedRecordId = '';
     moduleState.searchQuery = '';
+    moduleState.formDrafts[entityKey] = MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
+      ? MasterDataEntities.createFormDraft(entityKey)
+      : { id: '', value: '', description: '', city: '' };
     moduleState.quickAddContext = {
       entityKey,
       fieldName: String(context.fieldName || '').trim(),
       returnRoute: String(context.returnRoute || 'practices').trim() || 'practices',
-      returnTab: String(context.returnTab || 'practice').trim() || 'practice'
+      returnTab: String(context.returnTab || 'practice').trim() || 'practice',
+      returnSessionId: String(context.returnSessionId || '').trim(),
+      returnFocusField: String(context.returnFocusField || context.fieldName || '').trim(),
+      returnFocusTab: String(context.returnFocusTab || context.returnTab || 'practice').trim() || 'practice',
+      practiceReference: String(context.practiceReference || '').trim()
     };
     return moduleState.quickAddContext;
   }
@@ -258,7 +265,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
             <button class="btn secondary" type="button" id="masterDataNewButton">${escapeHtml(t.t('ui.masterDataNewEntry', 'Nuova scheda'))}</button>
           </div>
 
-          ${quickAddContext ? `<div class="master-data-return-banner"><span class="badge info">${escapeHtml(t.t('ui.quickAdd', 'Quick add'))}</span><span>${escapeHtml(activeDef.singleLabel)}</span></div>` : ''}
+          ${quickAddContext ? `<div class="master-data-return-banner"><span class="badge info">${escapeHtml(t.t('ui.quickAdd', 'Quick add'))}</span><span>${escapeHtml(activeDef.singleLabel)}</span>${quickAddContext.practiceReference ? `<strong>${escapeHtml(quickAddContext.practiceReference)}</strong>` : ''}</div>` : ''}
 
           <div class="form-grid two master-data-config-grid">
             <div class="field full">
@@ -348,7 +355,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     returnButton?.addEventListener('click', () => {
       const context = moduleState.quickAddContext;
       if (typeof restorePracticeContext === 'function') {
-        restorePracticeContext(context?.returnTab || 'practice');
+        restorePracticeContext(context || { returnTab: 'practice' });
       }
       clearQuickAdd(state);
       save();
@@ -416,7 +423,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           state.draftPractice.generatedReference = buildCurrentPracticeReference();
         }
         if (typeof restorePracticeContext === 'function') {
-          restorePracticeContext(context.returnTab || 'practice');
+          restorePracticeContext(context);
         }
         clearQuickAdd(state);
         moduleState.selectedRecordId = result.relatedId || '';

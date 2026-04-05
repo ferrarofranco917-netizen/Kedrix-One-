@@ -1382,6 +1382,21 @@
     if (Array.isArray(state._practiceValidationErrors) && state._practiceValidationErrors.length) {
       applyValidationState(state._practiceValidationErrors);
     }
+
+    const pendingFocus = state.pendingPracticeFieldFocus;
+    const activeSessionId = String(state.practiceWorkspace?.activeSessionId || '').trim();
+    if (pendingFocus && (!pendingFocus.sessionId || pendingFocus.sessionId === activeSessionId)) {
+      state.pendingPracticeFieldFocus = null;
+      const targetTab = String(pendingFocus.tab || 'practice').trim() || 'practice';
+      if (targetTab && targetTab !== 'identity' && targetTab !== state.practiceTab) {
+        state.practiceTab = targetTab;
+        setActivePracticeSessionTab(state.practiceTab);
+        save();
+        render();
+        return;
+      }
+      requestAnimationFrame(() => focusField(String(pendingFocus.fieldName || '').trim(), targetTab));
+    }
   }
 
 
@@ -1586,9 +1601,26 @@ function renderDocumentPreviewPanel() {
       navigate,
       toast,
       buildCurrentPracticeReference,
-      restorePracticeContext: (tab = 'practice') => {
-        state.practiceTab = String(tab || 'practice').trim() || 'practice';
+      restorePracticeContext: (context = {}) => {
+        const resolved = typeof context === 'object' && context !== null
+          ? context
+          : { returnTab: String(context || 'practice') };
+        const returnSessionId = String(resolved.returnSessionId || '').trim();
+        if (returnSessionId) {
+          switchPracticeDraftSession(returnSessionId);
+        }
+        state.practiceTab = String(resolved.returnTab || 'practice').trim() || 'practice';
         setActivePracticeSessionTab(state.practiceTab);
+        const returnFocusField = String(resolved.returnFocusField || '').trim();
+        if (returnFocusField) {
+          state.pendingPracticeFieldFocus = {
+            fieldName: returnFocusField,
+            tab: String(resolved.returnFocusTab || state.practiceTab || 'practice').trim() || 'practice',
+            sessionId: returnSessionId || String(state.practiceWorkspace?.activeSessionId || '').trim()
+          };
+        } else {
+          state.pendingPracticeFieldFocus = null;
+        }
       },
       i18n: I18N
     });
@@ -1792,11 +1824,20 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     const quickAdd = event.target.closest('[data-quick-add-field]');
     const MasterDataQuickAdd = getMasterDataQuickAdd();
     if (quickAdd && MasterDataQuickAdd && typeof MasterDataQuickAdd.prepareQuickAdd === 'function') {
-      MasterDataQuickAdd.prepareQuickAdd(state, {
-        fieldName: quickAdd.dataset.quickAddField,
+      const fieldName = String(quickAdd.dataset.quickAddField || '').trim();
+      const quickAddContext = MasterDataQuickAdd.prepareQuickAdd(state, {
+        fieldName,
         returnRoute: currentRoute(),
-        returnTab: state.practiceTab || 'practice'
+        returnTab: state.practiceTab || 'practice',
+        returnSessionId: String(state.practiceWorkspace?.activeSessionId || '').trim(),
+        returnFocusField: fieldName,
+        returnFocusTab: fieldName === 'clientName' ? 'identity' : (state.practiceTab || 'practice'),
+        practiceReference: String(state.draftPractice?.generatedReference || state.draftPractice?.editingPracticeId || '').trim()
       });
+      if (!quickAddContext) {
+        toast(I18N.t('ui.masterDataQuickAddUnavailable', 'Quick add non disponibile per questo campo.'), 'warning');
+        return;
+      }
       save();
       navigate('master-data');
       return;
