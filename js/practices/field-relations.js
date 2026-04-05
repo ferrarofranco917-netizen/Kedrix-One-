@@ -3,6 +3,7 @@ window.KedrixOnePracticeFieldRelations = (() => {
 
   const PracticeSchemas = window.KedrixOnePracticeSchemas;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const LinkedEntitySummary = window.KedrixOneLinkedEntitySummary || null;
 
   const relationalSuggestionKeys = new Set([
     'importers',
@@ -124,12 +125,16 @@ window.KedrixOnePracticeFieldRelations = (() => {
   }
 
   function renderFieldRelationMeta(options = {}) {
-    const { utils } = options;
+    const { utils, field = null } = options;
     const meta = getFieldRelationMeta(options);
     if (!meta) return '';
     const escape = utils && typeof utils.escapeHtml === 'function' ? utils.escapeHtml : (value) => String(value || '');
     const pillClass = meta.kind === 'linked' ? 'success' : 'default';
-    return `<div class="field-relation-row"><span class="field-relation-pill ${pillClass}">${escape(meta.badgeLabel)}</span><span class="field-relation-text">${escape(meta.detailLabel)}</span></div>`;
+    const fieldName = field && field.type === 'derived' ? 'clientName' : field && field.name ? field.name : '';
+    const summaryHtml = meta.kind === 'linked' && LinkedEntitySummary && typeof LinkedEntitySummary.renderInlineSummary === 'function'
+      ? LinkedEntitySummary.renderInlineSummary({ ...options, fieldName })
+      : '';
+    return `<div class="field-relation-meta"><div class="field-relation-row"><span class="field-relation-pill ${pillClass}">${escape(meta.badgeLabel)}</span><span class="field-relation-text">${escape(meta.detailLabel)}</span></div>${summaryHtml}</div>`;
   }
 
   function buildCoverageSummary(options = {}) {
@@ -165,7 +170,7 @@ window.KedrixOnePracticeFieldRelations = (() => {
       if (!field || !isRelationalField(field)) return;
 
       const html = renderFieldRelationMeta({ state, type, field, draft, companyConfig, i18n, utils });
-      const existing = wrap.querySelector('.field-relation-row');
+      const existing = wrap.querySelector('.field-relation-meta');
       if (!html) {
         if (existing) existing.remove();
         return;

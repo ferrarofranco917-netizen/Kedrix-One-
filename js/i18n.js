@@ -1650,9 +1650,15 @@ Object.assign(dictionary.it.ui, {
   masterDataPec: 'PEC',
   masterDataSdi: 'Codice SDI',
   masterDataActiveEntity: 'Entità attiva',
-  masterDataListThirdColumn: 'P.IVA / Codice',
-  email: 'Email',
-  phone: 'Telefono'
+  phone: 'Telefono',
+  linkedEntitySummaryVat: 'P.IVA',
+  linkedEntitySummaryCode: 'Codice',
+  linkedEntitySummaryLocation: 'Località',
+  linkedEntitySummaryContact: 'Contatto',
+  linkedEntitySummaryAddress: 'Indirizzo',
+  linkedEntitySummaryDetail: 'Dettaglio',
+  linkedEntitySummaryTaxCode: 'Codice fiscale',
+  linkedEntitySummaryInactive: 'Anagrafica non attiva'
 });
 
 Object.assign(dictionary.en.ui, {
@@ -1684,9 +1690,15 @@ Object.assign(dictionary.en.ui, {
   masterDataPec: 'PEC',
   masterDataSdi: 'SDI code',
   masterDataActiveEntity: 'Active entity',
-  masterDataListThirdColumn: 'VAT / Code',
-  email: 'Email',
-  phone: 'Phone'
+  phone: 'Phone',
+  linkedEntitySummaryVat: 'VAT',
+  linkedEntitySummaryCode: 'Code',
+  linkedEntitySummaryLocation: 'Location',
+  linkedEntitySummaryContact: 'Contact',
+  linkedEntitySummaryAddress: 'Address',
+  linkedEntitySummaryDetail: 'Detail',
+  linkedEntitySummaryTaxCode: 'Tax code',
+  linkedEntitySummaryInactive: 'Entity not active'
 });
 
   return {
