@@ -353,7 +353,20 @@ window.KedrixOneLinkedPartiesBoard = (() => {
       </section>`;
   }
 
+  function summarize(options = {}) {
+    const { state, draft = {}, type, i18n } = options;
+    if (!draft || !String(draft.practiceType || '').trim()) {
+      return { entries: [], counts: buildCounts([]), overview: buildOperationalOverview([], buildCounts([]), i18n) };
+    }
+    const entries = buildEntries({ state, draft, type: type || draft.practiceType, i18n })
+      .filter((entry) => entry.coreParty || entry.statusKey !== 'missing' || entry.manualValue || entry.linkedRecord || entry.label);
+    const counts = buildCounts(entries);
+    const overview = buildOperationalOverview(entries, counts, i18n);
+    return { entries, counts, overview };
+  }
+
   return {
-    render
+    render,
+    summarize
   };
 })();

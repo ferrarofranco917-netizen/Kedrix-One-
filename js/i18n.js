@@ -1980,6 +1980,56 @@ Object.assign(dictionary.en.ui, {
   baseQuotation: 'Base quotation'
 });
 
+Object.assign(dictionary.it.ui, {
+  practiceOperationalHubKicker: 'Hub operativo',
+  practiceOperationalHubTitle: 'Prossime azioni in pratica',
+  practiceOperationalHubSubtitle: 'Unifica soggetti, completezza operativa e documenti in una vista sola, così sai subito dove intervenire senza rincorrere più board separati.',
+  practiceOperationalHubPendingActions: 'azioni prioritarie',
+  practiceOperationalHubStatusCritical: 'Priorità alta',
+  practiceOperationalHubStatusAttention: 'Da consolidare',
+  practiceOperationalHubStatusReady: 'Stabile',
+  practiceOperationalHubSourceParties: 'Soggetti',
+  practiceOperationalHubSourceReadiness: 'Operatività',
+  practiceOperationalHubSourceDocuments: 'Documenti',
+  practiceOperationalHubSourcePartiesAction: 'Vai al soggetto prioritario',
+  practiceOperationalHubSourceReadinessAction: 'Vai al blocco operativo',
+  practiceOperationalHubSourceDocumentsAction: 'Vai al pacchetto documentale',
+  practiceOperationalHubOverviewReadyTitle: 'Pratica leggibile e ben instradata',
+  practiceOperationalHubOverviewReadyDetail: 'I tre livelli di controllo risultano stabili: puoi continuare con i completamenti di supporto o con la lavorazione successiva.',
+  practiceOperationalHubOverviewCriticalTitle: 'Chiudi prima i blocchi che impattano davvero la pratica',
+  practiceOperationalHubOverviewCriticalDetail: 'Parti dal punto più urgente e poi passa ai completamenti utili, così la pratica resta coerente anche su documenti e collegamenti.',
+  practiceOperationalHubOverviewAttentionTitle: 'Base pronta, ma conviene consolidare i prossimi punti',
+  practiceOperationalHubOverviewAttentionDetail: 'La pratica è leggibile: chiudi adesso i passaggi più vicini per evitare correzioni dopo.',
+  practiceOperationalHubOverviewNextSource: 'Prossimo fronte',
+  practiceOperationalHubStepLabel: 'Step {{count}}',
+  practiceOperationalHubEmpty: 'Nessuna urgenza attiva: puoi usare i board sotto per rifinire i dettagli di supporto.'
+});
+
+Object.assign(dictionary.en.ui, {
+  practiceOperationalHubKicker: 'Operational hub',
+  practiceOperationalHubTitle: 'Next actions in practice',
+  practiceOperationalHubSubtitle: 'Unify parties, operational completeness and documents in a single view, so you immediately know where to intervene without chasing separate boards.',
+  practiceOperationalHubPendingActions: 'priority actions',
+  practiceOperationalHubStatusCritical: 'High priority',
+  practiceOperationalHubStatusAttention: 'To consolidate',
+  practiceOperationalHubStatusReady: 'Stable',
+  practiceOperationalHubSourceParties: 'Parties',
+  practiceOperationalHubSourceReadiness: 'Operations',
+  practiceOperationalHubSourceDocuments: 'Documents',
+  practiceOperationalHubSourcePartiesAction: 'Go to priority party',
+  practiceOperationalHubSourceReadinessAction: 'Go to operational block',
+  practiceOperationalHubSourceDocumentsAction: 'Go to document pack',
+  practiceOperationalHubOverviewReadyTitle: 'Practice is readable and well routed',
+  practiceOperationalHubOverviewReadyDetail: 'The three control layers are stable: you can continue with support completions or the next operational activity.',
+  practiceOperationalHubOverviewCriticalTitle: 'Close first the blocks that really impact the practice',
+  practiceOperationalHubOverviewCriticalDetail: 'Start from the most urgent point and then move to useful completions, so the practice stays coherent on documents and links too.',
+  practiceOperationalHubOverviewAttentionTitle: 'Base is ready, but the next points should be consolidated',
+  practiceOperationalHubOverviewAttentionDetail: 'The practice is readable: close the nearest steps now to avoid corrections later.',
+  practiceOperationalHubOverviewNextSource: 'Next front',
+  practiceOperationalHubStepLabel: 'Step {{count}}',
+  practiceOperationalHubEmpty: 'No active urgency: you can use the boards below to refine support details.'
+});
+
   return {
     dictionary,
     setLanguage,

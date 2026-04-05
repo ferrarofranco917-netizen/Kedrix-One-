@@ -506,7 +506,19 @@ window.KedrixOnePracticeDocumentReadinessBoard = (() => {
       </section>`;
   }
 
+  function summarize(options = {}) {
+    const { state = null, draft = {}, type, i18n } = options;
+    const practiceType = String(type || draft?.practiceType || '').trim();
+    if (!practiceType) return { cards: [], overview: { counts: { ready: 0, attention: 0, critical: 0 }, tone: 'default', title: '', detail: '', topCard: null, totalAttachments: 0 } };
+    const attachments = getAttachments(state, draft);
+    const attachmentCounts = countAttachmentsByType(attachments);
+    const cards = buildDocumentProfiles(practiceType).map((profile) => computeCard(profile, attachmentCounts, draft, i18n));
+    const overview = cards.length ? buildOverview(cards, attachments.length, i18n) : { counts: { ready: 0, attention: 0, critical: 0 }, tone: 'default', title: '', detail: '', topCard: null, totalAttachments: attachments.length };
+    return { cards, overview };
+  }
+
   return {
-    render
+    render,
+    summarize
   };
 })();

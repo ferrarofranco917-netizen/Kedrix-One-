@@ -559,7 +559,19 @@ window.KedrixOnePracticeReadinessBoard = (() => {
       </section>`;
   }
 
+  function summarize(options = {}) {
+    const { draft = {}, type, i18n } = options;
+    const practiceType = String(type || draft?.practiceType || '').trim();
+    if (!practiceType) return { sections: [], overview: { counts: { ready: 0, attention: 0, critical: 0 }, tone: 'default', title: '', detail: '', topSection: null } };
+    const schemaFieldNames = getSchemaFieldNames(practiceType);
+    const sections = filterDefinitionsForSchema(buildDefinitions(practiceType), schemaFieldNames)
+      .map((section) => computeSection(section, draft, i18n));
+    const overview = sections.length ? buildOverview(sections, i18n) : { counts: { ready: 0, attention: 0, critical: 0 }, tone: 'default', title: '', detail: '', topSection: null };
+    return { sections, overview };
+  }
+
   return {
-    render
+    render,
+    summarize
   };
 })();
