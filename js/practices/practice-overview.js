@@ -143,6 +143,9 @@ window.KedrixOnePracticeOverview = (() => {
     const readinessBoardHtml = PracticeReadinessBoard && typeof PracticeReadinessBoard.render === 'function'
       ? PracticeReadinessBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
+    const practiceDocumentReadinessHtml = PracticeDocumentReadinessBoard && typeof PracticeDocumentReadinessBoard.render === 'function'
+      ? PracticeDocumentReadinessBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
+      : '';
     const linkedPartiesBoardHtml = LinkedPartiesBoard && typeof LinkedPartiesBoard.render === 'function'
       ? LinkedPartiesBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
@@ -160,6 +163,7 @@ window.KedrixOnePracticeOverview = (() => {
           </div>
         </div>
         ${readinessBoardHtml}
+        ${practiceDocumentReadinessHtml}
         ${linkedPartiesBoardHtml}
         <div class="practice-overview-grid">
           ${cards.map((card) => `

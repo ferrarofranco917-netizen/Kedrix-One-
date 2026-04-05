@@ -1898,6 +1898,19 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     }
 
 
+    const focusPracticeTabOnly = event.target.closest('[data-focus-practice-tab-only]');
+    if (focusPracticeTabOnly) {
+      const targetTab = String(focusPracticeTabOnly.dataset.focusPracticeTabOnly || '').trim();
+      if (!targetTab) return;
+      state.practiceTab = targetTab;
+      setActivePracticeSessionTab(targetTab);
+      delete state.pendingPracticeFieldFocus;
+      save();
+      render();
+      return;
+    }
+
+
     const focusPracticeField = event.target.closest('[data-focus-practice-field]');
     if (focusPracticeField) {
       const fieldName = String(focusPracticeField.dataset.focusPracticeField || '').trim();
