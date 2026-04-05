@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepz-linked-parties-board-v1';
+const CACHE = 'kedrix-one-stepaa-linked-parties-actions-v1';
 const FILES = [
   './',
   './index.html',

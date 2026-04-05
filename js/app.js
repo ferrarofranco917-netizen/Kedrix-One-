@@ -1897,6 +1897,50 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       return;
     }
 
+
+    const focusPracticeField = event.target.closest('[data-focus-practice-field]');
+    if (focusPracticeField) {
+      const fieldName = String(focusPracticeField.dataset.focusPracticeField || '').trim();
+      const targetTab = String(focusPracticeField.dataset.focusPracticeTab || 'practice').trim() || 'practice';
+      if (!fieldName) return;
+      state.practiceTab = targetTab;
+      setActivePracticeSessionTab(targetTab);
+      state.pendingPracticeFieldFocus = {
+        fieldName,
+        tab: targetTab,
+        sessionId: String(state.practiceWorkspace?.activeSessionId || '').trim()
+      };
+      save();
+      render();
+      return;
+    }
+
+    const linkPracticeEntity = event.target.closest('[data-link-practice-entity-field]');
+    const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+    if (linkPracticeEntity && MasterDataEntities && typeof MasterDataEntities.getEntityRecordById === 'function' && typeof MasterDataEntities.applyLinkedRecordToDraft === 'function') {
+      if (typeof state._persistActivePracticeDraft === 'function') {
+        state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
+      }
+      const fieldName = String(linkPracticeEntity.dataset.linkPracticeEntityField || '').trim();
+      const recordId = String(linkPracticeEntity.dataset.linkPracticeEntityId || '').trim();
+      const entityKey = typeof MasterDataEntities.resolveEntityKeyForField === 'function'
+        ? MasterDataEntities.resolveEntityKeyForField(fieldName)
+        : '';
+      const record = recordId && entityKey
+        ? MasterDataEntities.getEntityRecordById(state, entityKey, recordId)
+        : null;
+      if (!fieldName || !entityKey || !record) {
+        toast(I18N.t('ui.linkedPartiesBoardLinkUnavailable', 'Impossibile collegare la scheda anagrafica da questo riquadro.'), 'warning');
+        return;
+      }
+      MasterDataEntities.applyLinkedRecordToDraft({ state, draft: state.draftPractice, fieldName, entityKey, record, value: record.name || record.value || '' });
+      markActivePracticeSessionDirty(true);
+      save();
+      render();
+      toast(I18N.t('ui.linkedPartiesBoardLinkSuccess', 'Scheda anagrafica collegata alla pratica.'), 'success');
+      return;
+    }
+
     const linkedSummaryToggle = event.target.closest('[data-linked-summary-action="toggle"]');
     if (linkedSummaryToggle) {
       const summaryCard = linkedSummaryToggle.closest('.linked-entity-summary-card');

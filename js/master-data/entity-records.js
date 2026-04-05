@@ -989,6 +989,7 @@ window.KedrixOneMasterDataEntities = (() => {
     hydratePracticeLinkedEntities,
     buildEntityDisplayValue,
     normalizeBusinessRecord,
+    findStructuredEntityRecordByValue,
     findStructuredEntityRecordByVat,
     isStructuredEntityKey
   };

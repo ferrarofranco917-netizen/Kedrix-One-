@@ -4,6 +4,7 @@ window.KedrixOneLinkedPartiesBoard = (() => {
   const PracticeSchemas = window.KedrixOnePracticeSchemas || null;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const LinkedEntitySummary = window.KedrixOneLinkedEntitySummary || null;
+  const STRUCTURED_ENTITY_KEYS = new Set(['client', 'importer', 'consignee', 'sender', 'carrier']);
 
   function t(i18n, key, fallback) {
     return i18n && typeof i18n.t === 'function' ? i18n.t(key, fallback) : fallback;
@@ -94,6 +95,10 @@ window.KedrixOneLinkedPartiesBoard = (() => {
         ? LinkedEntitySummary.buildDataQuality(linkedRecord, i18n)
         : null;
       const manualValue = getDynamicValue(draft, field.fieldName);
+      const exactMatchRecord = !linkedRecord && manualValue && MasterDataEntities && typeof MasterDataEntities.findStructuredEntityRecordByValue === 'function'
+        ? MasterDataEntities.findStructuredEntityRecordByValue(state, field.entityKey, manualValue)
+        : null;
+      const supportsQuickAdd = STRUCTURED_ENTITY_KEYS.has(field.entityKey);
 
       let statusKey = 'missing';
       let statusLabel = t(i18n, 'ui.linkedPartiesBoardStatusMissing', 'Da completare');
@@ -114,7 +119,9 @@ window.KedrixOneLinkedPartiesBoard = (() => {
         statusLabel = t(i18n, 'ui.linkedPartiesBoardStatusManual', 'Manuale');
         statusClass = 'warning';
         value = manualValue;
-        helper = t(i18n, 'ui.linkedPartiesBoardManualHint', 'Valore presente ma non ancora collegato a una scheda anagrafica.');
+        helper = exactMatchRecord
+          ? t(i18n, 'ui.linkedPartiesBoardMatchHint', 'Scheda anagrafica già presente: puoi collegarla subito senza ricrearla.')
+          : t(i18n, 'ui.linkedPartiesBoardManualHint', 'Valore presente ma non ancora collegato a una scheda anagrafica.');
       }
 
       return {
@@ -124,12 +131,17 @@ window.KedrixOneLinkedPartiesBoard = (() => {
         summaryData,
         quality,
         manualValue,
+        exactMatchRecord,
+        supportsQuickAdd,
         statusKey,
         statusLabel,
         statusClass,
         value,
         helper,
-        canOpen: Boolean(linkedRecord)
+        canOpen: Boolean(linkedRecord),
+        canLink: Boolean(exactMatchRecord && exactMatchRecord.id),
+        canCreate: supportsQuickAdd,
+        canFocus: true
       };
     });
   }
@@ -145,6 +157,24 @@ window.KedrixOneLinkedPartiesBoard = (() => {
 
   function renderCountChip(utils, label, value, className = 'default') {
     return `<span class="linked-entity-summary-chip ${escape(utils, className)}"><strong>${escape(utils, String(value))}</strong>&nbsp;${escape(utils, label)}</span>`;
+  }
+
+  function renderCardActions(entry, i18n, utils) {
+    const actions = [];
+    if (entry.canOpen) {
+      actions.push(`<button type="button" class="linked-entity-summary-action" data-open-linked-field="${escape(utils, entry.fieldName)}">${escape(utils, t(i18n, 'ui.linkedEntitySummaryOpenAction', 'Apri scheda'))}</button>`);
+    }
+    if (entry.canLink) {
+      actions.push(`<button type="button" class="linked-entity-summary-action primary" data-link-practice-entity-field="${escape(utils, entry.fieldName)}" data-link-practice-entity-id="${escape(utils, entry.exactMatchRecord.id)}">${escape(utils, t(i18n, 'ui.linkedPartiesBoardLinkAction', 'Collega scheda'))}</button>`);
+    }
+    if (!entry.canOpen && !entry.canLink && entry.canCreate) {
+      actions.push(`<button type="button" class="linked-entity-summary-action" data-quick-add-field="${escape(utils, entry.fieldName)}">${escape(utils, t(i18n, 'ui.linkedPartiesBoardCreateAction', 'Crea scheda'))}</button>`);
+    }
+    if (entry.canFocus) {
+      actions.push(`<button type="button" class="linked-entity-summary-action subtle" data-focus-practice-field="${escape(utils, entry.fieldName)}" data-focus-practice-tab="practice">${escape(utils, t(i18n, 'ui.linkedPartiesBoardFocusAction', 'Vai al campo'))}</button>`);
+    }
+    if (!actions.length) return '';
+    return `<div class="linked-parties-board-card-actions">${actions.join('')}</div>`;
   }
 
   function render(options = {}) {
@@ -179,7 +209,7 @@ window.KedrixOneLinkedPartiesBoard = (() => {
               </div>
               <div class="linked-parties-board-card-value">${escape(utils, entry.value)}</div>
               <div class="linked-parties-board-card-helper">${escape(utils, entry.helper || t(i18n, 'ui.linkedPartiesBoardMissingHint', 'Nessuna scheda collegata ancora disponibile.'))}</div>
-              ${entry.canOpen ? `<div class="linked-parties-board-card-actions"><button type="button" class="linked-entity-summary-action" data-open-linked-field="${escape(utils, entry.fieldName)}">${escape(utils, t(i18n, 'ui.linkedEntitySummaryOpenAction', 'Apri scheda'))}</button></div>` : ''}
+              ${renderCardActions(entry, i18n, utils)}
             </article>`).join('')}
         </div>
       </section>`;

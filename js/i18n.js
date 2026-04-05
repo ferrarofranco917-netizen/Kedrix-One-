@@ -1747,7 +1747,13 @@ Object.assign(dictionary.it.ui, {
   linkedPartiesBoardStatusManual: 'Manuale',
   linkedPartiesBoardStatusMissing: 'Da completare',
   linkedPartiesBoardManualHint: 'Valore presente ma non ancora collegato a una scheda anagrafica.',
-  linkedPartiesBoardMissingHint: 'Nessuna scheda collegata ancora disponibile.'
+  linkedPartiesBoardMissingHint: 'Nessuna scheda collegata ancora disponibile.',
+  linkedPartiesBoardMatchHint: 'Scheda anagrafica già presente: puoi collegarla subito senza ricrearla.',
+  linkedPartiesBoardLinkAction: 'Collega scheda',
+  linkedPartiesBoardCreateAction: 'Crea scheda',
+  linkedPartiesBoardFocusAction: 'Vai al campo',
+  linkedPartiesBoardLinkSuccess: 'Scheda anagrafica collegata alla pratica.',
+  linkedPartiesBoardLinkUnavailable: 'Impossibile collegare la scheda anagrafica da questo riquadro.'
 });
 
 Object.assign(dictionary.en.ui, {
@@ -1761,7 +1767,13 @@ Object.assign(dictionary.en.ui, {
   linkedPartiesBoardStatusManual: 'Manual',
   linkedPartiesBoardStatusMissing: 'To complete',
   linkedPartiesBoardManualHint: 'Value present but not yet linked to a master data record.',
-  linkedPartiesBoardMissingHint: 'No linked record available yet.'
+  linkedPartiesBoardMissingHint: 'No linked record available yet.',
+  linkedPartiesBoardMatchHint: 'A master data record already exists: you can link it immediately without recreating it.',
+  linkedPartiesBoardLinkAction: 'Link record',
+  linkedPartiesBoardCreateAction: 'Create record',
+  linkedPartiesBoardFocusAction: 'Go to field',
+  linkedPartiesBoardLinkSuccess: 'Master data record linked to the practice.',
+  linkedPartiesBoardLinkUnavailable: 'Unable to link the master data record from this board.'
 });
 
 
