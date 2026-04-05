@@ -71,7 +71,9 @@ window.KedrixOneLinkedEntitySummary = (() => {
     const location = join([record.city, record.province, record.country], ', ');
     const contact = join([record.email, record.phone]);
     const address = join([record.address, join([record.zipCode, record.city], ' ')], ' · ');
-    const description = text(record.description, '');
+    const description = text(record.description || record.notes || record.detail, '');
+    const pec = text(record.pec, '');
+    const sdi = text(record.sdiCode || record.sdi, '');
 
     const facts = [];
     if (vatNumber) {
@@ -95,13 +97,31 @@ window.KedrixOneLinkedEntitySummary = (() => {
       facts.push({ label: t(i18n, 'ui.linkedEntitySummaryCode', 'Codice'), value: code });
     }
 
-    if (!title && !facts.length && !address) return null;
+    const detailRows = [];
+    const pushDetail = (labelKey, fallback, value) => {
+      const resolved = text(value, '');
+      if (!resolved) return;
+      detailRows.push({ label: t(i18n, labelKey, fallback), value: resolved });
+    };
+
+    pushDetail('ui.linkedEntitySummaryVat', 'P.IVA', vatNumber);
+    pushDetail('ui.linkedEntitySummaryTaxCode', 'Codice fiscale', taxCode);
+    pushDetail('ui.linkedEntitySummaryCode', 'Codice', code);
+    pushDetail('ui.linkedEntitySummaryLocation', 'Località', location);
+    pushDetail('ui.linkedEntitySummaryAddress', 'Indirizzo', address);
+    pushDetail('ui.linkedEntitySummaryContact', 'Contatto', contact);
+    pushDetail('ui.linkedEntitySummaryPec', 'PEC', pec);
+    pushDetail('ui.linkedEntitySummarySdi', 'SDI', sdi);
+    pushDetail('ui.linkedEntitySummaryDetail', 'Dettaglio', description);
+
+    if (!title && !facts.length && !detailRows.length) return null;
 
     return {
       title: title || text(record.displayValue || record.value || record.label || record.name, ''),
       facts: facts.slice(0, 3),
       address,
-      isInactive: record.active === false
+      isInactive: record.active === false,
+      detailRows
     };
   }
 
@@ -112,33 +132,56 @@ window.KedrixOneLinkedEntitySummary = (() => {
     return [summary.title, primaryFact].filter(Boolean).join(' · ');
   }
 
+  function buildCopyText(options = {}) {
+    const record = options.record || getLinkedRecord(options);
+    const summary = buildSummaryData(record, options.i18n);
+    if (!summary) return '';
+    const lines = [summary.title].filter(Boolean);
+    summary.detailRows.forEach((row) => {
+      lines.push(`${row.label}: ${row.value}`);
+    });
+    return lines.join('\n').trim();
+  }
+
   function renderInlineSummary(options = {}) {
     const record = options.record || getLinkedRecord(options);
     const summary = buildSummaryData(record, options.i18n);
-    if (!summary || (!summary.facts.length && !summary.address)) return '';
+    if (!summary || (!summary.facts.length && !summary.detailRows.length)) return '';
 
+    const resolvedFieldName = resolveFieldName(options.fieldName || '');
     const htmlFacts = summary.facts.length
       ? `<div class="linked-entity-summary-facts">${summary.facts.map((fact) => `
           <span class="linked-entity-summary-fact"><strong>${escape(options.utils, fact.label)}:</strong> ${escape(options.utils, fact.value)}</span>`).join('')}
         </div>`
       : '';
 
-    const htmlAddress = summary.address
-      ? `<div class="linked-entity-summary-address"><strong>${escape(options.utils, t(options.i18n, 'ui.linkedEntitySummaryAddress', 'Indirizzo'))}:</strong> ${escape(options.utils, summary.address)}</div>`
-      : '';
-
     const htmlInactive = summary.isInactive
       ? `<span class="linked-entity-summary-status">${escape(options.utils, t(options.i18n, 'ui.linkedEntitySummaryInactive', 'Anagrafica non attiva'))}</span>`
       : '';
 
+    const actionDetailLabel = t(options.i18n, 'ui.linkedEntitySummaryDetailAction', 'Dettaglio');
+    const actionOpenLabel = t(options.i18n, 'ui.linkedEntitySummaryOpenAction', 'Apri scheda');
+    const actionCopyLabel = t(options.i18n, 'ui.linkedEntitySummaryCopyAction', 'Copia dati');
+    const collapseLabel = t(options.i18n, 'ui.linkedEntitySummaryCollapseAction', 'Nascondi');
+
+    const detailsHtml = summary.detailRows.length
+      ? `<div class="linked-entity-summary-details" hidden>${summary.detailRows.map((row) => `
+          <div class="linked-entity-summary-detail-row"><span class="linked-entity-summary-detail-label">${escape(options.utils, row.label)}</span><span class="linked-entity-summary-detail-value">${escape(options.utils, row.value)}</span></div>`).join('')}</div>`
+      : '';
+
     return `
-      <div class="linked-entity-summary-card" data-linked-summary-field="${escape(options.utils, resolveFieldName(options.fieldName || ''))}">
+      <div class="linked-entity-summary-card" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}">
         <div class="linked-entity-summary-head">
           <div class="linked-entity-summary-title">${escape(options.utils, summary.title)}</div>
           ${htmlInactive}
         </div>
         ${htmlFacts}
-        ${htmlAddress}
+        <div class="linked-entity-summary-actions">
+          <button type="button" class="linked-entity-summary-action" data-linked-summary-action="toggle" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}" data-expand-label="${escape(options.utils, actionDetailLabel)}" data-collapse-label="${escape(options.utils, collapseLabel)}">${escape(options.utils, actionDetailLabel)}</button>
+          <button type="button" class="linked-entity-summary-action" data-open-linked-field="${escape(options.utils, resolvedFieldName)}">${escape(options.utils, actionOpenLabel)}</button>
+          <button type="button" class="linked-entity-summary-action" data-linked-summary-action="copy" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}">${escape(options.utils, actionCopyLabel)}</button>
+        </div>
+        ${detailsHtml}
       </div>`;
   }
 
@@ -146,6 +189,7 @@ window.KedrixOneLinkedEntitySummary = (() => {
     getLinkedRecord,
     buildSummaryData,
     buildCompactText,
+    buildCopyText,
     renderInlineSummary
   };
 })();

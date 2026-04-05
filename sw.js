@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepw-i18n-load-hotfix-v1';
+const CACHE = 'kedrix-one-stepx-linked-summary-actions-v1';
 const FILES = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const FILES = [
   './js/wisemind.js',
   './js/i18n.js',
   './js/practice-schemas.js',
+  './js/practices/linked-entity-summary.js',
   './js/practices/sea-schema-cleanup.js',
   './js/practices/reference-normalizer.js',
   './js/practices/verification.js',

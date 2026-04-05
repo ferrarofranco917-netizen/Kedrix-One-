@@ -1658,7 +1658,16 @@ Object.assign(dictionary.it.ui, {
   linkedEntitySummaryAddress: 'Indirizzo',
   linkedEntitySummaryDetail: 'Dettaglio',
   linkedEntitySummaryTaxCode: 'Codice fiscale',
-  linkedEntitySummaryInactive: 'Anagrafica non attiva'
+  linkedEntitySummaryInactive: 'Anagrafica non attiva',
+  linkedEntitySummaryPec: 'PEC',
+  linkedEntitySummarySdi: 'SDI',
+  linkedEntitySummaryDetailAction: 'Dettaglio',
+  linkedEntitySummaryCollapseAction: 'Nascondi',
+  linkedEntitySummaryOpenAction: 'Apri scheda',
+  linkedEntitySummaryCopyAction: 'Copia dati',
+  linkedEntitySummaryCopySuccess: 'Dati anagrafici copiati negli appunti.',
+  linkedEntitySummaryCopyUnavailable: 'Nessun dato collegato da copiare per questo campo.',
+  linkedEntitySummaryCopyError: 'Impossibile copiare i dati anagrafici.'
 });
 
 Object.assign(dictionary.en.ui, {
@@ -1698,7 +1707,16 @@ Object.assign(dictionary.en.ui, {
   linkedEntitySummaryAddress: 'Address',
   linkedEntitySummaryDetail: 'Detail',
   linkedEntitySummaryTaxCode: 'Tax code',
-  linkedEntitySummaryInactive: 'Entity not active'
+  linkedEntitySummaryInactive: 'Entity not active',
+  linkedEntitySummaryPec: 'PEC',
+  linkedEntitySummarySdi: 'SDI',
+  linkedEntitySummaryDetailAction: 'Detail',
+  linkedEntitySummaryCollapseAction: 'Hide',
+  linkedEntitySummaryOpenAction: 'Open record',
+  linkedEntitySummaryCopyAction: 'Copy data',
+  linkedEntitySummaryCopySuccess: 'Master data copied to clipboard.',
+  linkedEntitySummaryCopyUnavailable: 'No linked data available to copy for this field.',
+  linkedEntitySummaryCopyError: 'Unable to copy linked data.'
 });
 
   return {

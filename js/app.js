@@ -1897,6 +1897,64 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       return;
     }
 
+    const linkedSummaryToggle = event.target.closest('[data-linked-summary-action="toggle"]');
+    if (linkedSummaryToggle) {
+      const summaryCard = linkedSummaryToggle.closest('.linked-entity-summary-card');
+      const details = summaryCard ? summaryCard.querySelector('.linked-entity-summary-details') : null;
+      if (!summaryCard || !details) return;
+      const isHidden = details.hasAttribute('hidden');
+      if (isHidden) {
+        details.removeAttribute('hidden');
+        summaryCard.dataset.expanded = 'true';
+      } else {
+        details.setAttribute('hidden', 'hidden');
+        delete summaryCard.dataset.expanded;
+      }
+      const expandLabel = String(linkedSummaryToggle.dataset.expandLabel || I18N.t('ui.linkedEntitySummaryDetailAction', 'Dettaglio')).trim();
+      const collapseLabel = String(linkedSummaryToggle.dataset.collapseLabel || I18N.t('ui.linkedEntitySummaryCollapseAction', 'Nascondi')).trim();
+      linkedSummaryToggle.textContent = isHidden ? collapseLabel : expandLabel;
+      return;
+    }
+
+    const linkedSummaryCopy = event.target.closest('[data-linked-summary-action="copy"]');
+    if (linkedSummaryCopy) {
+      const LinkedEntitySummary = window.KedrixOneLinkedEntitySummary || null;
+      const fieldName = String(linkedSummaryCopy.dataset.linkedSummaryField || '').trim();
+      const payload = LinkedEntitySummary && typeof LinkedEntitySummary.buildCopyText === 'function'
+        ? LinkedEntitySummary.buildCopyText({ state, draft: state.draftPractice, fieldName, i18n: I18N })
+        : '';
+      if (!payload) {
+        toast(I18N.t('ui.linkedEntitySummaryCopyUnavailable', 'Nessun dato collegato da copiare per questo campo.'), 'warning');
+        return;
+      }
+      const copyWithFallback = async () => {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(payload);
+          return true;
+        }
+        const helper = document.createElement('textarea');
+        helper.value = payload;
+        helper.setAttribute('readonly', 'readonly');
+        helper.style.position = 'absolute';
+        helper.style.left = '-9999px';
+        document.body.appendChild(helper);
+        helper.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(helper);
+        return success;
+      };
+      copyWithFallback()
+        .then((copied) => {
+          toast(copied
+            ? I18N.t('ui.linkedEntitySummaryCopySuccess', 'Dati anagrafici copiati negli appunti.')
+            : I18N.t('ui.linkedEntitySummaryCopyUnavailable', 'Nessun dato collegato da copiare per questo campo.'), copied ? 'success' : 'warning');
+        })
+        .catch(() => {
+          toast(I18N.t('ui.linkedEntitySummaryCopyError', 'Impossibile copiare i dati anagrafici.'), 'warning');
+        });
+      return;
+    }
+
     const openLinked = event.target.closest('[data-open-linked-field]');
     if (openLinked && MasterDataQuickAdd && typeof MasterDataQuickAdd.openLinkedRecordFromPractice === 'function') {
       if (typeof state._persistActivePracticeDraft === 'function') {
