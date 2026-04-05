@@ -4,6 +4,7 @@ window.KedrixOnePracticeOverview = (() => {
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
   const LinkedPartiesBoard = window.KedrixOneLinkedPartiesBoard;
   const PracticeReadinessBoard = window.KedrixOnePracticeReadinessBoard;
+  const PracticeDocumentReadinessBoard = window.KedrixOnePracticeDocumentReadinessBoard;
 
   function escape(utils, value) {
     return utils && typeof utils.escapeHtml === 'function'
