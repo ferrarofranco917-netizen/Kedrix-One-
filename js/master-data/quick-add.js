@@ -2,8 +2,11 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   'use strict';
 
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
-  const MasterDataOverview = window.KedrixOneMasterDataOverview || null;
   const VatAutofill = window.KedrixOneVatAutofill || null;
+
+  function getMasterDataOverview() {
+    return window.KedrixOneMasterDataOverview || null;
+  }
 
   function ensureModuleState(state) {
     if (!state || typeof state !== 'object') {
@@ -271,9 +274,10 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const formDraft = getFormDraft(state, activeEntity);
     const isEditing = Boolean(formDraft.id);
     const familyOptions = Object.values(defs);
+    const MasterDataOverview = getMasterDataOverview();
     const overviewHtml = MasterDataOverview && typeof MasterDataOverview.renderSummary === 'function'
       ? MasterDataOverview.renderSummary({ state, activeEntity, i18n: t })
-      : '';
+      : `<section class="panel master-data-active-context"><div class="panel-head compact"><div><h3 class="panel-title">${escapeHtml(t.t('ui.masterDataOverviewFallbackTitle', 'Fondazione anagrafiche'))}</h3><p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataOverviewFallbackDetail', 'Panoramica temporaneamente non disponibile: ricarica la schermata per inizializzare il riepilogo anagrafiche.'))}</p></div></div></section>`;
 
     return `
       <section class="hero">
