@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepap-document-completeness-v1';
+const CACHE = 'kedrix-one-stepaq2-practices-architecture-v1';
 const FILES = [
   './',
   './index.html',
