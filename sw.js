@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepal-hotfix-import-target-select-v1';
+const CACHE = 'kedrix-one-stepam-import-practices-v1';
 const FILES = [
   './',
   './index.html',
@@ -29,6 +29,10 @@ const FILES = [
   './js/import/import-master-data-commit.js',
   './js/import/import-logistics-commit.js',
   './js/import/import-manager.js',
+  './js/import/import-practice-mapper.js',
+  './js/import/import-practice-validator.js',
+  './js/import/import-practice-commit.js',
+  './js/import/import-practice-manager.js',
   './js/master-data/quick-add.js',
   './js/practice-schemas.js',
   './js/practices/practice-readiness-board.js',
