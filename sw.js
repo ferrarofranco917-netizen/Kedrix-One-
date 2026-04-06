@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepan-import-document-references-v1';
+const CACHE = 'kedrix-one-stepap-document-completeness-v1';
 const FILES = [
   './',
   './index.html',
@@ -61,6 +61,8 @@ const FILES = [
   './js/practices/weight-integrity.js',
   './js/practices/attachments.js',
   './js/practices/duplicate.js',
+  './js/documents/document-relations.js',
+  './js/documents/document-completeness.js',
   './js/documents/document-engine.js',
   './js/search/practice-search-ui.js',
   './js/module-registry.js',

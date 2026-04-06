@@ -3455,3 +3455,60 @@ body.dialog-open {
 .document-bundle-relation-kpis {
   margin-top: 0;
 }
+
+
+.document-completeness-inline-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.document-bundle-completeness {
+  margin: 18px 0;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.document-completeness-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.document-completeness-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.document-completeness-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.document-completeness-item[data-tone="critical"] {
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+.document-completeness-item[data-tone="attention"] {
+  border-color: rgba(251, 191, 36, 0.24);
+}
+
+.document-completeness-item[data-tone="ready"] {
+  border-color: rgba(52, 211, 153, 0.24);
+}
+
+.document-completeness-item-title {
+  font-size: 14px;
+}
+
+.document-completeness-item-side {
+  flex-shrink: 0;
+}

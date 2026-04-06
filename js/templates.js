@@ -20,6 +20,7 @@ window.KedrixOneTemplates = (() => {
   const T = window.KedrixOneI18N;
   const PracticeVerification = window.KedrixOnePracticeVerification;
   const DocumentEngine = window.KedrixOneDocumentEngine;
+  const DocumentCompleteness = window.KedrixOneDocumentCompleteness || null;
   const DocumentCategories = window.KedrixOneDocumentCategories;
 
   function getMasterDataQuickAdd() {
@@ -620,6 +621,13 @@ function documents(state, module, searchResults = []) {
   const documentReferenceImportHtml = DocumentReferenceImport && typeof DocumentReferenceImport.renderPanel === 'function'
     ? DocumentReferenceImport.renderPanel({ state, i18n: T })
     : '';
+  const relationFoundation = summary.relationFoundation || { bundlesWithSubjects: 0, bundlesWithOperationalRefs: 0, bundlesWithReferenceOnlyDocs: 0 };
+  const completenessFoundation = DocumentCompleteness && typeof DocumentCompleteness.buildFoundationSummary === 'function'
+    ? DocumentCompleteness.buildFoundationSummary(bundles, T)
+    : { bundlesReady: 0, bundlesAttention: 0, bundlesCritical: 0, bundlesWithReferenceCoverage: 0 };
+  const activeBundleCompleteness = activeBundle && DocumentCompleteness && typeof DocumentCompleteness.summarizeBundle === 'function'
+    ? DocumentCompleteness.summarizeBundle(activeBundle, T)
+    : null;
 
   return `
     <section class="hero">
@@ -652,6 +660,64 @@ function documents(state, module, searchResults = []) {
     </section>
 
     ${documentReferenceImportHtml}
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.documentRelationsFoundationTitle', 'Fondazione relazionale documenti'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentRelationsFoundationHint', 'Ogni bundle legge soggetti collegati, riferimenti operativi e mix documentale per preparare la ricerca relazionale completa.'))}</p>
+        </div>
+      </div>
+      <div class="kpi-grid compact-kpi-grid">
+        <article class="kpi-card">
+          <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesWithSubjects', 'Bundle con soggetti collegati'))}</div>
+          <div class="kpi-value">${relationFoundation.bundlesWithSubjects || 0}</div>
+          <div class="kpi-hint">${U.escapeHtml(T.t('ui.documentBundlesWithSubjectsHint', 'Cliente, importatore, destinatario, mittente o vettore leggibili dal bundle.'))}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesWithOperationalRefs', 'Bundle con riferimenti operativi'))}</div>
+          <div class="kpi-value">${relationFoundation.bundlesWithOperationalRefs || 0}</div>
+          <div class="kpi-hint">${U.escapeHtml(T.t('ui.documentBundlesWithOperationalRefsHint', 'Container, booking, polizza, dogana o nodi logistici già leggibili.'))}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesWithReferenceOnlyDocs', 'Bundle con soli riferimenti'))}</div>
+          <div class="kpi-value">${relationFoundation.bundlesWithReferenceOnlyDocs || 0}</div>
+          <div class="kpi-hint">${U.escapeHtml(T.t('ui.documentBundlesWithReferenceOnlyDocsHint', 'Metadata importati senza file binario, utili per completare il fascicolo dopo.'))}</div>
+        </article>
+      </div>
+
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.documentCompletenessFoundationTitle', 'Completezza documentale intelligente'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentCompletenessFoundationHint', 'Leggi per tipo pratica quali documenti essenziali sono allegati, quali sono solo referenziati e quali mancano ancora nel fascicolo.'))}</p>
+        </div>
+      </div>
+      <div class="kpi-grid compact-kpi-grid">
+        <article class="kpi-card">
+          <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesReady', 'Bundle pronti'))}</div>
+          <div class="kpi-value">${completenessFoundation.bundlesReady || 0}</div>
+          <div class="kpi-hint">${U.escapeHtml(T.t('ui.documentBundlesReadyHint', 'Tutti i documenti essenziali risultano già allegati come file binari.'))}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesAttention', 'Bundle da allegare'))}</div>
+          <div class="kpi-value">${completenessFoundation.bundlesAttention || 0}</div>
+          <div class="kpi-hint">${U.escapeHtml(T.t('ui.documentBundlesAttentionHint', 'I documenti essenziali sono almeno referenziati, ma alcuni vanno ancora allegati.'))}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesCritical', 'Bundle incompleti'))}</div>
+          <div class="kpi-value">${completenessFoundation.bundlesCritical || 0}</div>
+          <div class="kpi-hint">${U.escapeHtml(T.t('ui.documentBundlesCriticalHint', 'Manca ancora almeno un documento essenziale per il profilo pratica.'))}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesWithReferenceCoverage', 'Copertura solo riferimenti'))}</div>
+          <div class="kpi-value">${completenessFoundation.bundlesWithReferenceCoverage || 0}</div>
+          <div class="kpi-hint">${U.escapeHtml(T.t('ui.documentBundlesWithReferenceCoverageHint', 'Bundle con documenti referenziati ma non ancora presenti come allegati binari.'))}</div>
+        </article>
+      </div>
+    </section>
 
     <section class="panel">
       <div class="panel-head">
@@ -696,12 +762,15 @@ function documents(state, module, searchResults = []) {
                 </div>
                 <span class="badge info">${U.escapeHtml(bundle.practiceTypeLabel || '—')}</span>
               </div>
-              <div class="document-bundle-meta">
+              ${(() => { const completeness = DocumentCompleteness && typeof DocumentCompleteness.summarizeBundle === 'function' ? DocumentCompleteness.summarizeBundle(bundle, T) : null; return `<div class="document-bundle-meta">
                 <span>${U.escapeHtml(T.t('ui.status', 'Stato'))}: ${U.escapeHtml(bundle.practiceStatus || '—')}</span>
                 <span>${U.escapeHtml(T.t('ui.documentsWord', 'Documenti'))}: ${bundle.documentsCount || bundle.documents?.length || 0}</span>
                 ${bundle.matchedDocumentsCount ? `<span>${U.escapeHtml(T.t('ui.documentMatches', 'Match documento'))}: ${bundle.matchedDocumentsCount}</span>` : ''}
-              </div>
+                ${completeness ? `<span class="badge ${completeness.tone === 'critical' ? 'warning' : completeness.tone === 'attention' ? 'info' : ''}">${U.escapeHtml(completeness.tone === 'critical' ? T.t('ui.documentCompletenessStatusCritical', 'Incompleto') : completeness.tone === 'attention' ? T.t('ui.documentCompletenessStatusAttention', 'Solo riferimenti') : T.t('ui.documentCompletenessStatusReady', 'Pronto'))}</span>` : ''}
+              </div>${completeness ? `<div class="document-completeness-inline-hint">${U.escapeHtml(T.t('ui.documentCompletenessCoverage', 'Essenziali'))}: ${U.escapeHtml(`${completeness.counts.essentialReady}/${completeness.counts.essentialTotal}`)}${completeness.counts.essentialReferenceOnly ? ` · ${U.escapeHtml(T.t('ui.documentCompletenessReferenceOnlyShort', 'solo rif.'))}: ${U.escapeHtml(completeness.counts.essentialReferenceOnly)}` : ''}</div>` : ''}`; })()}
               ${(bundle.practiceMatches || []).length ? `<div class="practice-search-match-list">${bundle.practiceMatches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(match.label)}:</strong> ${U.escapeHtml(match.value)}</span>`).join('')}</div>` : ''}
+              ${bundle.relationSummary?.subjectChips?.length ? `<div class="document-relation-chip-set">${bundle.relationSummary.subjectChips.map((entry) => `<span class="match-chip"><strong>${U.escapeHtml(entry.label)}:</strong> ${U.escapeHtml(entry.value)}</span>`).join('')}</div>` : ''}
+              ${bundle.relationSummary?.referenceChips?.length ? `<div class="document-relation-chip-set">${bundle.relationSummary.referenceChips.map((entry) => `<span class="match-chip"><strong>${U.escapeHtml(entry.label)}:</strong> ${U.escapeHtml(entry.value)}</span>`).join('')}</div>` : ''}
             </button>`).join('') : `<div class="empty-state-inline">${U.escapeHtml(query ? T.t('ui.noDocumentSearchResults', 'Nessun bundle documentale coerente con la ricerca.') : T.t('ui.noDocumentsAvailable', 'Nessun documento disponibile'))}</div>`}
         </div>
       </article>
@@ -723,6 +792,64 @@ function documents(state, module, searchResults = []) {
           <div class="action-row">
             <button class="btn" type="button" data-document-open-practice="${U.escapeHtml(activeBundle.practiceId || '')}">${U.escapeHtml(T.t('ui.openPractice', 'Apri pratica'))}</button>
           </div>
+          ${activeBundle.relationSummary ? `<section class="document-bundle-relations">
+            <div class="panel-head compact-head">
+              <div>
+                <h4 class="panel-title">${U.escapeHtml(T.t('ui.documentBundleRelationsTitle', 'Relazioni del bundle'))}</h4>
+                <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentBundleRelationsHint', 'Lettura rapida di soggetti collegati, riferimenti operativi e mix documentale del fascicolo.'))}</p>
+              </div>
+            </div>
+            <div class="kpi-grid compact-kpi-grid document-bundle-relation-kpis">
+              <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentLinkedSubjects', 'Soggetti collegati'))}</div><div class="kpi-value">${activeBundle.relationSummary.subjectCount || 0}</div></article>
+              <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentOperationalReferences', 'Riferimenti operativi'))}</div><div class="kpi-value">${activeBundle.relationSummary.referenceCount || 0}</div></article>
+              <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentDocumentMix', 'Mix documentale'))}</div><div class="kpi-value">${U.escapeHtml(`${activeBundle.relationSummary.binaryCount || 0}/${activeBundle.relationSummary.referenceOnlyCount || 0}`)}</div><div class="kpi-hint">${U.escapeHtml(T.t('ui.documentDocumentMixHint', 'File binari / solo riferimenti'))}</div></article>
+            </div>
+            <div class="document-bundle-relations-grid">
+              <div class="document-relation-block">
+                <div class="summary-kicker">${U.escapeHtml(T.t('ui.documentLinkedSubjects', 'Soggetti collegati'))}</div>
+                ${activeBundle.relationSummary.subjects?.length ? `<div class="document-relation-chip-set">${activeBundle.relationSummary.subjects.map((entry) => `<span class="match-chip"><strong>${U.escapeHtml(entry.label)}:</strong> ${U.escapeHtml(entry.value)}</span>`).join('')}</div>` : `<div class="empty-state-inline">${U.escapeHtml(T.t('ui.documentNoLinkedSubjects', 'Nessun soggetto collegato leggibile da questo bundle.'))}</div>`}
+              </div>
+              <div class="document-relation-block">
+                <div class="summary-kicker">${U.escapeHtml(T.t('ui.documentOperationalReferences', 'Riferimenti operativi'))}</div>
+                ${activeBundle.relationSummary.references?.length ? `<div class="document-relation-chip-set">${activeBundle.relationSummary.references.map((entry) => `<span class="match-chip"><strong>${U.escapeHtml(entry.label)}:</strong> ${U.escapeHtml(entry.value)}</span>`).join('')}</div>` : `<div class="empty-state-inline">${U.escapeHtml(T.t('ui.documentNoOperationalReferences', 'Nessun riferimento operativo leggibile da questo bundle.'))}</div>`}
+              </div>
+              <div class="document-relation-block">
+                <div class="summary-kicker">${U.escapeHtml(T.t('ui.topDocumentType', 'Tipo documento prevalente'))}</div>
+                ${activeBundle.relationSummary.typeLabels?.length ? `<div class="tag-grid compact-tag-grid">${activeBundle.relationSummary.typeLabels.map((entry) => `<span class="tag-pill">${U.escapeHtml(entry)}</span>`).join('')}</div>` : `<div class="empty-state-inline">${U.escapeHtml(T.t('ui.noDocumentsAvailable', 'Nessun documento disponibile'))}</div>`}
+              </div>
+            </div>
+          </section>` : ''}
+          ${activeBundleCompleteness ? `<section class="document-bundle-completeness">
+            <div class="panel-head compact-head">
+              <div>
+                <h4 class="panel-title">${U.escapeHtml(T.t('ui.documentBundleCompletenessTitle', 'Completezza documentale'))}</h4>
+                <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentBundleCompletenessHint', 'Controlla subito quali documenti essenziali risultano allegati, solo referenziati o ancora mancanti per questo tipo pratica.'))}</p>
+              </div>
+            </div>
+            <div class="kpi-grid compact-kpi-grid document-bundle-relation-kpis">
+              <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentCompletenessProfile', 'Profilo'))}</div><div class="kpi-value text-sm">${U.escapeHtml(activeBundleCompleteness.profileLabel || '—')}</div></article>
+              <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentCompletenessCoverage', 'Essenziali'))}</div><div class="kpi-value">${U.escapeHtml(`${activeBundleCompleteness.counts.essentialReady}/${activeBundleCompleteness.counts.essentialTotal}`)}</div></article>
+              <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentCompletenessStatusAttention', 'Solo riferimenti'))}</div><div class="kpi-value">${activeBundleCompleteness.counts.essentialReferenceOnly || 0}</div></article>
+              <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentCompletenessStatusCritical', 'Mancanti'))}</div><div class="kpi-value">${activeBundleCompleteness.counts.essentialMissing || 0}</div></article>
+            </div>
+            <div class="practice-readiness-overview ${U.escapeHtml(activeBundleCompleteness.tone === 'critical' ? 'danger' : activeBundleCompleteness.tone === 'attention' ? 'warning' : 'success')}">
+              <div>
+                <div class="practice-readiness-overview-title">${U.escapeHtml(activeBundleCompleteness.title || '—')}</div>
+                <div class="practice-readiness-overview-detail">${U.escapeHtml(activeBundleCompleteness.detail || '—')}</div>
+              </div>
+              <div class="practice-readiness-overview-side">${activeBundleCompleteness.nextAction ? `<span class="helper-pill">${U.escapeHtml(activeBundleCompleteness.nextAction)}</span>` : ''}</div>
+            </div>
+            <div class="document-completeness-grid">
+              <div class="document-completeness-block">
+                <div class="summary-kicker">${U.escapeHtml(T.t('ui.documentCompletenessEssentialDocs', 'Documenti essenziali'))}</div>
+                ${activeBundleCompleteness.essentialRows.length ? activeBundleCompleteness.essentialRows.map((row) => `<article class="document-completeness-item" data-tone="${U.escapeHtml(row.tone)}"><div><div class="panel-title document-completeness-item-title">${U.escapeHtml(row.label)}</div><div class="panel-subtitle">${U.escapeHtml(row.helper)}</div></div><div class="document-completeness-item-side"><span class="badge ${row.tone === 'critical' ? 'warning' : row.tone === 'attention' ? 'info' : ''}">${U.escapeHtml(row.status === 'ready' ? T.t('ui.documentCompletenessRowReady', 'Allegato') : row.status === 'reference-only' ? T.t('ui.documentCompletenessRowReferenceOnly', 'Solo riferimento') : T.t('ui.documentCompletenessRowMissing', 'Mancante'))}</span></div></article>`).join('') : `<div class="empty-state-inline">${U.escapeHtml(T.t('ui.noDocumentsAvailable', 'Nessun documento disponibile'))}</div>`}
+              </div>
+              <div class="document-completeness-block">
+                <div class="summary-kicker">${U.escapeHtml(T.t('ui.documentCompletenessOptionalDocs', 'Documenti opzionali / supporto'))}</div>
+                ${activeBundleCompleteness.optionalRows.length ? activeBundleCompleteness.optionalRows.map((row) => `<article class="document-completeness-item" data-tone="${U.escapeHtml(row.tone)}"><div><div class="panel-title document-completeness-item-title">${U.escapeHtml(row.label)}</div><div class="panel-subtitle">${U.escapeHtml(row.helper)}</div></div><div class="document-completeness-item-side"><span class="badge ${row.tone === 'info' ? 'info' : ''}">${U.escapeHtml(row.status === 'ready' ? T.t('ui.documentCompletenessRowReady', 'Allegato') : row.status === 'reference-only' ? T.t('ui.documentCompletenessRowReferenceOnly', 'Solo riferimento') : T.t('ui.documentCompletenessRowOptionalMissing', 'Opzionale'))}</span></div></article>`).join('') : `<div class="empty-state-inline">${U.escapeHtml(T.t('ui.documentCompletenessNoOptionalDocs', 'Nessun documento opzionale previsto per questo profilo.'))}</div>`}
+              </div>
+            </div>
+          </section>` : ''}
           <div class="attachments-list document-engine-list">
             ${activeDocuments.length ? activeDocuments.map((document) => `
               <article class="attachment-card document-engine-card ${(activeAttachmentId === document.id) ? 'document-engine-card-active' : ''}">
