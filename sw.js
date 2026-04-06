@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepam-import-practices-v1';
+const CACHE = 'kedrix-one-stepan-import-document-references-v1';
 const FILES = [
   './',
   './index.html',
@@ -33,6 +33,10 @@ const FILES = [
   './js/import/import-practice-validator.js',
   './js/import/import-practice-commit.js',
   './js/import/import-practice-manager.js',
+  './js/import/import-document-reference-manager.js',
+  './js/import/import-document-reference-commit.js',
+  './js/import/import-document-reference-validator.js',
+  './js/import/import-document-reference-mapper.js',
   './js/master-data/quick-add.js',
   './js/practice-schemas.js',
   './js/practices/practice-readiness-board.js',

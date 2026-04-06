@@ -616,6 +616,10 @@ function documents(state, module, searchResults = []) {
     ? DocumentCategories.getOptions(state, T)
     : [];
   const topTypeEntry = Object.entries(summary.typedCounts || {}).sort((left, right) => right[1] - left[1])[0] || null;
+  const DocumentReferenceImport = window.KedrixOneDocumentReferenceImportFoundation || null;
+  const documentReferenceImportHtml = DocumentReferenceImport && typeof DocumentReferenceImport.renderPanel === 'function'
+    ? DocumentReferenceImport.renderPanel({ state, i18n: T })
+    : '';
 
   return `
     <section class="hero">
@@ -646,6 +650,8 @@ function documents(state, module, searchResults = []) {
         <div class="kpi-hint">${U.escapeHtml(topTypeEntry ? `${topTypeEntry[1]} ${T.t('ui.documentsWord', 'documenti')}` : T.t('ui.noDocumentsAvailable', 'Nessun documento disponibile'))}</div>
       </article>
     </section>
+
+    ${documentReferenceImportHtml}
 
     <section class="panel">
       <div class="panel-head">
@@ -722,15 +728,14 @@ function documents(state, module, searchResults = []) {
               <article class="attachment-card document-engine-card ${(activeAttachmentId === document.id) ? 'document-engine-card-active' : ''}">
                 <div class="attachment-main">
                   <div class="attachment-file-name">${U.escapeHtml(document.fileName || '—')}</div>
-                  <div class="attachment-file-meta">${U.escapeHtml(document.documentTypeLabel || '—')} · ${U.escapeHtml(formatDateTime(document.importedAt))}</div>
+                  <div class="attachment-file-meta">${U.escapeHtml(document.documentTypeLabel || '—')} · ${U.escapeHtml(formatDateTime(document.importedAt))}${document.isReferenceOnly ? ` · ${U.escapeHtml(T.t('ui.documentReferenceOnlyBadge', 'Solo riferimento'))}` : ''}</div>
                   ${document.metadataSummary?.length ? `<div class="attachment-metadata-summary">${document.metadataSummary.map((entry) => `<span class="match-chip"><strong>${U.escapeHtml(entry.label)}:</strong> ${U.escapeHtml(entry.value)}</span>`).join('')}</div>` : ''}
                 </div>
                 <div class="document-engine-meta">
-                  ${(document.matches || []).length ? `<div class="practice-search-match-list">${document.matches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(match.label)}:</strong> ${U.escapeHtml(match.value)}</span>`).join('')}</div>` : `<div class="attachment-file-meta">${U.escapeHtml(T.t('ui.documentPreviewHint', 'Usa Anteprima per controllare il contenuto senza uscire dal modulo.'))}</div>`}
+                  ${(document.matches || []).length ? `<div class="practice-search-match-list">${document.matches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(match.label)}:</strong> ${U.escapeHtml(match.value)}</span>`).join('')}</div>` : `<div class="attachment-file-meta">${U.escapeHtml(document.isReferenceOnly ? T.t('ui.documentReferenceOnlyHint', 'Riferimento documentale importato: allega il file binario in un secondo momento.') : T.t('ui.documentPreviewHint', 'Usa Anteprima per controllare il contenuto senza uscire dal modulo.'))}</div>`}
                 </div>
                 <div class="attachment-actions">
-                  <button class="btn secondary small-btn" type="button" data-document-preview-file="${U.escapeHtml(document.id)}">${U.escapeHtml(T.t('ui.preview', 'Anteprima'))}</button>
-                  <button class="btn secondary small-btn" type="button" data-document-open="${U.escapeHtml(document.id)}">${U.escapeHtml(T.t('ui.openAttachment', 'Apri'))}</button>
+                  ${document.isReferenceOnly ? `<span class="helper-pill">${U.escapeHtml(T.t('ui.documentReferenceOnlyBadge', 'Solo riferimento'))}</span>` : `<button class="btn secondary small-btn" type="button" data-document-preview-file="${U.escapeHtml(document.id)}">${U.escapeHtml(T.t('ui.preview', 'Anteprima'))}</button><button class="btn secondary small-btn" type="button" data-document-open="${U.escapeHtml(document.id)}">${U.escapeHtml(T.t('ui.openAttachment', 'Apri'))}</button>`}
                 </div>
               </article>`).join('') : `<div class="empty-text">${U.escapeHtml(T.t('ui.noDocumentsInBundle', 'Nessun documento collegato nel bundle selezionato.'))}</div>`}
           </div>

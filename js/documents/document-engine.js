@@ -74,9 +74,17 @@ window.KedrixOneDocumentEngine = (() => {
       || null;
   }
 
+  function buildReferenceFileName(item, state, i18n) {
+    const typeLabel = getTypeLabel(item.documentType || 'generic', state, i18n);
+    return String(item.documentLabel || item.externalReference || item.customsMrn || typeLabel || 'reference').trim();
+  }
+
   function listDocuments(state, i18n) {
     const index = state?.practiceAttachmentIndex && typeof state.practiceAttachmentIndex === 'object'
       ? state.practiceAttachmentIndex
+      : {};
+    const referenceIndex = state?.practiceDocumentReferenceIndex && typeof state.practiceDocumentReferenceIndex === 'object'
+      ? state.practiceDocumentReferenceIndex
       : {};
 
     const documents = [];
@@ -116,7 +124,50 @@ window.KedrixOneDocumentEngine = (() => {
           tags: Array.isArray(metadata.tags) ? metadata.tags : [],
           notes: metadata.notes || '',
           metadataSummary,
-          practice
+          practice,
+          isReferenceOnly: false
+        });
+      });
+    });
+
+    Object.entries(referenceIndex).forEach(([ownerKey, items]) => {
+      (Array.isArray(items) ? items : []).forEach((item) => {
+        if (!item || typeof item !== 'object') return;
+        const practice = resolvePractice(state, ownerKey, item.practiceId);
+        const metadata = DocumentMetadata && typeof DocumentMetadata.ensure === 'function'
+          ? DocumentMetadata.ensure(item)
+          : item;
+        const metadataSummary = DocumentMetadata && typeof DocumentMetadata.buildSummary === 'function'
+          ? DocumentMetadata.buildSummary(metadata, i18n)
+          : [];
+
+        documents.push({
+          id: item.id,
+          ownerKey: String(ownerKey || '').trim(),
+          practiceId: practice?.id || String(item.practiceId || '').trim(),
+          reference: practice?.reference || '—',
+          clientName: practice?.clientName || practice?.client || '—',
+          practiceType: practice?.practiceType || '',
+          practiceTypeLabel: practice?.practiceTypeLabel || practice?.practiceType || '—',
+          practiceStatus: practice?.status || '—',
+          containerCode: practice?.containerCode || '',
+          booking: practice?.booking || '',
+          customsOffice: practice?.customsOffice || '',
+          goodsDescription: practice?.goodsDescription || '',
+          fileName: buildReferenceFileName(item, state, i18n),
+          mimeType: 'application/x-kedrix-reference',
+          size: 0,
+          documentType: String(item.documentType || 'generic'),
+          documentTypeLabel: getTypeLabel(item.documentType || 'generic', state, i18n),
+          importedAt: item.importedAt || '',
+          documentDate: metadata.documentDate || '',
+          externalReference: metadata.externalReference || '',
+          customsMrn: metadata.customsMrn || '',
+          tags: Array.isArray(metadata.tags) ? metadata.tags : [],
+          notes: metadata.notes || '',
+          metadataSummary,
+          practice,
+          isReferenceOnly: true
         });
       });
     });

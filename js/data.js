@@ -26,6 +26,7 @@ window.KedrixOneData = (() => {
       language: 'it',
       practiceTab: 'practice',
       practiceAttachmentIndex: {},
+      practiceDocumentReferenceIndex: {},
       draftPractice: {
         editingPracticeId: '',
         practiceType: '',

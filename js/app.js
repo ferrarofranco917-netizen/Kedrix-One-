@@ -31,6 +31,7 @@
   const DocumentEngine = window.KedrixOneDocumentEngine;
   const DocumentCategories = window.KedrixOneDocumentCategories;
   const DocumentPreview = window.KedrixOneDocumentPreview;
+  const DocumentReferenceImportFoundation = window.KedrixOneDocumentReferenceImportFoundation || null;
   const AppFeedback = window.KedrixOneAppFeedback;
   const PracticeDocumentBridge = window.KedrixOnePracticeDocumentBridge;
   const PracticeDuplicate = window.KedrixOnePracticeDuplicate;
@@ -1512,7 +1513,20 @@ function ensureDocumentPreviewSelection() {
 
 function renderDocumentPreviewPanel() {
   const host = document.getElementById('documentPreviewHost');
-  if (!host || !DocumentPreview || typeof DocumentPreview.render !== 'function') return;
+  if (!host) return;
+  const bundle = activeDocumentBundle();
+  const docs = bundle ? ((bundle.matchedDocumentsCount ? bundle.matchedDocuments : bundle.documents) || []) : [];
+  const activeDoc = docs.find((item) => item.id === state.documentPreviewAttachmentId) || docs[0] || null;
+  if (!activeDoc) {
+    host.innerHTML = `<div class="empty-text">${Utils.escapeHtml(I18N.t('ui.selectDocumentBundle', 'Seleziona un bundle documentale dalla colonna sinistra.'))}</div>`;
+    return;
+  }
+  if (activeDoc.isReferenceOnly) {
+    if (DocumentPreview && typeof DocumentPreview.revokePreviewUrl === 'function') DocumentPreview.revokePreviewUrl();
+    host.innerHTML = `<div class="empty-text">${Utils.escapeHtml(I18N.t('ui.documentReferenceOnlyHint', 'Riferimento documentale importato: allega il file binario in un secondo momento.'))}</div>`;
+    return;
+  }
+  if (!DocumentPreview || typeof DocumentPreview.render !== 'function') return;
   DocumentPreview.render({
     host,
     attachmentId: state.documentPreviewAttachmentId,
@@ -1569,6 +1583,17 @@ function renderDocumentPreviewPanel() {
         queuePracticeOpenFromDocuments(button.dataset.documentOpenPractice);
       });
     });
+
+    if (DocumentReferenceImportFoundation && typeof DocumentReferenceImportFoundation.bind === 'function') {
+      DocumentReferenceImportFoundation.bind({
+        state,
+        root: main,
+        save,
+        render,
+        toast,
+        i18n: I18N
+      });
+    }
   }
 
   function renderSidebar() {
