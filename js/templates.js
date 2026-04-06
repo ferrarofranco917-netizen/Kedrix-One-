@@ -755,7 +755,7 @@ function practicesHub(state, module) {
     <section class="module-card-grid practice-hub-grid">
       <article class="module-card practice-hub-card">
         <div>
-          <div class="summary-kicker">${U.escapeHtml(T.t('ui.practiceList', 'Elenco pratiche'))}</div>
+          <div class="summary-kicker">${U.escapeHtml(T.t('submodules.practices/gestione-pratiche', 'Gestione pratiche'))}</div>
           <div class="module-card-title">${U.escapeHtml(T.t('ui.practiceHubListTitle', 'Lista pulita + ricerca avanzata'))}</div>
           <div class="module-card-meta">${U.escapeHtml(T.t('ui.practiceHubListDetail', 'Filtri per campo, range date, confronto periodale e pulsante “Apri nuova pratica” solo qui.'))}</div>
         </div>
@@ -767,7 +767,7 @@ function practicesHub(state, module) {
           <div class="module-card-title">${U.escapeHtml(T.t('ui.practiceHubWorkspaceTitle', 'Lavorazione in maschera dedicata'))}</div>
           <div class="module-card-meta">${U.escapeHtml(T.t('ui.practiceHubWorkspaceDetail', 'Dall’apertura al salvataggio, la pratica vive in uno spazio interno all’app separato dall’elenco.'))}</div>
         </div>
-        <div class="action-row"><button class="btn secondary" type="button" data-route-action="practices/pratiche">${U.escapeHtml(T.t('ui.openPracticeWorkspace', 'Apri workspace pratiche'))}</button></div>
+        <div class="action-row"><button class="btn secondary" type="button" data-route-action="practices">${U.escapeHtml(T.t('ui.openPracticeWorkspace', 'Apri workspace pratiche'))}</button></div>
       </article>
     </section>`;
 }
@@ -810,8 +810,8 @@ function practiceList(state, filtered = [], insights = {}) {
 
   return `
     <section class="hero">
-      <div class="hero-meta">${U.escapeHtml(T.t('ui.practiceListKicker', 'Gestione pratiche · lista e ricerca avanzata'))}</div>
-      <h2>${U.escapeHtml(T.t('ui.practiceListTitle', 'Gestione pratiche'))}</h2>
+      <div class="hero-meta">${U.escapeHtml(T.t('ui.practiceListKicker', 'Elenco pratiche · lista e ricerca avanzata'))}</div>
+      <h2>${U.escapeHtml(T.t('ui.practiceListTitle', 'Elenco pratiche pulito'))}</h2>
       <p>${U.escapeHtml(T.t('ui.practiceListIntro', 'Questa vista resta dedicata solo a ricerca, filtri per campo, confronto periodale e apertura della pratica nel workspace interno.'))}</p>
     </section>
 
@@ -855,7 +855,7 @@ function practiceList(state, filtered = [], insights = {}) {
           <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListFiltersHint', 'Filtra per soggetti, riferimenti logistici e range date per leggere il periodo attivo e confrontarlo con un secondo intervallo.'))}</p>
         </div>
         <div class="action-row">
-          <button id="newPracticeButton" class="btn" type="button" data-route-action="practices/pratiche">${U.escapeHtml(T.t('ui.newPractice', 'Nuova pratica'))}</button>
+          <button id="newPracticeButton" class="btn" type="button" data-route-action="practices">${U.escapeHtml(T.t('ui.newPractice', 'Nuova pratica'))}</button>
           <button class="btn secondary" type="button" data-action="reset-practice-list-filters">${U.escapeHtml(T.t('ui.resetPracticeListFilters', 'Reset filtri'))}</button>
         </div>
       </div>

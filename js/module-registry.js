@@ -20,8 +20,20 @@ window.KedrixOneModules = (() => {
       category: 'operations',
       tierHint: 'base',
       submodules: [
-        'Pratiche',
-        'Gestione pratiche'
+        'Istruzioni di sdoganamento',
+        'Buono consegna merce aerea',
+        'Booking d’imbarco',
+        'Notifica arrivo merce',
+        'Notifica partenza merce',
+        'Rimessa documenti',
+        'Buono di consegna',
+        'Delivery order',
+        'Richiesta fondi',
+        'Gestione pratiche',
+        'Lettere viaggi partenze',
+        'Avvisi spedizione',
+        'Conferma prenotazione ritiro',
+        'Viaggi nave'
       ]
     },
     {
@@ -334,7 +346,7 @@ window.KedrixOneModules = (() => {
     dashboard: 'dashboard',
     practices: 'practices',
     'practices/elenco-pratiche': 'practices/gestione-pratiche',
-    'practices/pratiche-v2': 'practices/pratiche',
+    'practices/pratiche-v2': 'practices',
     documents: 'documents',
     settings: 'settings'
   };

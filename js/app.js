@@ -566,7 +566,7 @@
   function openPracticeForEditing(practiceId, options = {}) {
     const normalizedPracticeId = String(practiceId || '').trim();
     const source = options.source || 'manual';
-    const targetRoute = 'practices/pratiche';
+    const targetRoute = 'practices';
     if (!normalizedPracticeId) return;
     if (currentRoute() !== targetRoute && options.forceImmediate !== true) {
       state._pendingPracticeOpen = { practiceId: normalizedPracticeId, source };
@@ -598,7 +598,7 @@
     if (!normalizedPracticeId) return;
     state._pendingPracticeOpen = { practiceId: normalizedPracticeId, source: 'documents' };
     save();
-    navigate('practices/pratiche');
+    navigate('practices');
   }
 
   function consumePendingPracticeOpen() {
@@ -898,7 +898,7 @@
     const normalized = safeRoute(route);
     const changed = normalized !== state.currentRoute;
 
-    if (normalized !== 'practices/pratiche' && normalized !== 'practices') {
+    if (normalized !== 'practices') {
       state.pendingPracticeFieldFocus = null;
       if (typeof state._persistActivePracticeDraft === 'function') state._persistActivePracticeDraft = null;
     }
@@ -1217,7 +1217,7 @@
     }
 
     state._persistActivePracticeDraft = (options = {}) => {
-      if (state.currentRoute !== 'practices/pratiche' && state.currentRoute !== 'practices') return false;
+      if (state.currentRoute !== 'practices') return false;
       persistIdentity({
         refreshValidation: options.refreshValidation !== false,
         markDirty: false
@@ -1712,17 +1712,17 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
-    if (route === 'practices/gestione-pratiche') {
-      main.innerHTML = Templates.practiceList(state, filteredPractices(), practiceListInsights());
-      bindPracticeListEvents();
-      return;
-    }
-
-    if (route === 'practices' || route === 'practices/pratiche') {
+    if (route === 'practices') {
       ensurePracticeWorkspace();
       main.innerHTML = Templates.practices(state, selectedPractice(), filteredPractices(), practiceSearchResults());
       bindPracticeEvents();
       consumePendingPracticeOpen();
+      return;
+    }
+
+    if (route === 'practices/gestione-pratiche') {
+      main.innerHTML = Templates.practiceList(state, filteredPractices(), practiceListInsights());
+      bindPracticeListEvents();
       return;
     }
 
@@ -1996,7 +1996,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       if (routeAction.id === 'newPracticeButton') {
         resetPracticeDraft();
         save();
-        navigate(routeAction.dataset.routeAction || 'practices/pratiche');
+        navigate(routeAction.dataset.routeAction || 'practices');
         toast(I18N.t('ui.newDraft', 'Nuova pratica'), 'info');
         return;
       }
