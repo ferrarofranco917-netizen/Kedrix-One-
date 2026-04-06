@@ -45,7 +45,7 @@ window.KedrixOneData = (() => {
       settingsModuleKey: 'practices',
       settingsClientId: 'CL-001',
       language: 'it',
-      practiceTab: 'practice',
+      practiceTab: 'start',
       practiceAttachmentIndex: {},
       practiceDocumentReferenceIndex: {},
       draftPractice: {

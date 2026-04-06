@@ -104,6 +104,58 @@
     Storage.save(state);
   }
 
+  function resolveDefaultPracticeTab(draft = null, fallback = '') {
+    const sourceDraft = draft && typeof draft === 'object' ? draft : (state.draftPractice || {});
+    const explicit = String(fallback || '').trim();
+    if (explicit) return explicit;
+    return String(sourceDraft.editingPracticeId || '').trim() ? 'practice' : 'start';
+  }
+
+  function practiceWorkspaceSessions() {
+    ensurePracticeWorkspace();
+    return Array.isArray(state.practiceWorkspace?.sessions) ? state.practiceWorkspace.sessions : [];
+  }
+
+  function hasOpenPracticeWorkspace() {
+    if (state && state._pendingPracticeOpen && state._pendingPracticeOpen.practiceId) return true;
+    return practiceWorkspaceSessions().length > 0;
+  }
+
+  function renderPracticeStarterPanel() {
+    return `
+      <section class="kpi-grid compact-kpi-grid">
+        <article class="kpi-card">
+          <div class="kpi-label">${Utils.escapeHtml(I18N.t('ui.practiceStartStepIdentityLabel', '1 · Identità'))}</div>
+          <div class="kpi-value">${Utils.escapeHtml(I18N.t('ui.practiceStartStepIdentityValue', 'Compila base'))}</div>
+          <div class="kpi-hint">${Utils.escapeHtml(I18N.t('ui.practiceStartStepIdentityHint', 'Seleziona tipo pratica, cliente, data e categoria per sbloccare il resto della maschera.'))}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">${Utils.escapeHtml(I18N.t('ui.practiceStartStepBlocksLabel', '2 · Blocchi operativi'))}</div>
+          <div class="kpi-value">${Utils.escapeHtml(I18N.t('ui.practiceStartStepBlocksValue', 'Apri quando serve'))}</div>
+          <div class="kpi-hint">${Utils.escapeHtml(I18N.t('ui.practiceStartStepBlocksHint', 'Pratica, dettaglio, note e allegati restano disponibili senza sporcare l’avvio della nuova maschera.'))}</div>
+        </article>
+        <article class="kpi-card">
+          <div class="kpi-label">${Utils.escapeHtml(I18N.t('ui.practiceStartStepSaveLabel', '3 · Controlli'))}</div>
+          <div class="kpi-value">${Utils.escapeHtml(I18N.t('ui.practiceStartStepSaveValue', 'Al salvataggio'))}</div>
+          <div class="kpi-hint">${Utils.escapeHtml(I18N.t('ui.practiceStartStepSaveHint', 'Le validazioni bloccanti vengono portate in evidenza solo quando provi a salvare la pratica.'))}</div>
+        </article>
+      </section>
+
+      <section class="panel inset-panel">
+        <div class="panel-head">
+          <div>
+            <h3 class="panel-title">${Utils.escapeHtml(I18N.t('ui.practiceStartIntroTitle', 'Avvio pulito della nuova pratica'))}</h3>
+            <p class="panel-subtitle">${Utils.escapeHtml(I18N.t('ui.practiceStartIntroHint', 'Questa maschera parte in modo ordinato: compila prima l’identità sopra, poi apri i blocchi operativi che ti servono.'))}</p>
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="btn" type="button" data-focus-practice-tab-only="practice">${Utils.escapeHtml(I18N.t('ui.practiceStartOpenPracticeTab', 'Apri tab Pratica'))}</button>
+          <button class="btn secondary" type="button" data-focus-practice-tab-only="detail">${Utils.escapeHtml(I18N.t('ui.practiceStartOpenDetailTab', 'Apri tab Dettaglio'))}</button>
+          <button class="btn secondary" type="button" data-focus-practice-tab-only="attachments">${Utils.escapeHtml(I18N.t('ui.practiceStartOpenAttachmentsTab', 'Apri Allegati'))}</button>
+        </div>
+      </section>`;
+  }
+
   function createEmptyPracticeDraft(overrides = {}) {
     if (PracticeIdentity && typeof PracticeIdentity.createEmptyDraft === 'function') {
       return PracticeIdentity.createEmptyDraft(overrides);
@@ -171,7 +223,7 @@
         draft: nextDraft,
         source: options.source || 'manual',
         createEmptyDraft: createEmptyPracticeDraft,
-        practiceTab: options.practiceTab || 'practice'
+        practiceTab: resolveDefaultPracticeTab(nextDraft, options.practiceTab)
       });
       PracticeWorkspace.syncActiveDraft(state, { createEmptyDraft: createEmptyPracticeDraft });
       return state.draftPractice;
@@ -706,6 +758,9 @@
   }
 
   function renderDynamicFieldsHTML(type, tab, draft = ensureDraftPractice()) {
+    if (tab === 'start') {
+      return renderPracticeStarterPanel();
+    }
     if (tab === 'attachments' && PracticeAttachments && typeof PracticeAttachments.renderPanelHTML === 'function') {
       return PracticeAttachments.renderPanelHTML({ state, draft, i18n: I18N, utils: Utils });
     }
@@ -738,8 +793,9 @@
   function resetPracticeDraft(options = {}) {
     const overrides = options.overrides || {};
     if (PracticeWorkspace && typeof PracticeWorkspace.openDraftSession === 'function') {
-      openPracticeDraftSession(createEmptyPracticeDraft(overrides), { source: options.source || 'new', practiceTab: options.practiceTab || 'practice' });
-      state.practiceTab = options.practiceTab || 'practice';
+      const initialPracticeTab = resolveDefaultPracticeTab(null, options.practiceTab || 'start');
+      openPracticeDraftSession(createEmptyPracticeDraft(overrides), { source: options.source || 'new', practiceTab: initialPracticeTab });
+      state.practiceTab = initialPracticeTab;
       setActivePracticeSessionTab(state.practiceTab);
       state._practiceValidationErrors = [];
       state.practiceSearchPreviewId = '';
@@ -1714,6 +1770,10 @@ function renderDocumentPreviewPanel() {
 
     if (route === 'practices') {
       ensurePracticeWorkspace();
+      if (!hasOpenPracticeWorkspace()) {
+        main.innerHTML = Templates.practicesHub(state, module);
+        return;
+      }
       main.innerHTML = Templates.practices(state, selectedPractice(), filteredPractices(), practiceSearchResults());
       bindPracticeEvents();
       consumePendingPracticeOpen();
@@ -2040,6 +2100,9 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     if (focusPracticeTabOnly) {
       const targetTab = String(focusPracticeTabOnly.dataset.focusPracticeTabOnly || '').trim();
       if (!targetTab) return;
+      if (typeof state._persistActivePracticeDraft === 'function') {
+        state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
+      }
       state.practiceTab = targetTab;
       setActivePracticeSessionTab(targetTab);
       delete state.pendingPracticeFieldFocus;
@@ -2195,7 +2258,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
 
     if (action.dataset.action === 'reset-demo') {
       const fresh = Data.initialState();
-      Object.assign(state, fresh, { practiceTab: 'practice' });
+      Object.assign(state, fresh, { practiceTab: 'start' });
       I18N.setLanguage(state.language || 'it');
       normalizePracticeRecordsState();
       state.currentRoute = safeRoute(state.currentRoute);
@@ -2235,6 +2298,11 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
   });
 
   ensureDraftPractice();
+  if (!String(state.draftPractice?.editingPracticeId || '').trim() && !String(state.practiceTab || '').trim()) {
+    state.practiceTab = 'start';
+  } else if (!String(state.draftPractice?.editingPracticeId || '').trim() && String(state.practiceTab || '').trim() === 'practice' && !hasOpenPracticeWorkspace()) {
+    state.practiceTab = 'start';
+  }
   I18N.setLanguage(state.language || 'it');
   const recordsNormalized = normalizePracticeRecordsState();
   state.currentRoute = safeRoute(window.location.hash || state.currentRoute);

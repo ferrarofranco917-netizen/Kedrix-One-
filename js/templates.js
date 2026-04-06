@@ -161,7 +161,9 @@ window.KedrixOneTemplates = (() => {
       { value: 'road_export', label: T.t('ui.typeRoadExport', 'Terra Export') },
       { value: 'warehouse', label: T.t('ui.typeWarehouse', 'Magazzino') }
     ];
+    const hasStarterTab = !String(draft.editingPracticeId || '').trim() && !state.practiceDuplicateSource;
     const tabs = [
+      ...(hasStarterTab ? [{ key: 'start', label: T.t('ui.practiceStartTab', fallbackByLanguage('Avvio', 'Start')) }] : []),
       { key: 'practice', label: T.t('ui.tabPractice', 'Pratica') },
       { key: 'detail', label: T.t('ui.tabDetail', 'Dettaglio') },
       { key: 'notes', label: T.t('ui.tabNotes', 'Note') },
@@ -727,6 +729,16 @@ function practicesHub(state, module) {
   const openMasks = Array.isArray(workspace.sessions) ? workspace.sessions.length : 0;
   const draftCount = (workspace.sessions || []).filter((session) => !String(session?.draft?.editingPracticeId || '').trim()).length;
   const practiceCount = Array.isArray(state.practices) ? state.practices.length : 0;
+  const workspaceActionRoute = openMasks > 0 ? 'practices' : 'practices/gestione-pratiche';
+  const workspaceActionLabel = openMasks > 0
+    ? T.t('ui.openPracticeWorkspace', 'Apri workspace pratiche')
+    : T.t('ui.openPracticeList', 'Apri elenco pratiche');
+  const workspaceDetail = openMasks > 0
+    ? T.t('ui.practiceHubWorkspaceDetail', 'Dall’apertura al salvataggio, la pratica vive in uno spazio interno all’app separato dall’elenco.')
+    : T.t('ui.practiceHubWorkspaceWaitingDetail', 'Il workspace interno si attiva quando apri una pratica esistente o ne crei una nuova da Gestione pratiche.');
+  const workspaceTitle = openMasks > 0
+    ? T.t('ui.practiceHubWorkspaceTitle', 'Lavorazione in maschera dedicata')
+    : T.t('ui.practiceHubWorkspaceWaitingTitle', 'Workspace pronto quando serve');
   return `
     <section class="hero">
       <div class="hero-meta">${U.escapeHtml(T.t('ui.practiceHubKicker', 'Pratiche padre · hub operativo'))}</div>
@@ -764,10 +776,10 @@ function practicesHub(state, module) {
       <article class="module-card practice-hub-card">
         <div>
           <div class="summary-kicker">${U.escapeHtml(T.t('ui.practiceWorkspaceTitle', 'Workspace pratica'))}</div>
-          <div class="module-card-title">${U.escapeHtml(T.t('ui.practiceHubWorkspaceTitle', 'Lavorazione in maschera dedicata'))}</div>
-          <div class="module-card-meta">${U.escapeHtml(T.t('ui.practiceHubWorkspaceDetail', 'Dall’apertura al salvataggio, la pratica vive in uno spazio interno all’app separato dall’elenco.'))}</div>
+          <div class="module-card-title">${U.escapeHtml(workspaceTitle)}</div>
+          <div class="module-card-meta">${U.escapeHtml(workspaceDetail)}</div>
         </div>
-        <div class="action-row"><button class="btn secondary" type="button" data-route-action="practices">${U.escapeHtml(T.t('ui.openPracticeWorkspace', 'Apri workspace pratiche'))}</button></div>
+        <div class="action-row"><button class="btn secondary" type="button" data-route-action="${U.escapeHtml(workspaceActionRoute)}">${U.escapeHtml(workspaceActionLabel)}</button></div>
       </article>
     </section>`;
 }
@@ -810,8 +822,8 @@ function practiceList(state, filtered = [], insights = {}) {
 
   return `
     <section class="hero">
-      <div class="hero-meta">${U.escapeHtml(T.t('ui.practiceListKicker', 'Elenco pratiche · lista e ricerca avanzata'))}</div>
-      <h2>${U.escapeHtml(T.t('ui.practiceListTitle', 'Elenco pratiche pulito'))}</h2>
+      <div class="hero-meta">${U.escapeHtml(T.t('ui.practiceListKicker', 'Gestione pratiche · lista e ricerca avanzata'))}</div>
+      <h2>${U.escapeHtml(T.t('ui.practiceListTitle', 'Gestione pratiche'))}</h2>
       <p>${U.escapeHtml(T.t('ui.practiceListIntro', 'Questa vista resta dedicata solo a ricerca, filtri per campo, confronto periodale e apertura della pratica nel workspace interno.'))}</p>
     </section>
 
