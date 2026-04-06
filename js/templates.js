@@ -210,6 +210,10 @@ window.KedrixOneTemplates = (() => {
       ? (state.practices || []).find((practice) => practice.id === activeSearchPreviewId) || null
       : null;
     const activeSearchPreviewResult = activeSearchPreview ? searchResults.find((result) => result.practiceId === activeSearchPreviewId) || null : null;
+    const PracticeImport = window.KedrixOnePracticeImportFoundation || null;
+    const practiceImportHtml = PracticeImport && typeof PracticeImport.renderPanel === 'function'
+      ? PracticeImport.renderPanel({ state, draftPractice: draft, i18n: T })
+      : '';
     const activeSearchPreviewEntries = activeSearchPreview
       ? Object.entries(activeSearchPreview.dynamicData || {}).filter(([, value]) => {
           if (Array.isArray(value)) return value.length;
@@ -285,6 +289,8 @@ window.KedrixOneTemplates = (() => {
             </div>`).join('')}
         </div>
       </section>
+
+      ${practiceImportHtml}
 
       <section class="panel" id="practiceEditorSection">
         <div class="panel-head">

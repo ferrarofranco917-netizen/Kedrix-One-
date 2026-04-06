@@ -879,6 +879,7 @@
   }
 
   function bindPracticeEvents() {
+    const PracticeImportFoundation = window.KedrixOnePracticeImportFoundation || null;
     const draft = ensureDraftPractice();
     const form = document.getElementById('practiceForm');
     const filter = document.getElementById('filterText');
@@ -1177,6 +1178,17 @@
         node.addEventListener('input', () => persistNodeValue(false));
         node.addEventListener('change', () => persistNodeValue(true));
         node.addEventListener('blur', () => persistNodeValue(true));
+      });
+    }
+
+    if (PracticeImportFoundation && typeof PracticeImportFoundation.bind === 'function') {
+      PracticeImportFoundation.bind({
+        state,
+        root: main,
+        save,
+        render,
+        toast,
+        i18n: I18N
       });
     }
 
