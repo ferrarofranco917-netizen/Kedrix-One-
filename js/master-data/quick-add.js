@@ -410,7 +410,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     }
 
     if (ImportFoundation && typeof ImportFoundation.bind === 'function') {
-      ImportFoundation.bind({ root, render, toast, i18n });
+      ImportFoundation.bind({ state, root, save, render, toast, i18n });
     }
 
     vatLookupButton?.addEventListener('click', async () => {

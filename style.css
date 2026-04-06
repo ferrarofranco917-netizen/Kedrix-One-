@@ -3365,3 +3365,62 @@ body.dialog-open {
   border-color: rgba(239, 68, 68, 0.28);
   background: rgba(239, 68, 68, 0.12);
 }
+
+
+.import-commit-plan {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.22);
+}
+
+.import-commit-plan-disabled {
+  border-style: dashed;
+}
+
+.import-commit-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.mini-kpi {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(2, 6, 23, 0.24);
+}
+
+.mini-kpi strong {
+  font-size: 18px;
+  color: #e2e8f0;
+}
+
+.mini-kpi span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.import-last-commit-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+@media (max-width: 1100px) {
+  .import-commit-plan-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .import-commit-plan-grid {
+    grid-template-columns: 1fr;
+  }
+}

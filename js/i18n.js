@@ -2489,7 +2489,25 @@ Object.assign(dictionary.it.ui, {
   importInvalidVatWarning: 'Partita IVA da verificare',
   importDuplicateUploadWarning: 'Possibile duplicato nello stesso file',
   importDuplicateVatWarning: 'Partita IVA duplicata nello stesso file',
-  importValueField: 'Valore'
+  importValueField: 'Valore',
+  importCommitEnabled: 'Commit anagrafiche attivo',
+  importCommitAction: 'Importa anagrafiche valide',
+  importCommitPlanTitle: 'Commit controllato anagrafiche',
+  importCommitPlanDetail: 'In questo step il commit crea le nuove schede e salta errori e duplicati già presenti.',
+  importCommitUnsupportedTarget: 'In questo step il commit è attivo solo per le anagrafiche strutturate principali.',
+  importCreatableRows: 'Nuove schede',
+  importDuplicateExistingRows: 'Già presenti',
+  importWarningRows: 'Con warning',
+  importBlockedRows: 'Bloccate da errori',
+  importCommitRulesHint: 'Il commit importa solo le righe senza errori: le righe con warning vengono comunque create, mentre i duplicati già presenti vengono saltati.',
+  importLastCommitBadge: 'Ultimo commit',
+  importCreatedCount: 'Create',
+  importDuplicateCount: 'Duplicati',
+  importSkippedRows: 'Righe bloccate',
+  importCommitToastLead: 'Commit completato',
+  importCreatedCountLower: 'create',
+  importDuplicateCountLower: 'duplicate',
+  importSkippedRowsLower: 'bloccate'
 });
 
 Object.assign(dictionary.en.ui, {
@@ -2544,7 +2562,25 @@ Object.assign(dictionary.en.ui, {
   importInvalidVatWarning: 'VAT number should be checked',
   importDuplicateUploadWarning: 'Possible duplicate inside the same file',
   importDuplicateVatWarning: 'Duplicate VAT number inside the same file',
-  importValueField: 'Value'
+  importValueField: 'Value',
+  importCommitEnabled: 'Master data commit enabled',
+  importCommitAction: 'Import valid master data',
+  importCommitPlanTitle: 'Controlled master data commit',
+  importCommitPlanDetail: 'At this step the commit creates the new records and skips errors and duplicates that already exist.',
+  importCommitUnsupportedTarget: 'At this step the commit is active only for the main structured master data families.',
+  importCreatableRows: 'New records',
+  importDuplicateExistingRows: 'Already present',
+  importWarningRows: 'With warnings',
+  importBlockedRows: 'Blocked by errors',
+  importCommitRulesHint: 'The commit imports only rows without errors: rows with warnings are still created, while duplicates already present are skipped.',
+  importLastCommitBadge: 'Last commit',
+  importCreatedCount: 'Created',
+  importDuplicateCount: 'Duplicates',
+  importSkippedRows: 'Blocked rows',
+  importCommitToastLead: 'Commit completed',
+  importCreatedCountLower: 'created',
+  importDuplicateCountLower: 'duplicates',
+  importSkippedRowsLower: 'blocked'
 });
 
 dictionary.es = dictionary.es || JSON.parse(JSON.stringify(dictionary.en || { brand: {}, ui: {}, modules: {}, submodules: {} }));
@@ -2600,7 +2636,25 @@ Object.assign(dictionary.es.ui, {
   importInvalidVatWarning: 'NIF / IVA por verificar',
   importDuplicateUploadWarning: 'Posible duplicado dentro del mismo archivo',
   importDuplicateVatWarning: 'IVA duplicado dentro del mismo archivo',
-  importValueField: 'Valor'
+  importValueField: 'Valor',
+  importCommitEnabled: 'Commit de anagráficas activo',
+  importCommitAction: 'Importar anagráficas válidas',
+  importCommitPlanTitle: 'Commit controlado de anagráficas',
+  importCommitPlanDetail: 'En este paso el commit crea nuevas fichas y salta errores y duplicados ya presentes.',
+  importCommitUnsupportedTarget: 'En este paso el commit está activo solo para las principales anagráficas estructuradas.',
+  importCreatableRows: 'Nuevas fichas',
+  importDuplicateExistingRows: 'Ya presentes',
+  importWarningRows: 'Con warnings',
+  importBlockedRows: 'Bloqueadas por errores',
+  importCommitRulesHint: 'El commit importa solo filas sin errores: las filas con warnings igualmente se crean, mientras que los duplicados ya presentes se omiten.',
+  importLastCommitBadge: 'Último commit',
+  importCreatedCount: 'Creadas',
+  importDuplicateCount: 'Duplicados',
+  importSkippedRows: 'Filas bloqueadas',
+  importCommitToastLead: 'Commit completado',
+  importCreatedCountLower: 'creadas',
+  importDuplicateCountLower: 'duplicados',
+  importSkippedRowsLower: 'bloqueadas'
 });
 
 dictionary.fr = dictionary.fr || JSON.parse(JSON.stringify(dictionary.en || { brand: {}, ui: {}, modules: {}, submodules: {} }));
@@ -2656,7 +2710,25 @@ Object.assign(dictionary.fr.ui, {
   importInvalidVatWarning: 'TVA à vérifier',
   importDuplicateUploadWarning: 'Doublon possible dans le même fichier',
   importDuplicateVatWarning: 'TVA dupliquée dans le même fichier',
-  importValueField: 'Valeur'
+  importValueField: 'Valeur',
+  importCommitEnabled: 'Commit anagrafiche actif',
+  importCommitAction: 'Importer les fiches valides',
+  importCommitPlanTitle: 'Commit contrôlé des fiches',
+  importCommitPlanDetail: 'À cette étape, le commit crée les nouvelles fiches et saute les erreurs ainsi que les doublons déjà présents.',
+  importCommitUnsupportedTarget: 'À cette étape, le commit est actif uniquement pour les principales fiches structurées.',
+  importCreatableRows: 'Nouvelles fiches',
+  importDuplicateExistingRows: 'Déjà présentes',
+  importWarningRows: 'Avec warnings',
+  importBlockedRows: 'Bloquées par erreurs',
+  importCommitRulesHint: 'Le commit importe uniquement les lignes sans erreurs : les lignes avec warnings sont quand même créées, tandis que les doublons déjà présents sont sautés.',
+  importLastCommitBadge: 'Dernier commit',
+  importCreatedCount: 'Créées',
+  importDuplicateCount: 'Doublons',
+  importSkippedRows: 'Lignes bloquées',
+  importCommitToastLead: 'Commit terminé',
+  importCreatedCountLower: 'créées',
+  importDuplicateCountLower: 'doublons',
+  importSkippedRowsLower: 'bloquées'
 });
 
   return {

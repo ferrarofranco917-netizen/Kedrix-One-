@@ -5,7 +5,7 @@ window.KedrixOneImportFoundation = (() => {
   const ExcelReader = window.KedrixOneImportExcelReader || null;
   const Mapper = window.KedrixOneImportMapper || null;
   const Validator = window.KedrixOneImportValidator || null;
-  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const Committer = window.KedrixOneImportMasterDataCommit || null;
 
   const session = {
     targetEntity: '',
@@ -25,7 +25,9 @@ window.KedrixOneImportFoundation = (() => {
     sourceDelimiter: '',
     selectedSheet: '',
     sheetNames: [],
-    currentFile: null
+    currentFile: null,
+    commitPlan: null,
+    lastCommitSummary: null
   };
 
   function cleanText(value) {
@@ -120,6 +122,9 @@ window.KedrixOneImportFoundation = (() => {
     session.validationRows = validation.rows || [];
     session.validationSummary = validation.summary || null;
     session.issues = validation.issues || [];
+    session.commitPlan = Committer && typeof Committer.summarizePlannedCommit === 'function'
+      ? Committer.summarizePlannedCommit({ state: window.KedrixOneAppState || null, entityKey: session.targetEntity, rows: session.validationRows })
+      : null;
   }
 
   async function handleIncomingFile(file, i18n) {
@@ -292,8 +297,52 @@ window.KedrixOneImportFoundation = (() => {
       </div>`;
   }
 
-  function renderPanel({ activeEntity, i18n }) {
+  function renderCommitPlan(i18n) {
+    const plan = session.commitPlan;
+    if (!plan) return '';
+    if (!plan.eligible) {
+      return `
+        <div class="import-commit-plan import-commit-plan-disabled">
+          <div>
+            <div class="panel-title" style="font-size:14px">${escapeHtml(t(i18n, 'ui.importCommitPlanTitle', 'Commit controllato anagrafiche'))}</div>
+            <div class="panel-subtitle">${escapeHtml(t(i18n, 'ui.importCommitUnsupportedTarget', 'In questo step il commit è attivo solo per le anagrafiche strutturate principali.'))}</div>
+          </div>
+        </div>`;
+    }
+
+    const lastSummary = session.lastCommitSummary;
+    const lastSummaryHtml = lastSummary ? `
+      <div class="import-last-commit-strip">
+        <span class="badge success">${escapeHtml(t(i18n, 'ui.importLastCommitBadge', 'Ultimo commit'))}</span>
+        <span>${escapeHtml(t(i18n, 'ui.importCreatedCount', 'Create'))}: ${lastSummary.created}</span>
+        <span>${escapeHtml(t(i18n, 'ui.importDuplicateCount', 'Duplicati'))}: ${lastSummary.duplicates}</span>
+        <span>${escapeHtml(t(i18n, 'ui.importSkippedRows', 'Righe bloccate'))}: ${lastSummary.skippedErrors}</span>
+      </div>` : '';
+
+    return `
+      <div class="import-commit-plan">
+        <div class="panel-head compact">
+          <div>
+            <div class="panel-title" style="font-size:14px">${escapeHtml(t(i18n, 'ui.importCommitPlanTitle', 'Commit controllato anagrafiche'))}</div>
+            <div class="panel-subtitle">${escapeHtml(t(i18n, 'ui.importCommitPlanDetail', 'In questo step il commit crea le nuove schede e salta errori e duplicati già presenti.'))}</div>
+          </div>
+        </div>
+        <div class="import-commit-plan-grid">
+          <div class="mini-kpi"><strong>${plan.creatableRows}</strong><span>${escapeHtml(t(i18n, 'ui.importCreatableRows', 'Nuove schede'))}</span></div>
+          <div class="mini-kpi"><strong>${plan.duplicateRows}</strong><span>${escapeHtml(t(i18n, 'ui.importDuplicateExistingRows', 'Già presenti'))}</span></div>
+          <div class="mini-kpi"><strong>${plan.warningRows}</strong><span>${escapeHtml(t(i18n, 'ui.importWarningRows', 'Con warning'))}</span></div>
+          <div class="mini-kpi"><strong>${plan.blockedRows}</strong><span>${escapeHtml(t(i18n, 'ui.importBlockedRows', 'Bloccate da errori'))}</span></div>
+        </div>
+        <div class="field-hint">${escapeHtml(t(i18n, 'ui.importCommitRulesHint', 'Il commit importa solo le righe senza errori: le righe con warning vengono comunque create, mentre i duplicati già presenti vengono saltati.'))}</div>
+        ${lastSummaryHtml}
+      </div>`;
+  }
+
+  function renderPanel({ state, activeEntity, i18n }) {
     ensureTarget(i18n, activeEntity || 'client');
+    if (session.validationRows.length && Committer && typeof Committer.summarizePlannedCommit === 'function') {
+      session.commitPlan = Committer.summarizePlannedCommit({ state, entityKey: session.targetEntity, rows: session.validationRows });
+    }
     const targetOptions = Mapper.getTargetOptions(i18n);
     const statusClass = session.statusTone === 'critical' ? 'danger' : (session.statusTone === 'attention' ? 'attention' : (session.statusTone === 'ready' ? 'success' : 'info'));
     const sheetField = session.sheetNames.length > 1 ? `
@@ -314,7 +363,7 @@ window.KedrixOneImportFoundation = (() => {
           </div>
           <div class="attachments-meta-pills">
             <span class="helper-pill">${escapeHtml(session.sourceFormat ? session.sourceFormat.toUpperCase() : t(i18n, 'ui.importNoFormat', 'Nessun file'))}</span>
-            <span class="helper-pill">${escapeHtml(t(i18n, 'ui.importCommitLocked', 'Commit sbloccato nel prossimo step'))}</span>
+            <span class="helper-pill">${escapeHtml(session.commitPlan?.eligible ? t(i18n, 'ui.importCommitEnabled', 'Commit anagrafiche attivo') : t(i18n, 'ui.importCommitLocked', 'Commit sbloccato nel prossimo step'))}</span>
           </div>
         </div>
 
@@ -363,17 +412,20 @@ window.KedrixOneImportFoundation = (() => {
               <h5 class="panel-title" style="font-size:14px">${escapeHtml(t(i18n, 'ui.importIssuesTitle', 'Issue report'))}</h5>
               ${renderIssues(i18n)}
             </div>
+            <div class="import-issues-block">
+              ${renderCommitPlan(i18n)}
+            </div>
           </article>
         </section>
 
         <div class="form-actions import-foundation-actions">
           <button class="btn secondary" type="button" id="importFoundationResetButton">${escapeHtml(t(i18n, 'ui.importResetSession', 'Reset sessione import'))}</button>
-          <button class="btn" type="button" disabled>${escapeHtml(t(i18n, 'ui.importCommitDeferred', 'Commit controllato nel prossimo step'))}</button>
+          <button class="btn" type="button" id="importFoundationCommitButton" ${!(session.commitPlan && session.commitPlan.eligible && (session.commitPlan.creatableRows || session.commitPlan.warningRows || session.commitPlan.duplicateRows)) ? 'disabled' : ''}>${escapeHtml(session.commitPlan?.eligible ? t(i18n, 'ui.importCommitAction', 'Importa anagrafiche valide') : t(i18n, 'ui.importCommitDeferred', 'Commit controllato nel prossimo step'))}</button>
         </div>
       </section>`;
   }
 
-  function bind({ root, render, toast, i18n }) {
+  function bind({ state, root, save, render, toast, i18n }) {
     const fileInput = root.querySelector('#masterDataImportInput');
     const fileTrigger = root.querySelector('[data-file-trigger="masterDataImportInput"]');
     const fileStatus = root.querySelector('[data-import-file-status]');
@@ -381,6 +433,7 @@ window.KedrixOneImportFoundation = (() => {
     const headerInput = root.querySelector('#importHeaderRow');
     const sheetSelect = root.querySelector('#importSheetSelect');
     const resetButton = root.querySelector('#importFoundationResetButton');
+    const commitButton = root.querySelector('#importFoundationCommitButton');
 
     fileTrigger?.addEventListener('click', () => fileInput?.click());
 
@@ -424,6 +477,27 @@ window.KedrixOneImportFoundation = (() => {
       if (fileInput) fileInput.value = '';
       render();
       toast(t(i18n, 'ui.importSessionResetToast', 'Sessione import azzerata.'), 'info');
+    });
+
+    commitButton?.addEventListener('click', () => {
+      if (!Committer || typeof Committer.commitRows !== 'function') return;
+      const summary = Committer.commitRows({ state, entityKey: session.targetEntity, rows: session.validationRows });
+      session.lastCommitSummary = summary;
+      session.commitPlan = Committer && typeof Committer.summarizePlannedCommit === 'function'
+        ? Committer.summarizePlannedCommit({ state, entityKey: session.targetEntity, rows: session.validationRows })
+        : session.commitPlan;
+      if (!summary.eligible) {
+        toast(t(i18n, 'ui.importCommitUnsupportedTarget', 'In questo step il commit è attivo solo per le anagrafiche strutturate principali.'), 'info');
+        render();
+        return;
+      }
+      save && save();
+      const tone = summary.created || summary.updated ? 'success' : (summary.duplicates ? 'info' : 'warning');
+      const message = `${t(i18n, 'ui.importCommitToastLead', 'Commit completato')}: ${summary.created} ${t(i18n, 'ui.importCreatedCountLower', 'create')}, ${summary.duplicates} ${t(i18n, 'ui.importDuplicateCountLower', 'duplicate')}, ${summary.skippedErrors} ${t(i18n, 'ui.importSkippedRowsLower', 'bloccate')}.`;
+      session.statusTone = tone === 'success' ? 'ready' : (tone === 'warning' ? 'attention' : 'info');
+      session.statusMessage = message;
+      render();
+      toast(message, tone);
     });
   }
 
