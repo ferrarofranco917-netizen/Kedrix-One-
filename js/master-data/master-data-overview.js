@@ -2,6 +2,7 @@ window.KedrixOneMasterDataOverview = (() => {
   'use strict';
 
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const LogisticsArchives = window.KedrixOneLogisticsArchives || null;
 
   const GROUPS = [
     {
@@ -156,10 +157,14 @@ window.KedrixOneMasterDataOverview = (() => {
   function renderSummary(options = {}) {
     const { state = null, activeEntity = 'client', i18n = null } = options;
     if (!state || !MasterDataEntities) return '';
+    const logisticsHtml = LogisticsArchives && typeof LogisticsArchives.renderSection === 'function'
+      ? LogisticsArchives.renderSection({ state, activeEntity, i18n })
+      : '';
     return `
       <section class="master-data-overview-grid">
         ${GROUPS.map((group) => renderGroupCard(state, group, i18n)).join('')}
       </section>
+      ${logisticsHtml}
       ${renderActiveFamilyContext(state, activeEntity, i18n)}`;
   }
 

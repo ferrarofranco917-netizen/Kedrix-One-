@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepah-master-data-expansion-v1';
+const CACHE = 'kedrix-one-stepai-logistics-archives-v1';
 const FILES = [
   './',
   './index.html',
@@ -20,6 +20,7 @@ const FILES = [
   './js/i18n.js',
   './js/master-data/entity-records.js',
   './js/master-data/vat-autofill.js',
+  './js/master-data/logistics-archives.js',
   './js/master-data/master-data-overview.js',
   './js/master-data/quick-add.js',
   './js/practice-schemas.js',

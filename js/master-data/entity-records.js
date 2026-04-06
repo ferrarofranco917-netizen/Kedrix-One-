@@ -120,6 +120,42 @@ window.KedrixOneMasterDataEntities = (() => {
         supportsDescription: true,
         supportsCity: true
       },
+      seaPort: {
+        key: 'seaPort',
+        familyLabel: t(i18n, 'ui.masterDataFamilySeaPorts', 'Porti'),
+        singleLabel: t(i18n, 'ui.masterDataSeaPortSingle', 'Porto'),
+        valueLabel: t(i18n, 'ui.masterDataSeaPortSingle', 'Porto'),
+        storageType: 'directory',
+        directoryKey: 'seaPortLocodes',
+        fieldNames: ['portLoading', 'portDischarge'],
+        suggestionKeys: ['seaPortLocodes'],
+        supportsDescription: true,
+        supportsCity: true
+      },
+      airport: {
+        key: 'airport',
+        familyLabel: t(i18n, 'ui.masterDataFamilyAirports', 'Aeroporti'),
+        singleLabel: t(i18n, 'ui.masterDataAirportSingle', 'Aeroporto'),
+        valueLabel: t(i18n, 'ui.masterDataAirportSingle', 'Aeroporto'),
+        storageType: 'directory',
+        directoryKey: 'airports',
+        fieldNames: ['airportDeparture', 'airportDestination'],
+        suggestionKeys: ['airports'],
+        supportsDescription: true,
+        supportsCity: true
+      },
+      terminal: {
+        key: 'terminal',
+        familyLabel: t(i18n, 'ui.masterDataFamilyTerminals', 'Terminal'),
+        singleLabel: t(i18n, 'ui.masterDataTerminalSingle', 'Terminal'),
+        valueLabel: t(i18n, 'ui.masterDataTerminalSingle', 'Terminal'),
+        storageType: 'directory',
+        directoryKey: 'seaTerminals',
+        fieldNames: ['terminal', 'terminalPickup', 'terminalDelivery'],
+        suggestionKeys: ['seaTerminals'],
+        supportsDescription: true,
+        supportsCity: true
+      },
       origin: {
         key: 'origin',
         familyLabel: t(i18n, 'ui.masterDataFamilyOrigins', 'Origini'),
@@ -140,6 +176,40 @@ window.KedrixOneMasterDataEntities = (() => {
         directoryKey: 'destinationDirectories',
         fieldNames: ['destinationRef'],
         suggestionKeys: ['destinationDirectories'],
+        supportsDescription: true
+      },
+      logisticsLocation: {
+        key: 'logisticsLocation',
+        familyLabel: t(i18n, 'ui.masterDataFamilyLogisticsLocations', 'Località logistiche'),
+        singleLabel: t(i18n, 'ui.masterDataLogisticsLocationSingle', 'Località logistica'),
+        valueLabel: t(i18n, 'ui.masterDataLogisticsLocationSingle', 'Località logistica'),
+        storageType: 'directory',
+        directoryKey: 'logisticsLocations',
+        fieldNames: ['pickupPlace', 'deliveryPlace', 'originDest'],
+        suggestionKeys: ['logisticsLocations'],
+        supportsDescription: true,
+        supportsCity: true
+      },
+      deposit: {
+        key: 'deposit',
+        familyLabel: t(i18n, 'ui.masterDataFamilyDeposits', 'Depositi'),
+        singleLabel: t(i18n, 'ui.masterDataDepositSingle', 'Deposito'),
+        valueLabel: t(i18n, 'ui.masterDataDepositSingle', 'Deposito'),
+        storageType: 'directory',
+        directoryKey: 'deposits',
+        fieldNames: ['deposit'],
+        suggestionKeys: ['deposits'],
+        supportsDescription: true
+      },
+      warehouseLink: {
+        key: 'warehouseLink',
+        familyLabel: t(i18n, 'ui.masterDataFamilyWarehouseLinks', 'Collega a'),
+        singleLabel: t(i18n, 'ui.masterDataWarehouseLinkSingle', 'Collega a'),
+        valueLabel: t(i18n, 'ui.masterDataWarehouseLinkSingle', 'Collega a'),
+        storageType: 'directory',
+        directoryKey: 'warehouseLinks',
+        fieldNames: ['linkedTo'],
+        suggestionKeys: ['warehouseLinks'],
         supportsDescription: true
       },
       articleCode: {

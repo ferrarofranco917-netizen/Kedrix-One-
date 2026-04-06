@@ -3203,3 +3203,16 @@ body.dialog-open {
     flex-direction: column;
   }
 }
+
+
+.master-data-logistics-section {
+  margin-bottom: 14px;
+}
+
+.master-data-overview-grid-logistics {
+  margin-bottom: 0;
+}
+
+.master-data-logistics-section .panel-head.compact {
+  margin-bottom: 14px;
+}
