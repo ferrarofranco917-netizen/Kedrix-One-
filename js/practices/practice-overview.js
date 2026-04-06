@@ -4,6 +4,7 @@ window.KedrixOnePracticeOverview = (() => {
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
   const LinkedPartiesBoard = window.KedrixOneLinkedPartiesBoard;
   const PracticeReadinessBoard = window.KedrixOnePracticeReadinessBoard;
+  const PracticeLogisticsBoard = window.KedrixOnePracticeLogisticsBoard;
   const PracticeDocumentReadinessBoard = window.KedrixOnePracticeDocumentReadinessBoard;
   const PracticeOperationalHub = window.KedrixOnePracticeOperationalHub;
 
@@ -44,6 +45,10 @@ window.KedrixOnePracticeOverview = (() => {
     const relationValue = relationSummary
       ? `${relationSummary.linked}/${relationSummary.total} ${t(i18n, 'ui.practiceOverviewRelationsLinked', 'collegati')} · ${relationSummary.manual} ${t(i18n, 'ui.practiceOverviewRelationsManual', 'manuali')}`
       : '';
+    const logisticsSummary = PracticeLogisticsBoard && typeof PracticeLogisticsBoard.summarize === 'function'
+      ? PracticeLogisticsBoard.summarize({ state, draft, type: type || practiceType, companyConfig, i18n })
+      : null;
+    const logisticsRouteValue = String(logisticsSummary?.overview?.routeText || '').trim();
 
     const cards = [
       {
@@ -58,7 +63,7 @@ window.KedrixOnePracticeOverview = (() => {
       {
         key: 'route',
         label: t(i18n, 'ui.practiceOverviewRoute', 'Nodi logistici'),
-        value: joinParts([
+        value: logisticsRouteValue || joinParts([
           getDynamicValue(draft, ['portLoading', 'airportDeparture', 'originRef', 'pickupPlace']),
           getDynamicValue(draft, ['portDischarge', 'airportDestination', 'destinationRef', 'deliveryPlace'])
         ], ' → ')
@@ -145,6 +150,9 @@ window.KedrixOnePracticeOverview = (() => {
     const operationalHubHtml = PracticeOperationalHub && typeof PracticeOperationalHub.render === 'function'
       ? PracticeOperationalHub.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
+    const logisticsBoardHtml = PracticeLogisticsBoard && typeof PracticeLogisticsBoard.render === 'function'
+      ? PracticeLogisticsBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
+      : '';
     const readinessBoardHtml = PracticeReadinessBoard && typeof PracticeReadinessBoard.render === 'function'
       ? PracticeReadinessBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
@@ -168,6 +176,7 @@ window.KedrixOnePracticeOverview = (() => {
           </div>
         </div>
         ${operationalHubHtml}
+        ${logisticsBoardHtml}
         ${readinessBoardHtml}
         ${practiceDocumentReadinessHtml}
         ${linkedPartiesBoardHtml}

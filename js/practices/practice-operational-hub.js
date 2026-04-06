@@ -3,6 +3,7 @@ window.KedrixOnePracticeOperationalHub = (() => {
 
   const LinkedPartiesBoard = window.KedrixOneLinkedPartiesBoard || null;
   const PracticeReadinessBoard = window.KedrixOnePracticeReadinessBoard || null;
+  const PracticeLogisticsBoard = window.KedrixOnePracticeLogisticsBoard || null;
   const PracticeDocumentReadinessBoard = window.KedrixOnePracticeDocumentReadinessBoard || null;
 
   function t(i18n, key, fallback) {
@@ -44,6 +45,9 @@ window.KedrixOnePracticeOperationalHub = (() => {
     const readinessSummary = PracticeReadinessBoard && typeof PracticeReadinessBoard.summarize === 'function'
       ? PracticeReadinessBoard.summarize({ draft, type, i18n })
       : { sections: [], overview: { counts: { ready: 0, attention: 0, critical: 0 }, tone: 'default', title: '', detail: '', topSection: null } };
+    const logisticsSummary = PracticeLogisticsBoard && typeof PracticeLogisticsBoard.summarize === 'function'
+      ? PracticeLogisticsBoard.summarize({ state, draft, type, companyConfig: context.companyConfig || null, i18n })
+      : { cards: [], overview: { counts: { ready: 0, attention: 0, critical: 0 }, tone: 'default', title: '', detail: '', topItem: null, routeText: '' } };
     const documentSummary = PracticeDocumentReadinessBoard && typeof PracticeDocumentReadinessBoard.summarize === 'function'
       ? PracticeDocumentReadinessBoard.summarize({ state, draft, type, i18n })
       : { cards: [], overview: { counts: { ready: 0, attention: 0, critical: 0 }, tone: 'default', title: '', detail: '', topCard: null, totalAttachments: 0 } };
@@ -84,6 +88,24 @@ window.KedrixOnePracticeOperationalHub = (() => {
           label: t(i18n, 'ui.practiceOperationalHubSourceReadinessAction', 'Vai al blocco operativo')
         } : null,
         priorityLabel: readinessSummary.overview?.topSection?.title || ''
+      },
+      {
+        key: 'logistics',
+        tone: logisticsSummary.overview?.tone === 'danger' ? 'danger' : logisticsSummary.overview?.tone === 'warning' ? 'warning' : 'success',
+        label: t(i18n, 'ui.practiceOperationalHubSourceLogistics', 'Logistica'),
+        title: logisticsSummary.overview?.title || t(i18n, 'ui.practiceOperationalHubSourceLogisticsFallbackTitle', 'Percorso logistico'),
+        detail: logisticsSummary.overview?.detail || t(i18n, 'ui.practiceOperationalHubSourceLogisticsFallbackDetail', 'Controlla origine, destinazione, snodi intermedi e tempi minimi del percorso fisico.'),
+        chips: [
+          `${logisticsSummary.overview?.counts?.critical || 0} ${t(i18n, 'ui.practiceLogisticsCountCritical', 'essenziali')}`,
+          `${logisticsSummary.overview?.counts?.attention || 0} ${t(i18n, 'ui.practiceLogisticsCountAttention', 'da chiarire')}`,
+          `${logisticsSummary.overview?.counts?.ready || 0} ${t(i18n, 'ui.practiceLogisticsCountReady', 'nodi pronti')}`
+        ],
+        action: logisticsSummary.overview?.topItem?.fieldName ? {
+          kind: 'field',
+          fieldName: logisticsSummary.overview.topItem.fieldName,
+          label: t(i18n, 'ui.practiceOperationalHubSourceLogisticsAction', 'Vai al nodo logistico')
+        } : null,
+        priorityLabel: logisticsSummary.overview?.topItem?.label || logisticsSummary.overview?.routeText || ''
       },
       {
         key: 'documents',
@@ -133,7 +155,7 @@ window.KedrixOnePracticeOperationalHub = (() => {
       return {
         tone: 'success',
         title: t(i18n, 'ui.practiceOperationalHubOverviewReadyTitle', 'Pratica leggibile e ben instradata'),
-        detail: t(i18n, 'ui.practiceOperationalHubOverviewReadyDetail', 'I tre livelli di controllo risultano stabili: puoi continuare con i completamenti di supporto o con la lavorazione successiva.')
+        detail: t(i18n, 'ui.practiceOperationalHubOverviewReadyDetail', 'I livelli di controllo risultano stabili: puoi continuare con i completamenti di supporto o con la lavorazione successiva.')
       };
     }
     const first = actions[0];
