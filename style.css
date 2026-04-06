@@ -3424,3 +3424,34 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 }
+
+
+.document-relation-chip-set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.document-bundle-relations {
+  margin-top: 14px;
+  display: grid;
+  gap: 14px;
+}
+
+.document-bundle-relations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.document-relation-block {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  background: rgba(15, 23, 32, 0.52);
+  padding: 12px;
+}
+
+.document-bundle-relation-kpis {
+  margin-top: 0;
+}
