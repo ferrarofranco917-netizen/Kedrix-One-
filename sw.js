@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepai-logistics-archives-v1';
+const CACHE = 'kedrix-one-stepaj-import-foundation-v1';
 const FILES = [
   './',
   './index.html',
@@ -22,6 +22,11 @@ const FILES = [
   './js/master-data/vat-autofill.js',
   './js/master-data/logistics-archives.js',
   './js/master-data/master-data-overview.js',
+  './js/import/import-csv-reader.js',
+  './js/import/import-excel-reader.js',
+  './js/import/import-mapper.js',
+  './js/import/import-validator.js',
+  './js/import/import-manager.js',
   './js/master-data/quick-add.js',
   './js/practice-schemas.js',
   './js/practices/practice-readiness-board.js',

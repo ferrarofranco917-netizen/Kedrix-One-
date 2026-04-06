@@ -4,6 +4,10 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const VatAutofill = window.KedrixOneVatAutofill || null;
 
+  function getImportFoundation() {
+    return window.KedrixOneImportFoundation || null;
+  }
+
   function getMasterDataOverview() {
     return window.KedrixOneMasterDataOverview || null;
   }
@@ -275,9 +279,13 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const isEditing = Boolean(formDraft.id);
     const familyOptions = Object.values(defs);
     const MasterDataOverview = getMasterDataOverview();
+    const ImportFoundation = getImportFoundation();
     const overviewHtml = MasterDataOverview && typeof MasterDataOverview.renderSummary === 'function'
       ? MasterDataOverview.renderSummary({ state, activeEntity, i18n: t })
       : `<section class="panel master-data-active-context"><div class="panel-head compact"><div><h3 class="panel-title">${escapeHtml(t.t('ui.masterDataOverviewFallbackTitle', 'Fondazione anagrafiche'))}</h3><p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataOverviewFallbackDetail', 'Panoramica temporaneamente non disponibile: ricarica la schermata per inizializzare il riepilogo anagrafiche.'))}</p></div></div></section>`;
+    const importHtml = !quickAddContext && ImportFoundation && typeof ImportFoundation.renderPanel === 'function'
+      ? ImportFoundation.renderPanel({ state, activeEntity, i18n: t })
+      : '';
 
     return `
       <section class="hero">
@@ -287,6 +295,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       </section>
 
       ${overviewHtml}
+      ${importHtml}
 
       <section class="master-data-shell two-col master-data-shell-v2">
         <article class="panel">
@@ -343,6 +352,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
   function bind({ state, root, save, render, navigate, toast, buildCurrentPracticeReference, restorePracticeContext, markPracticeDirty, i18n }) {
     const moduleState = ensureModuleState(state);
+    const ImportFoundation = getImportFoundation();
     const familySelect = root.querySelector('#masterDataFamilySelect');
     const searchInput = root.querySelector('#masterDataSearchInput');
     const form = root.querySelector('#masterDataEntryForm');
@@ -397,6 +407,10 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
     if (VatAutofill && typeof VatAutofill.bindConfigPanel === 'function') {
       VatAutofill.bindConfigPanel({ state, root, save, render, toast, i18n });
+    }
+
+    if (ImportFoundation && typeof ImportFoundation.bind === 'function') {
+      ImportFoundation.bind({ root, render, toast, i18n });
     }
 
     vatLookupButton?.addEventListener('click', async () => {

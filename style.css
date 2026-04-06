@@ -3216,3 +3216,152 @@ body.dialog-open {
 .master-data-logistics-section .panel-head.compact {
   margin-bottom: 14px;
 }
+
+.import-foundation-panel {
+  margin-bottom: 14px;
+}
+
+.import-foundation-config-grid {
+  margin-top: 14px;
+}
+
+.import-status-bar {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.28);
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.import-status-bar.success {
+  border-color: rgba(95, 143, 118, 0.28);
+  background: rgba(95, 143, 118, 0.14);
+  color: #d7efe0;
+}
+
+.import-status-bar.attention {
+  border-color: rgba(199, 154, 82, 0.32);
+  background: rgba(199, 154, 82, 0.14);
+  color: #eed4a6;
+}
+
+.import-status-bar.danger {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
+
+.badge.attention {
+  background: rgba(199, 154, 82, 0.16);
+  color: #eed4a6;
+}
+
+.import-foundation-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.kpi-card.compact {
+  min-height: auto;
+}
+
+.import-foundation-shell {
+  margin-top: 14px;
+}
+
+.import-mapping-table {
+  display: grid;
+  gap: 12px;
+}
+
+.import-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.22);
+}
+
+.import-mapping-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.import-mapping-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.import-mapping-select-wrap select {
+  width: 100%;
+}
+
+.import-preview-table-wrap {
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+}
+
+.import-preview-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.import-preview-table th,
+.import-preview-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  text-align: left;
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.import-preview-table th {
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.import-issues-block {
+  margin-top: 14px;
+}
+
+.compact-alert-list {
+  gap: 10px;
+}
+
+.import-foundation-actions {
+  margin-top: 14px;
+}
+
+@media (max-width: 1100px) {
+  .import-foundation-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .import-foundation-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .import-mapping-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.alert-item.danger {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.12);
+}
