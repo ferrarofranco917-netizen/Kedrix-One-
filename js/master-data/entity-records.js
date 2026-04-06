@@ -61,6 +61,19 @@ window.KedrixOneMasterDataEntities = (() => {
         idPrefix: 'CON-',
         structured: true
       },
+      supplier: {
+        key: 'supplier',
+        familyLabel: t(i18n, 'ui.masterDataFamilySuppliers', 'Fornitori'),
+        singleLabel: t(i18n, 'ui.masterDataSupplierSingle', 'Fornitore'),
+        valueLabel: t(i18n, 'ui.masterDataSupplierSingle', 'Fornitore'),
+        storageType: 'records',
+        recordStoreKey: 'suppliers',
+        directoryKey: 'suppliers',
+        fieldNames: ['supplier'],
+        suggestionKeys: ['suppliers'],
+        idPrefix: 'SUP-',
+        structured: true
+      },
       vessel: {
         key: 'vessel',
         familyLabel: t(i18n, 'ui.masterDataFamilyVessels', 'Navi'),
@@ -145,22 +158,26 @@ window.KedrixOneMasterDataEntities = (() => {
         familyLabel: t(i18n, 'ui.masterDataFamilyShippingCompanies', 'Compagnie marittime'),
         singleLabel: t(i18n, 'ui.shippingCompany', 'Compagnia marittima'),
         valueLabel: t(i18n, 'ui.shippingCompany', 'Compagnia marittima'),
-        storageType: 'directory',
+        storageType: 'records',
+        recordStoreKey: 'shippingCompanies',
         directoryKey: 'shippingCompanies',
         fieldNames: ['company'],
         suggestionKeys: ['shippingCompanies'],
-        supportsDescription: true
+        idPrefix: 'SCO-',
+        structured: true
       },
       airline: {
         key: 'airline',
         familyLabel: t(i18n, 'ui.masterDataFamilyAirlines', 'Compagnie aeree'),
         singleLabel: t(i18n, 'ui.airline', 'Compagnia aerea'),
         valueLabel: t(i18n, 'ui.airline', 'Compagnia aerea'),
-        storageType: 'directory',
+        storageType: 'records',
+        recordStoreKey: 'airlines',
         directoryKey: 'airlines',
         fieldNames: ['airline'],
         suggestionKeys: ['airlines'],
-        supportsDescription: true
+        idPrefix: 'AIR-',
+        structured: true
       },
       carrier: {
         key: 'carrier',

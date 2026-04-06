@@ -2,6 +2,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   'use strict';
 
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const MasterDataOverview = window.KedrixOneMasterDataOverview || null;
   const VatAutofill = window.KedrixOneVatAutofill || null;
 
   function ensureModuleState(state) {
@@ -270,6 +271,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const formDraft = getFormDraft(state, activeEntity);
     const isEditing = Boolean(formDraft.id);
     const familyOptions = Object.values(defs);
+    const overviewHtml = MasterDataOverview && typeof MasterDataOverview.renderSummary === 'function'
+      ? MasterDataOverview.renderSummary({ state, activeEntity, i18n: t })
+      : '';
 
     return `
       <section class="hero">
@@ -277,6 +281,8 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         <h2>${escapeHtml(module?.label || t.t('ui.masterDataTitle', 'Anagrafiche'))}</h2>
         <p>${escapeHtml(t.t('ui.masterDataIntro', 'Gestisci anagrafiche e directory operative condivise tra pratiche e moduli collegati.'))}</p>
       </section>
+
+      ${overviewHtml}
 
       <section class="master-data-shell two-col master-data-shell-v2">
         <article class="panel">

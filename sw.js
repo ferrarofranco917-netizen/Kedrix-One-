@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepag-logistics-completeness-v1';
+const CACHE = 'kedrix-one-stepah-master-data-expansion-v1';
 const FILES = [
   './',
   './index.html',
@@ -11,11 +11,17 @@ const FILES = [
   './js/data/customs.js',
   './js/data/taric.js',
   './js/data/goods-master.js',
+  './js/data/transport-units.js',
+  './js/config/integrations-endpoints.js',
   './js/data.js',
   './js/utils.js',
   './js/ui/app-feedback.js',
   './js/wisemind.js',
   './js/i18n.js',
+  './js/master-data/entity-records.js',
+  './js/master-data/vat-autofill.js',
+  './js/master-data/master-data-overview.js',
+  './js/master-data/quick-add.js',
   './js/practice-schemas.js',
   './js/practices/practice-readiness-board.js',
   './js/practices/practice-logistics-intelligence.js',

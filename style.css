@@ -3096,3 +3096,110 @@ body.dialog-open {
     justify-content: flex-start;
   }
 }
+
+
+.master-data-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.master-data-overview-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.master-data-overview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.master-data-overview-head h3 {
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+
+.master-data-overview-kicker {
+  color: var(--muted-text);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.master-data-overview-card p,
+.master-data-active-context p {
+  margin: 0;
+  color: var(--muted-text);
+  line-height: 1.45;
+}
+
+.master-data-overview-metrics {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.master-data-overview-metrics strong {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.master-data-overview-metrics.inline strong {
+  font-size: 24px;
+}
+
+.master-data-overview-meta {
+  color: var(--muted-text);
+  font-size: 12px;
+}
+
+.master-data-overview-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.master-data-overview-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.master-data-overview-chip.success {
+  background: rgba(58, 178, 114, 0.16);
+  border-color: rgba(58, 178, 114, 0.28);
+}
+
+.master-data-active-context {
+  margin-bottom: 14px;
+}
+
+.master-data-active-context-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.master-data-shell-v2 {
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .master-data-active-context-body {
+    flex-direction: column;
+  }
+}

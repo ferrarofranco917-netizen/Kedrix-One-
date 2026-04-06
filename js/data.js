@@ -108,6 +108,7 @@ window.KedrixOneData = (() => {
             shippingCompanies: ['MSC', 'Maersk', 'CMA CGM', 'Hapag-Lloyd'],
             airlines: ['Lufthansa Cargo', 'Air France KLM Martinair Cargo', 'Qatar Airways Cargo'],
             carriers: ['TERCOM', 'BRT', 'DHL Freight', 'DB Schenker'],
+            suppliers: ['MSC', 'Maersk', 'Qatar Airways Cargo', 'Broker Doganale Piemonte', 'Autotrasporti Nord Ovest'],
             vehicleTypes: ['Bilico centinato', 'Motrice', 'Furgone', 'Container chassis'],
             logisticsLocations: ['Fossano', 'Torino', 'Genova', 'Milano', 'Lione'],
             seaPortLocodes: defaultSeaPortLocodes,
