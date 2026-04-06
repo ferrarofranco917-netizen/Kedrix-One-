@@ -36,6 +36,7 @@
   const PracticeDocumentBridge = window.KedrixOnePracticeDocumentBridge;
   const PracticeDuplicate = window.KedrixOnePracticeDuplicate;
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
+  const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
@@ -55,6 +56,22 @@
   if (MasterDataQuickAdd && typeof MasterDataQuickAdd.ensureModuleState === 'function') {
     MasterDataQuickAdd.ensureModuleState(state);
   }
+
+  function ensurePracticeListState() {
+    const defaults = PracticeListAnalytics && typeof PracticeListAnalytics.defaultFilters === 'function'
+      ? PracticeListAnalytics.defaultFilters()
+      : {
+          quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: ''
+        };
+    const current = state.practiceListFilters && typeof state.practiceListFilters === 'object' ? state.practiceListFilters : {};
+    state.practiceListFilters = { ...defaults, ...current };
+    if (!state.practiceListFilters.quick && state.filterText) state.practiceListFilters.quick = state.filterText;
+    if ((!state.practiceListFilters.status || state.practiceListFilters.status === 'all') && state.statusFilter && state.statusFilter !== 'Tutti') {
+      state.practiceListFilters.status = state.statusFilter;
+    }
+  }
+
+  ensurePracticeListState();
 
   sanitizeLegacyPortSuggestions();
 
@@ -273,10 +290,19 @@
     if (newPracticeButton) newPracticeButton.textContent = I18N.t('ui.newPractice', 'Nuova pratica');
   }
 
+  function currentPracticeListFilters() {
+    ensurePracticeListState();
+    return state.practiceListFilters;
+  }
+
   function filteredPractices() {
-    const query = Utils.normalize(state.filterText);
+    const filters = currentPracticeListFilters();
+    if (PracticeListAnalytics && typeof PracticeListAnalytics.filterPractices === 'function') {
+      return PracticeListAnalytics.filterPractices(state.practices, filters);
+    }
+    const query = Utils.normalize(filters.quick || state.filterText);
     return state.practices.filter((practice) => {
-      const okStatus = state.statusFilter === 'Tutti' || practice.status === state.statusFilter;
+      const okStatus = !filters.status || filters.status === 'all' || filters.status === 'Tutti' || practice.status === filters.status;
       const dynamicData = extractPracticeDynamicData(practice);
       const searchableValues = [
         practice.reference,
@@ -307,6 +333,29 @@
       });
       return okStatus && okQuery;
     });
+  }
+
+  function practiceListInsights() {
+    const filters = currentPracticeListFilters();
+    if (PracticeListAnalytics && typeof PracticeListAnalytics.buildMetrics === 'function') {
+      return PracticeListAnalytics.buildMetrics(state.practices, filters);
+    }
+    const primary = filteredPractices();
+    return {
+      primary,
+      comparison: [],
+      primaryCount: primary.length,
+      compareCount: 0,
+      deltaCount: primary.length,
+      primaryImportCount: primary.filter((practice) => String(practice.practiceType || '').includes('import')).length,
+      primaryExportCount: primary.filter((practice) => String(practice.practiceType || '').includes('export')).length,
+      primaryWarehouseCount: primary.filter((practice) => String(practice.practiceType || '').includes('warehouse')).length,
+      compareImportCount: 0,
+      compareExportCount: 0,
+      compareWarehouseCount: 0,
+      compareEnabled: false,
+      totalScopedCount: primary.length
+    };
   }
 
   function selectedPractice() {
@@ -515,9 +564,19 @@
   }
 
   function openPracticeForEditing(practiceId, options = {}) {
+    const normalizedPracticeId = String(practiceId || '').trim();
+    const source = options.source || 'manual';
+    const targetRoute = 'practices/pratiche';
+    if (!normalizedPracticeId) return;
+    if (currentRoute() !== targetRoute && options.forceImmediate !== true) {
+      state._pendingPracticeOpen = { practiceId: normalizedPracticeId, source };
+      save();
+      navigate(targetRoute);
+      return;
+    }
     if (PracticeOpenEdit && typeof PracticeOpenEdit.openForEditing === 'function') {
-      PracticeOpenEdit.openForEditing(practiceId, {
-        source: options.source || 'manual',
+      PracticeOpenEdit.openForEditing(normalizedPracticeId, {
+        source,
         state,
         main,
         save,
@@ -526,11 +585,10 @@
       });
       return;
     }
-    if (!practiceId) return;
-    loadPracticeIntoDraft(practiceId);
+    loadPracticeIntoDraft(normalizedPracticeId);
     state._practiceValidationErrors = [];
-    state.practiceSearchPreviewId = options.source === 'search' ? practiceId : '';
-    state.practiceOpenSource = options.source || 'manual';
+    state.practiceSearchPreviewId = source === 'search' ? normalizedPracticeId : '';
+    state.practiceOpenSource = source;
     save();
     render();
   }
@@ -540,7 +598,7 @@
     if (!normalizedPracticeId) return;
     state._pendingPracticeOpen = { practiceId: normalizedPracticeId, source: 'documents' };
     save();
-    navigate('practices');
+    navigate('practices/pratiche');
   }
 
   function consumePendingPracticeOpen() {
@@ -552,7 +610,7 @@
     state._pendingPracticeOpen = null;
     save();
     window.requestAnimationFrame(() => {
-      openPracticeForEditing(practiceId, { source: pending?.source || 'documents' });
+      openPracticeForEditing(practiceId, { source: pending?.source || 'documents', forceImmediate: true });
     });
   }
 
@@ -840,7 +898,7 @@
     const normalized = safeRoute(route);
     const changed = normalized !== state.currentRoute;
 
-    if (normalized !== 'practices') {
+    if (normalized !== 'practices/pratiche' && normalized !== 'practices') {
       state.pendingPracticeFieldFocus = null;
       if (typeof state._persistActivePracticeDraft === 'function') state._persistActivePracticeDraft = null;
     }
@@ -877,6 +935,43 @@
       visibleSubmodules: visible.reduce((acc, module) => acc + module.submodules.length, 0),
       hiddenSubmodules: Modules.summary().totalSubmodules - visible.reduce((acc, module) => acc + module.submodules.length, 0)
     };
+  }
+
+  function bindPracticeListEvents() {
+    const filters = currentPracticeListFilters();
+    const primaryInputIds = ['practiceListQuick', 'practiceListReference', 'practiceListClient', 'practiceListImporter', 'practiceListExporter', 'practiceListConsignee', 'practiceListContainer', 'practiceListBooking', 'practiceListPolicy', 'practiceListVessel', 'practiceListOrigin', 'practiceListDestination', 'practiceListDateFrom', 'practiceListDateTo', 'practiceListCompareDateFrom', 'practiceListCompareDateTo'];
+
+    main.querySelectorAll('[data-practice-list-filter]').forEach((node) => {
+      const filterKey = String(node.dataset.practiceListFilter || '').trim();
+      if (!filterKey || node.dataset.boundPracticeListFilter === '1') return;
+      node.dataset.boundPracticeListFilter = '1';
+      const handler = (event) => {
+        filters[filterKey] = event.target.value || '';
+        if (filterKey === 'quick') state.filterText = filters[filterKey];
+        if (filterKey === 'status') state.statusFilter = filters[filterKey] === 'all' ? 'Tutti' : (filters[filterKey] || 'Tutti');
+        save();
+        const targetId = event.target.id || '';
+        if (primaryInputIds.includes(targetId)) {
+          rerenderPreservingInput(targetId, event.target.selectionStart, event.target.selectionEnd);
+        } else {
+          render();
+        }
+      };
+      const eventName = node.tagName === 'SELECT' ? 'change' : (node.type === 'date' ? 'change' : 'input');
+      node.addEventListener(eventName, handler);
+    });
+
+    if (PracticeOpenEdit && typeof PracticeOpenEdit.bindOpenTriggers === 'function') {
+      PracticeOpenEdit.bindOpenTriggers({ main, openPracticeForEditing });
+    } else {
+      main.querySelectorAll('[data-open-practice-id]').forEach((node) => {
+        node.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const practiceId = node.dataset.openPracticeId;
+          openPracticeForEditing(practiceId, { source: 'list' });
+        });
+      });
+    }
   }
 
   function bindPracticeEvents() {
@@ -1122,7 +1217,7 @@
     }
 
     state._persistActivePracticeDraft = (options = {}) => {
-      if (state.currentRoute !== 'practices') return false;
+      if (state.currentRoute !== 'practices/pratiche' && state.currentRoute !== 'practices') return false;
       persistIdentity({
         refreshValidation: options.refreshValidation !== false,
         markDirty: false
@@ -1617,7 +1712,13 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
-    if (route === 'practices' || route === 'practices/elenco-pratiche') {
+    if (route === 'practices/gestione-pratiche') {
+      main.innerHTML = Templates.practiceList(state, filteredPractices(), practiceListInsights());
+      bindPracticeListEvents();
+      return;
+    }
+
+    if (route === 'practices' || route === 'practices/pratiche') {
       ensurePracticeWorkspace();
       main.innerHTML = Templates.practices(state, selectedPractice(), filteredPractices(), practiceSearchResults());
       bindPracticeEvents();
@@ -1895,7 +1996,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       if (routeAction.id === 'newPracticeButton') {
         resetPracticeDraft();
         save();
-        navigate(routeAction.dataset.routeAction || 'practices');
+        navigate(routeAction.dataset.routeAction || 'practices/pratiche');
         toast(I18N.t('ui.newDraft', 'Nuova pratica'), 'info');
         return;
       }
@@ -2109,6 +2210,18 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       save();
       render();
       toast(I18N.t('ui.newDraft', 'Nuova pratica'), 'info');
+    }
+
+    if (action.dataset.action === 'reset-practice-list-filters') {
+      const defaults = PracticeListAnalytics && typeof PracticeListAnalytics.defaultFilters === 'function'
+        ? PracticeListAnalytics.defaultFilters()
+        : { quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '' };
+      state.practiceListFilters = { ...defaults };
+      state.filterText = '';
+      state.statusFilter = 'Tutti';
+      save();
+      render();
+      toast(I18N.t('ui.practiceListFiltersReset', 'Filtri elenco pratiche azzerati'), 'info');
     }
   });
 

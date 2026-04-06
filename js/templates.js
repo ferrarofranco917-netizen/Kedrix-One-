@@ -22,6 +22,7 @@ window.KedrixOneTemplates = (() => {
   const DocumentEngine = window.KedrixOneDocumentEngine;
   const DocumentCompleteness = window.KedrixOneDocumentCompleteness || null;
   const DocumentCategories = window.KedrixOneDocumentCategories;
+  const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -270,7 +271,6 @@ window.KedrixOneTemplates = (() => {
             <h3 class="panel-title">${U.escapeHtml(T.t('ui.workspaceMasksTitle', 'Maschere aperte'))}</h3>
             <p class="panel-subtitle">${U.escapeHtml(T.t('ui.workspaceMasksHint', 'Base multi-maschera attiva per Pratiche: puoi tenere aperte più maschere e passare da una all\'altra senza perdere il contesto.'))}</p>
           </div>
-          <button class="btn secondary" type="button" data-action="new-practice-session">${U.escapeHtml(T.t('ui.workspaceOpenNewMask', 'Apri nuova maschera'))}</button>
         </div>
         <div class="practice-workspace-strip">
           ${workspaceSessions.map(({ summary }) => `
@@ -291,7 +291,6 @@ window.KedrixOneTemplates = (() => {
         </div>
       </section>
 
-      ${practiceImportHtml}
 
       <section class="panel" id="practiceEditorSection">
         <div class="panel-head">
@@ -419,169 +418,11 @@ window.KedrixOneTemplates = (() => {
             <div class="action-row">
               <button class="btn" type="submit">${U.escapeHtml(draft.editingPracticeId ? T.t('ui.updatePractice', 'Aggiorna pratica') : T.t('ui.saveAndGenerate', 'Salva pratica'))}</button>
               ${isEditing ? `<button class="btn secondary" type="button" data-action="duplicate-practice-draft">${U.escapeHtml(T.t('ui.duplicatePractice', 'Duplica pratica'))}</button>` : ''}
-              <button class="btn secondary" type="button" data-action="reset-practice-draft">${U.escapeHtml(T.t('ui.newDraft', 'Nuova pratica'))}</button>
               <button class="btn secondary" type="button" data-action="reset-demo">${U.escapeHtml(T.t('ui.resetDemo', 'Reset demo'))}</button>
             </div>
           </div>
         </form>
 
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <div>
-            <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceSearchEngineTitle', 'Motore ricerca pratiche'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceSearchEngineHint', 'Indicizzazione trasversale su numero pratica, cliente, container, booking, HBL/Polizza, AWB/HAWB/MAWB, CMR e riferimenti operativi.'))}</p>
-          </div>
-        </div>
-
-        <div class="practice-search-stack">
-          <div class="form-grid three practice-search-grid">
-            <div class="field full">
-              <label for="practiceSearchQuery">${U.escapeHtml(T.t('ui.searchLabel', 'Ricerca'))}</label>
-              <input id="practiceSearchQuery" name="practiceSearchQuery" type="search" value="${U.escapeHtml(searchQuery)}" placeholder="${U.escapeHtml(T.t('ui.practiceSearchPlaceholder', 'Cerca per cliente, numero pratica, container, booking, HBL, Polizza, MAWB, HAWB, CMR...'))}" autocomplete="off" />
-              <div class="field-hint">${U.escapeHtml(T.t('ui.practiceSearchLiveHint', 'Ricerca live ordinata per rilevanza operativa.'))}</div>
-            </div>
-          </div>
-
-          <div class="practice-search-meta-row">
-            <div class="search-meta-pill">${U.escapeHtml(T.t('ui.indexedFieldsHint', 'Campi indicizzati'))}: ${U.escapeHtml(T.t('ui.indexedFieldsList', 'pratiche · cliente · container · booking · HBL/Polizza · AWB/HAWB/MAWB · CMR · terminal · documenti collegati · MRN · riferimenti documento'))}</div>
-            <div class="search-meta-pill">${searchQuery ? `${searchResults.length} ${U.escapeHtml(T.t('ui.searchResults', 'risultati'))}` : U.escapeHtml(T.t('ui.searchReady', 'Ricerca pronta'))}</div>
-          </div>
-
-          ${searchQuery ? `
-            ${activeSearchPreview ? `
-              <article class="panel inset-panel search-preview-card" id="practiceSearchPreview">
-                <div class="panel-head search-preview-head">
-                  <div>
-                    <div class="summary-kicker">${U.escapeHtml(T.t('ui.searchPreviewKicker', 'Anteprima risultato selezionato'))}</div>
-                    <h4 class="panel-title">${U.escapeHtml(activeSearchPreview.clientName || activeSearchPreview.client || '—')}</h4>
-                    <p class="panel-subtitle">${U.escapeHtml(T.t('ui.searchPreviewHint', 'La pratica selezionata si apre nel form in alto in modifica e può essere aggiornata subito.'))}</p>
-                  </div>
-                  <div class="search-preview-badges">
-                    <span class="badge info">${U.escapeHtml(activeSearchPreview.practiceTypeLabel || activeSearchPreview.practiceType || '—')}</span>
-                    <span class="badge ${activeSearchPreview.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(activeSearchPreview.status || '—')}</span>
-                    ${activeSearchPreviewResult?.searchScopeLabel ? `<span class="badge info">${U.escapeHtml(activeSearchPreviewResult.searchScopeLabel)}</span>` : ''}
-                    <button class="btn secondary small-btn" type="button" data-open-practice-id="${U.escapeHtml(activeSearchPreview.id)}">${U.escapeHtml(T.t('ui.openAndEdit', 'Apri e modifica'))}</button>
-                  </div>
-                </div>
-                <div class="search-preview-grid">
-                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</div><div>${U.escapeHtml(activeSearchPreview.reference || '—')}</div></div>
-                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</div><div>${U.escapeHtml(activeSearchPreview.clientName || activeSearchPreview.client || '—')}</div></div>
-                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))}</div><div>${U.escapeHtml(activeSearchPreview.category || '—')}</div></div>
-                  <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))}</div><div>${U.escapeHtml(activeSearchPreview.practiceDate || activeSearchPreview.eta || '—')}</div></div>
-                  ${activeSearchPreviewResult?.linkedDocumentsCount ? `<div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.documentsWord', 'Documenti'))}</div><div>${U.escapeHtml(String(activeSearchPreviewResult.linkedDocumentsCount))}</div></div>` : ''}
-                  ${activeSearchPreviewEntries.map(([key, value]) => `<div class="detail-row"><div class="detail-label">${U.escapeHtml(activeSearchPreview.dynamicLabels?.[key] || key)}</div><div>${U.escapeHtml(Array.isArray(value) ? value.join(', ') : (value || '—'))}</div></div>`).join('')}
-                </div>
-                ${activeSearchPreviewResult && activeSearchPreviewResult.matches?.length ? `
-                  <div class="practice-search-match-list">
-                    ${activeSearchPreviewResult.matches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(match.label)}:</strong> ${U.escapeHtml(match.value)}</span>`).join('')}
-                  </div>` : ''}
-                ${activeSearchPreviewResult?.documentMatches?.length ? `
-                  <div class="practice-search-match-list">
-                    ${activeSearchPreviewResult.documentMatches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(T.t('ui.documentMatch', 'Documento'))}:</strong> ${U.escapeHtml(match.fileName)} · ${U.escapeHtml(match.documentTypeLabel)}</span>`).join('')}
-                  </div>` : ''}
-              </article>` : ''}
-            <div class="practice-search-results">
-              ${searchResults.length ? searchResults.slice(0, 8).map((result) => `
-                <button class="practice-search-result ${activeSearchPreviewId === result.practiceId ? 'is-active' : ''}" type="button" data-practice-id="${U.escapeHtml(result.practiceId)}">
-                  <div class="practice-search-result-head">
-                    <div>
-                      <div class="summary-kicker">${U.escapeHtml(result.reference)}</div>
-                      <div class="panel-title practice-search-result-title">${U.escapeHtml(result.clientName)}</div>
-                    </div>
-                    <div class="search-result-actions">
-                      <span class="badge info">${U.escapeHtml(result.practiceTypeLabel || '—')}</span>
-                      ${result.searchScopeLabel ? `<span class="badge info">${U.escapeHtml(result.searchScopeLabel)}</span>` : ''}
-                      <span class="search-edit-cta">${U.escapeHtml(T.t('ui.openAndEdit', 'Apri e modifica'))}</span>
-                    </div>
-                  </div>
-                  <div class="practice-search-result-meta">
-                    <span>${U.escapeHtml(T.t('ui.status', 'Stato'))}: ${U.escapeHtml(result.status || '—')}</span>
-                    <span>${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))}: ${U.escapeHtml(result.category || '—')}</span>
-                    <span>${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))}: ${U.escapeHtml(result.practiceDate || '—')}</span>
-                    ${result.linkedDocumentsCount ? `<span>${U.escapeHtml(T.t('ui.documentsWord', 'Documenti'))}: ${U.escapeHtml(String(result.linkedDocumentsCount))}</span>` : ''}
-                  </div>
-                  <div class="practice-search-match-list">
-                    ${result.matches.map((match) => `<span class="match-chip"><strong>${U.escapeHtml(match.label)}:</strong> ${U.escapeHtml(match.value)}</span>`).join('')}
-                  </div>
-                </button>`).join('') : `
-                <div class="empty-state-inline">${U.escapeHtml(T.t('ui.noSearchResults', 'Nessun risultato coerente con la ricerca inserita.'))}</div>`}
-            </div>` : `
-            <div class="empty-state-inline">${U.escapeHtml(T.t('ui.searchPrompt', 'Digita almeno un riferimento operativo per interrogare l’indice trasversale.'))}</div>`}
-        </div>
-      </section>
-
-      <section class="table-panel" id="practiceListSection">
-        <div class="panel-head">
-          <div>
-            <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceList', 'Elenco pratiche'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(T.t('ui.reopenHint', 'Clicca una riga per riaprire la pratica in modifica.'))}</p>
-          </div>
-        </div>
-        <div class="table-toolbar">
-          <div class="field">
-            <label for="filterText">${U.escapeHtml(T.t('ui.quickFilter', 'Filtro rapido elenco'))}</label>
-            <input id="filterText" name="filterText" type="search" value="${U.escapeHtml(state.filterText || '')}" placeholder="${U.escapeHtml(T.t('ui.quickFilterPlaceholder', 'Cliente, numero pratica, porto, merce...'))}" autocomplete="off" />
-          </div>
-          <div class="field">
-            <label for="statusFilter">${U.escapeHtml(T.t('ui.statusFilter', 'Filtro stato'))}</label>
-            <select id="statusFilter" name="statusFilter">
-              ${statusOptions.map((option) => `<option value="${U.escapeHtml(option)}" ${state.statusFilter === option ? 'selected' : ''}>${U.escapeHtml(option)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="table-toolbar-summary">${filtered.length} ${U.escapeHtml(T.t('ui.visiblePractices', 'pratiche visibili'))}</div>
-        </div>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>${U.escapeHtml(T.t('ui.id', 'ID'))}</th>
-                <th>${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</th>
-                <th>${U.escapeHtml(T.t('ui.practiceTypeDisplay', 'Tipologia'))}</th>
-                <th>${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</th>
-                <th>${U.escapeHtml(T.t('ui.containerCode', 'Container / telaio'))}</th>
-                <th>${U.escapeHtml(T.t('ui.packageCount', 'Colli'))}</th>
-                <th>${U.escapeHtml(T.t('ui.grossWeight', 'Peso lordo'))}</th>
-                <th>${U.escapeHtml(T.t('ui.status', 'Stato'))}</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filtered.map((practice) => `
-                <tr data-practice-id="${U.escapeHtml(practice.id)}">
-                  <td>${U.escapeHtml(practice.id)}</td>
-                  <td>${U.escapeHtml(practice.reference)}</td>
-                  <td>${U.escapeHtml(practice.practiceTypeLabel || practice.practiceType || '—')}</td>
-                  <td>${U.escapeHtml(practice.clientName || practice.client || '—')}</td>
-                  <td>${U.escapeHtml(practice.containerCode || '—')}</td>
-                  <td>${U.escapeHtml(practice.packageCount || '—')}</td>
-                  <td>${U.escapeHtml(practice.grossWeight || '—')}</td>
-                  <td><span class="badge ${practice.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(practice.status)}</span></td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="panel" id="practiceDetailSection">
-        <div class="panel-head">
-          <div>
-            <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceDetail', 'Dettaglio pratica'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(T.t('ui.selectPractice', 'Seleziona una pratica dalla tabella.'))}</p>
-          </div>
-        </div>
-        ${selected ? `
-          <div class="detail-grid detail-grid-large">
-            <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</div><div>${U.escapeHtml(selected.reference)}</div></div>
-            <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.practiceTypeDisplay', 'Tipologia'))}</div><div>${U.escapeHtml(selected.practiceTypeLabel || selected.practiceType || '—')}</div></div>
-            <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</div><div>${U.escapeHtml(selected.clientName || selected.client || '—')}</div></div>
-            <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.schemaGroup', 'Schema'))}</div><div>${U.escapeHtml(selected.schemaGroup || '—')}</div></div>
-            ${Object.entries(selected.dynamicData || {}).map(([key, value]) => `
-              <div class="detail-row"><div class="detail-label">${U.escapeHtml(selected.dynamicLabels?.[key] || key)}</div><div>${U.escapeHtml(Array.isArray(value) ? value.join(', ') : (value || '—'))}</div></div>
-            `).join('')}
-            <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.billingLinkStatus', 'Stato collegamento fatturazione'))}</div><div>${U.escapeHtml(selected.billingLinkStatus || T.t('ui.billingLinkPending', 'Da collegare'))}</div></div>
-            <div class="detail-row"><div class="detail-label">${U.escapeHtml(T.t('ui.notes', 'Note'))}</div><div>${U.escapeHtml(selected.notes || '—')}</div></div>
-          </div>` : `<div class="empty-text">${U.escapeHtml(T.t('ui.noSelection', 'Nessuna pratica selezionata.'))}</div>`}
       </section>`;
   }
   function formatDateTime(value) {
@@ -880,6 +721,215 @@ function documents(state, module, searchResults = []) {
 }
 
 
+
+function practicesHub(state, module) {
+  const workspace = state.practiceWorkspace || { sessions: [] };
+  const openMasks = Array.isArray(workspace.sessions) ? workspace.sessions.length : 0;
+  const draftCount = (workspace.sessions || []).filter((session) => !String(session?.draft?.editingPracticeId || '').trim()).length;
+  const practiceCount = Array.isArray(state.practices) ? state.practices.length : 0;
+  return `
+    <section class="hero">
+      <div class="hero-meta">${U.escapeHtml(T.t('ui.practiceHubKicker', 'Pratiche padre · hub operativo'))}</div>
+      <h2>${U.escapeHtml(module?.label || T.moduleLabel('practices', 'Pratiche'))}</h2>
+      <p>${U.escapeHtml(T.t('ui.practiceHubIntro', 'Il tab padre Pratiche resta il cockpit del dominio: qui orienti l’accesso a elenco, workspace dedicato e prossimi monitor operativi senza sporcare la lista.'))}</p>
+    </section>
+
+    <section class="kpi-grid compact-kpi-grid">
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceHubTotal', 'Pratiche archiviate'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(practiceCount))}</div>
+        <div class="kpi-hint">${U.escapeHtml(T.t('ui.practiceHubTotalHint', 'Base attuale disponibile per ricerca, confronti periodali e future analisi CRM.'))}</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceHubOpenMasks', 'Workspace aperti'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(openMasks))}</div>
+        <div class="kpi-hint">${U.escapeHtml(T.t('ui.practiceHubOpenMasksHint', 'Maschere pratica già attive nel workspace interno all’app.'))}</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceHubDraftMasks', 'Bozze aperte'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(draftCount))}</div>
+        <div class="kpi-hint">${U.escapeHtml(T.t('ui.practiceHubDraftMasksHint', 'Nuove pratiche ancora senza record definitivo salvato.'))}</div>
+      </article>
+    </section>
+
+    <section class="module-card-grid practice-hub-grid">
+      <article class="module-card practice-hub-card">
+        <div>
+          <div class="summary-kicker">${U.escapeHtml(T.t('ui.practiceList', 'Elenco pratiche'))}</div>
+          <div class="module-card-title">${U.escapeHtml(T.t('ui.practiceHubListTitle', 'Lista pulita + ricerca avanzata'))}</div>
+          <div class="module-card-meta">${U.escapeHtml(T.t('ui.practiceHubListDetail', 'Filtri per campo, range date, confronto periodale e pulsante “Apri nuova pratica” solo qui.'))}</div>
+        </div>
+        <div class="action-row"><button class="btn" type="button" data-route-action="practices/gestione-pratiche">${U.escapeHtml(T.t('ui.openPracticeList', 'Apri elenco pratiche'))}</button></div>
+      </article>
+      <article class="module-card practice-hub-card">
+        <div>
+          <div class="summary-kicker">${U.escapeHtml(T.t('ui.practiceWorkspaceTitle', 'Workspace pratica'))}</div>
+          <div class="module-card-title">${U.escapeHtml(T.t('ui.practiceHubWorkspaceTitle', 'Lavorazione in maschera dedicata'))}</div>
+          <div class="module-card-meta">${U.escapeHtml(T.t('ui.practiceHubWorkspaceDetail', 'Dall’apertura al salvataggio, la pratica vive in uno spazio interno all’app separato dall’elenco.'))}</div>
+        </div>
+        <div class="action-row"><button class="btn secondary" type="button" data-route-action="practices/pratiche">${U.escapeHtml(T.t('ui.openPracticeWorkspace', 'Apri workspace pratiche'))}</button></div>
+      </article>
+    </section>`;
+}
+
+function practiceList(state, filtered = [], insights = {}) {
+  const filters = state.practiceListFilters || {};
+  const practiceTypes = [
+    { value: '', label: T.t('ui.allPracticeTypes', 'Tutte le tipologie') },
+    { value: 'sea_import', label: T.t('ui.typeSeaImport', 'Mare Import') },
+    { value: 'sea_export', label: T.t('ui.typeSeaExport', 'Mare Export') },
+    { value: 'air_import', label: T.t('ui.typeAirImport', 'Aerea Import') },
+    { value: 'air_export', label: T.t('ui.typeAirExport', 'Aerea Export') },
+    { value: 'road_import', label: T.t('ui.typeRoadImport', 'Terra Import') },
+    { value: 'road_export', label: T.t('ui.typeRoadExport', 'Terra Export') },
+    { value: 'warehouse', label: T.t('ui.typeWarehouse', 'Magazzino') }
+  ];
+  const directionOptions = [
+    { value: 'all', label: T.t('ui.allDirections', 'Tutti') },
+    { value: 'import', label: T.t('ui.importWord', 'Import') },
+    { value: 'export', label: T.t('ui.exportWord', 'Export') },
+    { value: 'warehouse', label: T.t('ui.typeWarehouse', 'Magazzino') }
+  ];
+  const statusOptions = [
+    { value: 'all', label: T.t('ui.allStatuses', 'Tutti gli stati') },
+    { value: 'In attesa documenti', label: 'In attesa documenti' },
+    { value: 'Operativa', label: 'Operativa' },
+    { value: 'Sdoganamento', label: 'Sdoganamento' },
+    { value: 'Chiusa', label: 'Chiusa' }
+  ];
+  const primaryLabel = filters.dateFrom || filters.dateTo
+    ? `${filters.dateFrom || '…'} → ${filters.dateTo || '…'}`
+    : T.t('ui.practiceListNoPrimaryRange', 'Nessun range impostato');
+  const comparisonLabel = filters.compareDateFrom || filters.compareDateTo
+    ? `${filters.compareDateFrom || '…'} → ${filters.compareDateTo || '…'}`
+    : T.t('ui.practiceListNoComparisonRange', 'Nessun confronto impostato');
+  const deltaTone = insights.deltaCount > 0 ? 'success' : insights.deltaCount < 0 ? 'warning' : 'info';
+  const helper = PracticeListAnalytics && typeof PracticeListAnalytics.extractValues === 'function'
+    ? PracticeListAnalytics
+    : { extractValues: (practice) => ({ importer: practice.importer || '', exporter: practice.shipper || '', destination: practice.port || '', container: practice.containerCode || '', booking: practice.booking || '', practiceDate: practice.practiceDate || '' }) };
+
+  return `
+    <section class="hero">
+      <div class="hero-meta">${U.escapeHtml(T.t('ui.practiceListKicker', 'Gestione pratiche · lista e ricerca avanzata'))}</div>
+      <h2>${U.escapeHtml(T.t('ui.practiceListTitle', 'Gestione pratiche'))}</h2>
+      <p>${U.escapeHtml(T.t('ui.practiceListIntro', 'Questa vista resta dedicata solo a ricerca, filtri per campo, confronto periodale e apertura della pratica nel workspace interno.'))}</p>
+    </section>
+
+    <section class="kpi-grid compact-kpi-grid">
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceListCurrentRange', 'Range attivo'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(insights.primaryCount || 0))}</div>
+        <div class="kpi-hint">${U.escapeHtml(primaryLabel)}</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.importWord', 'Import'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(insights.primaryImportCount || 0))}</div>
+        <div class="kpi-hint">${U.escapeHtml(T.t('ui.practiceListImportHint', 'Conteggio pratiche import nel range filtrato.'))}</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.exportWord', 'Export'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(insights.primaryExportCount || 0))}</div>
+        <div class="kpi-hint">${U.escapeHtml(T.t('ui.practiceListExportHint', 'Conteggio pratiche export nel range filtrato.'))}</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceListComparison', 'Confronto periodo'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(insights.compareCount || 0))}</div>
+        <div class="kpi-hint">${U.escapeHtml(comparisonLabel)}</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceListDelta', 'Delta'))}</div>
+        <div class="kpi-value">${insights.deltaCount > 0 ? '+' : ''}${U.escapeHtml(String(insights.deltaCount || 0))}</div>
+        <div class="kpi-hint"><span class="badge ${deltaTone === 'success' ? '' : deltaTone === 'warning' ? 'warning' : 'info'}">${U.escapeHtml(deltaTone === 'success' ? T.t('ui.practiceListGrowing', 'In crescita') : deltaTone === 'warning' ? T.t('ui.practiceListDecreasing', 'In calo') : T.t('ui.practiceListStable', 'Stabile'))}</span></div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceListScopedTotal', 'Perimetro filtrato'))}</div>
+        <div class="kpi-value">${U.escapeHtml(String(insights.totalScopedCount || filtered.length || 0))}</div>
+        <div class="kpi-hint">${U.escapeHtml(T.t('ui.practiceListScopedTotalHint', 'Record coerenti con i filtri non temporali applicati.'))}</div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListFiltersTitle', 'Ricerca avanzata per campi'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListFiltersHint', 'Filtra per soggetti, riferimenti logistici e range date per leggere il periodo attivo e confrontarlo con un secondo intervallo.'))}</p>
+        </div>
+        <div class="action-row">
+          <button id="newPracticeButton" class="btn" type="button" data-route-action="practices/pratiche">${U.escapeHtml(T.t('ui.newPractice', 'Nuova pratica'))}</button>
+          <button class="btn secondary" type="button" data-action="reset-practice-list-filters">${U.escapeHtml(T.t('ui.resetPracticeListFilters', 'Reset filtri'))}</button>
+        </div>
+      </div>
+      <div class="form-grid three practice-list-filter-grid">
+        <div class="field"><label for="practiceListQuick">${U.escapeHtml(T.t('ui.quickFilter', 'Filtro rapido elenco'))}</label><input id="practiceListQuick" type="search" data-practice-list-filter="quick" value="${U.escapeHtml(filters.quick || '')}" placeholder="${U.escapeHtml(T.t('ui.practiceListQuickPlaceholder', 'Cliente, numero pratica, booking, container...'))}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListStatus">${U.escapeHtml(T.t('ui.statusFilter', 'Filtro stato'))}</label><select id="practiceListStatus" data-practice-list-filter="status">${statusOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.status === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="practiceListDirection">${U.escapeHtml(T.t('ui.direction', 'Direzione'))}</label><select id="practiceListDirection" data-practice-list-filter="direction">${directionOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.direction === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="practiceListType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))}</label><select id="practiceListType" data-practice-list-filter="practiceType">${practiceTypes.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.practiceType === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="practiceListReference">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</label><input id="practiceListReference" type="search" data-practice-list-filter="reference" value="${U.escapeHtml(filters.reference || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListClient">${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</label><input id="practiceListClient" type="search" data-practice-list-filter="client" value="${U.escapeHtml(filters.client || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListImporter">${U.escapeHtml(T.t('ui.importer', 'Importatore'))}</label><input id="practiceListImporter" type="search" data-practice-list-filter="importer" value="${U.escapeHtml(filters.importer || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListExporter">${U.escapeHtml(T.t('ui.shipper', 'Mittente / esportatore'))}</label><input id="practiceListExporter" type="search" data-practice-list-filter="exporter" value="${U.escapeHtml(filters.exporter || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListConsignee">${U.escapeHtml(T.t('ui.consignee', 'Destinatario'))}</label><input id="practiceListConsignee" type="search" data-practice-list-filter="consignee" value="${U.escapeHtml(filters.consignee || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListContainer">${U.escapeHtml(T.t('ui.containerCode', 'Container / telaio'))}</label><input id="practiceListContainer" type="search" data-practice-list-filter="container" value="${U.escapeHtml(filters.container || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListBooking">${U.escapeHtml(T.t('ui.bookingWord', 'Booking'))}</label><input id="practiceListBooking" type="search" data-practice-list-filter="booking" value="${U.escapeHtml(filters.booking || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListPolicy">${U.escapeHtml(T.t('ui.policyNumber', 'Polizza / BL / AWB'))}</label><input id="practiceListPolicy" type="search" data-practice-list-filter="policy" value="${U.escapeHtml(filters.policy || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListVessel">${U.escapeHtml(T.t('ui.vesselVoyage', 'Nave / viaggio'))}</label><input id="practiceListVessel" type="search" data-practice-list-filter="vessel" value="${U.escapeHtml(filters.vessel || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListOrigin">${U.escapeHtml(T.t('ui.originDirectory', 'Origine'))}</label><input id="practiceListOrigin" type="search" data-practice-list-filter="origin" value="${U.escapeHtml(filters.origin || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListDestination">${U.escapeHtml(T.t('ui.destinationDirectory', 'Destinazione'))}</label><input id="practiceListDestination" type="search" data-practice-list-filter="destination" value="${U.escapeHtml(filters.destination || '')}" autocomplete="off" /></div>
+      </div>
+      <div class="form-grid four practice-list-filter-grid compact-date-grid">
+        <div class="field"><label for="practiceListDateFrom">${U.escapeHtml(T.t('ui.dateFrom', 'Data da'))}</label><input id="practiceListDateFrom" type="date" data-practice-list-filter="dateFrom" value="${U.escapeHtml(filters.dateFrom || '')}" /></div>
+        <div class="field"><label for="practiceListDateTo">${U.escapeHtml(T.t('ui.dateTo', 'Data a'))}</label><input id="practiceListDateTo" type="date" data-practice-list-filter="dateTo" value="${U.escapeHtml(filters.dateTo || '')}" /></div>
+        <div class="field"><label for="practiceListCompareDateFrom">${U.escapeHtml(T.t('ui.compareDateFrom', 'Confronta da'))}</label><input id="practiceListCompareDateFrom" type="date" data-practice-list-filter="compareDateFrom" value="${U.escapeHtml(filters.compareDateFrom || '')}" /></div>
+        <div class="field"><label for="practiceListCompareDateTo">${U.escapeHtml(T.t('ui.compareDateTo', 'Confronta a'))}</label><input id="practiceListCompareDateTo" type="date" data-practice-list-filter="compareDateTo" value="${U.escapeHtml(filters.compareDateTo || '')}" /></div>
+      </div>
+    </section>
+
+    <section class="table-panel" id="practiceListSection">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListResultsTitle', 'Risultati elenco pratiche'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListResultsHint', 'Apri una pratica nel workspace interno all’app per lavorarla e salvarla senza sporcare la lista.'))}</p>
+        </div>
+        <div class="table-toolbar-summary">${U.escapeHtml(String(filtered.length))} ${U.escapeHtml(T.t('ui.visiblePractices', 'pratiche visibili'))}</div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</th>
+              <th>${U.escapeHtml(T.t('ui.practiceTypeDisplay', 'Tipologia'))}</th>
+              <th>${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</th>
+              <th>${U.escapeHtml(T.t('ui.importer', 'Importatore'))}</th>
+              <th>${U.escapeHtml(T.t('ui.shipper', 'Mittente / esportatore'))}</th>
+              <th>${U.escapeHtml(T.t('ui.containerCode', 'Container / telaio'))}</th>
+              <th>${U.escapeHtml(T.t('ui.bookingWord', 'Booking'))}</th>
+              <th>${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))}</th>
+              <th>${U.escapeHtml(T.t('ui.status', 'Stato'))}</th>
+              <th>${U.escapeHtml(T.t('ui.companyAction', 'Azione'))}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((practice) => {
+              const values = helper.extractValues(practice);
+              return `<tr>
+                <td>${U.escapeHtml(practice.reference || '—')}</td>
+                <td>${U.escapeHtml(practice.practiceTypeLabel || practice.practiceType || '—')}</td>
+                <td>${U.escapeHtml(practice.clientName || practice.client || '—')}</td>
+                <td>${U.escapeHtml(values.importer || '—')}</td>
+                <td>${U.escapeHtml(values.exporter || '—')}</td>
+                <td>${U.escapeHtml(values.container || '—')}</td>
+                <td>${U.escapeHtml(values.booking || '—')}</td>
+                <td>${U.escapeHtml(values.practiceDate || '—')}</td>
+                <td><span class="badge ${practice.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(practice.status || '—')}</span></td>
+                <td><button class="btn secondary small-btn" type="button" data-open-practice-id="${U.escapeHtml(practice.id)}">${U.escapeHtml(T.t('ui.openPracticeWorkspaceAction', 'Apri workspace'))}</button></td>
+              </tr>`;
+            }).join('') : `<tr><td colspan="10"><div class="empty-text">${U.escapeHtml(T.t('ui.noSearchResults', 'Nessun risultato coerente con la ricerca inserita.'))}</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
 function contacts(state, module) {
   const MasterDataQuickAdd = getMasterDataQuickAdd();
   if (MasterDataQuickAdd && typeof MasterDataQuickAdd.renderPanel === 'function') {
@@ -1155,6 +1205,8 @@ function settings(state, modules, activeUser) {
     sidebar,
     dashboard,
     practices,
+    practicesHub,
+    practiceList,
     documents,
     contacts,
     settings,

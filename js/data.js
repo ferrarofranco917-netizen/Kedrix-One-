@@ -20,6 +20,27 @@ window.KedrixOneData = (() => {
       documentPreviewPracticeId: '',
       documentPreviewAttachmentId: '',
       statusFilter: 'Tutti',
+      practiceListFilters: {
+        quick: '',
+        status: 'all',
+        direction: 'all',
+        practiceType: '',
+        reference: '',
+        client: '',
+        importer: '',
+        exporter: '',
+        consignee: '',
+        container: '',
+        booking: '',
+        policy: '',
+        vessel: '',
+        origin: '',
+        destination: '',
+        dateFrom: '',
+        dateTo: '',
+        compareDateFrom: '',
+        compareDateTo: ''
+      },
       expandedModules: ['practices', 'master-data', 'documents', 'tracking'],
       settingsModuleKey: 'practices',
       settingsClientId: 'CL-001',
@@ -150,7 +171,7 @@ window.KedrixOneData = (() => {
           extraModules: ['tracking'],
           disabledModules: ['crm', 'administration', 'bi'],
           extraSubmodules: [
-            'practices/elenco-pratiche',
+            'practices/gestione-pratiche',
             'tracking/container-tracking'
           ],
           disabledSubmodules: [
