@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-stepaf-logistics-hardening-v1';
+const CACHE = 'kedrix-one-stepag-logistics-completeness-v1';
 const FILES = [
   './',
   './index.html',
@@ -18,6 +18,7 @@ const FILES = [
   './js/i18n.js',
   './js/practice-schemas.js',
   './js/practices/practice-readiness-board.js',
+  './js/practices/practice-logistics-intelligence.js',
   './js/practices/practice-logistics-board.js',
   './js/practices/practice-document-readiness.js',
   './js/practices/practice-operational-hub.js',

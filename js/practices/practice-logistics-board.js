@@ -3,6 +3,7 @@ window.KedrixOnePracticeLogisticsBoard = (() => {
 
   const PracticeSchemas = window.KedrixOnePracticeSchemas || null;
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations || null;
+  const PracticeLogisticsIntelligence = window.KedrixOnePracticeLogisticsIntelligence || null;
 
   function t(i18n, key, fallback) {
     return i18n && typeof i18n.t === 'function' ? i18n.t(key, fallback) : fallback;
@@ -300,20 +301,23 @@ window.KedrixOnePracticeLogisticsBoard = (() => {
   }
 
   function summarizeSection(context = {}, key, titleKey, titleFallback, items = [], issues = []) {
-    const criticalCount = items.filter((item) => item.status === 'critical').length + issues.filter((issue) => issue.tone === 'danger').length;
-    const attentionCount = items.filter((item) => item.status === 'attention').length + issues.filter((issue) => issue.tone === 'warning').length;
-    const readyCount = items.filter((item) => item.status === 'ready').length;
+    const activeItems = items.filter((item) => item.status !== 'inactive');
+    const criticalCount = activeItems.filter((item) => item.status === 'critical').length + issues.filter((issue) => issue.tone === 'danger').length;
+    const attentionCount = activeItems.filter((item) => item.status === 'attention').length + issues.filter((issue) => issue.tone === 'warning').length;
+    const readyCount = activeItems.filter((item) => item.status === 'ready').length;
     const status = criticalCount > 0 ? 'critical' : attentionCount > 0 ? 'attention' : 'ready';
-    const firstMissing = items.find((item) => item.status === 'critical') || items.find((item) => item.status === 'attention') || null;
+    const firstMissing = activeItems.find((item) => item.status === 'critical') || activeItems.find((item) => item.status === 'attention') || null;
     const firstIssue = issues.find((issue) => issue.tone === 'danger') || issues.find((issue) => issue.tone === 'warning') || null;
     const actionFieldName = firstIssue?.fieldName || firstMissing?.fieldName || '';
     const detail = firstIssue
       ? firstIssue.label
-      : status === 'critical'
-        ? t(context.i18n, 'ui.practiceLogisticsSectionCriticalHint', 'Completa prima i nodi essenziali di questo blocco logistico.')
-        : status === 'attention'
-          ? t(context.i18n, 'ui.practiceLogisticsSectionAttentionHint', 'La base c’è, ma restano alcuni snodi utili da consolidare.')
-          : t(context.i18n, 'ui.practiceLogisticsSectionReadyHint', 'Blocco logistico leggibile e coerente per il flusso attuale.');
+      : activeItems.length === 0
+        ? t(context.i18n, 'ui.practiceLogisticsItemInactive', 'Non attivo per questo flusso')
+        : status === 'critical'
+          ? t(context.i18n, 'ui.practiceLogisticsSectionCriticalHint', 'Completa prima i nodi essenziali di questo blocco logistico.')
+          : status === 'attention'
+            ? t(context.i18n, 'ui.practiceLogisticsSectionAttentionHint', 'La base c’è, ma restano alcuni snodi utili da consolidare.')
+            : t(context.i18n, 'ui.practiceLogisticsSectionReadyHint', 'Blocco logistico leggibile e coerente per il flusso attuale.');
 
     return {
       key,
@@ -325,7 +329,7 @@ window.KedrixOnePracticeLogisticsBoard = (() => {
         critical: criticalCount,
         attention: attentionCount,
         ready: readyCount,
-        total: items.length
+        total: activeItems.length
       },
       firstMissing,
       firstIssue,
@@ -351,17 +355,30 @@ window.KedrixOnePracticeLogisticsBoard = (() => {
     }
 
     const definition = buildDefinition(type || draft.practiceType);
-    const routeItems = buildItems(context, definition.route);
-    const supportItems = buildItems(context, definition.support);
-    const timingItems = buildItems(context, definition.timing);
-    const issues = buildIssues(context, routeItems, timingItems, definition.issueRules);
-    const routeText = buildRouteText(routeItems, context.i18n);
+    const intelligenceFlags = PracticeLogisticsIntelligence && typeof PracticeLogisticsIntelligence.buildFlags === 'function'
+      ? PracticeLogisticsIntelligence.buildFlags(context)
+      : null;
+    let routeItems = buildItems(context, definition.route);
+    let supportItems = buildItems(context, definition.support);
+    let timingItems = buildItems(context, definition.timing);
+
+    if (PracticeLogisticsIntelligence && typeof PracticeLogisticsIntelligence.annotateItems === 'function') {
+      routeItems = PracticeLogisticsIntelligence.annotateItems(context, 'route', routeItems, { flags: intelligenceFlags, supportItems, routeItems });
+      supportItems = PracticeLogisticsIntelligence.annotateItems(context, 'support', supportItems, { flags: intelligenceFlags, routeItems, supportItems });
+      timingItems = PracticeLogisticsIntelligence.annotateItems(context, 'timing', timingItems, { flags: intelligenceFlags, routeItems, supportItems });
+    }
+
+    const issues = buildIssues(context, routeItems.filter((item) => item.status !== 'inactive'), timingItems.filter((item) => item.status !== 'inactive'), definition.issueRules);
+    const routeText = buildRouteText(routeItems.filter((item) => item.status !== 'inactive' || item.value), context.i18n);
+    const coverage = PracticeLogisticsIntelligence && typeof PracticeLogisticsIntelligence.buildCoverage === 'function'
+      ? PracticeLogisticsIntelligence.buildCoverage(context, { flags: intelligenceFlags, routeItems, supportItems, timingItems, issues, routeText })
+      : null;
 
     const cards = [
       summarizeSection(context, 'route', 'ui.practiceLogisticsCardRoute', 'Percorso fisico', routeItems, issues),
       summarizeSection(context, 'support', 'ui.practiceLogisticsCardSupport', 'Snodi di supporto', supportItems, []),
       summarizeSection(context, 'timing', 'ui.practiceLogisticsCardTiming', 'Tempi logistici', timingItems, [])
-    ].filter((card) => card.items.length);
+    ].filter((card) => card.items.length && (card.counts.total > 0 || card.items.some((item) => item.value)));
 
     const counts = cards.reduce((acc, card) => {
       acc.critical += card.counts.critical;
@@ -379,19 +396,19 @@ window.KedrixOnePracticeLogisticsBoard = (() => {
           : null)
       : null;
 
-    const tone = counts.critical > 0 ? 'danger' : counts.attention > 0 ? 'warning' : 'success';
-    let overviewTitle = t(context.i18n, 'ui.practiceLogisticsOverviewReadyTitle', 'Percorso logistico leggibile');
-    let overviewDetail = `${t(context.i18n, 'ui.practiceLogisticsOverviewReadyDetail', 'I nodi principali risultano presenti e la tratta è abbastanza chiara per proseguire.')}${routeText ? ` ${routeText}.` : ''}`;
+    const tone = coverage?.tone || (counts.critical > 0 ? 'danger' : counts.attention > 0 ? 'warning' : 'success');
+    let overviewTitle = coverage?.label || t(context.i18n, 'ui.practiceLogisticsOverviewReadyTitle', 'Percorso logistico leggibile');
+    let overviewDetail = coverage?.detail || t(context.i18n, 'ui.practiceLogisticsOverviewReadyDetail', 'I nodi principali risultano presenti e la tratta è abbastanza chiara per proseguire.');
 
-    if (tone === 'danger') {
+    if (tone === 'danger' && !coverage) {
       overviewTitle = t(context.i18n, 'ui.practiceLogisticsOverviewCriticalTitle', 'Mancano nodi logistici essenziali');
       overviewDetail = t(context.i18n, 'ui.practiceLogisticsOverviewCriticalDetail', 'Chiudi prima origine, destinazione e tempi minimi: sono i punti che rendono fragile la pratica.');
-      if (topItem?.cardTitle) overviewDetail += ` ${t(context.i18n, 'ui.practiceOperationalHubOverviewNextSource', 'Prossimo fronte')}: ${topItem.cardTitle}.`;
-    } else if (tone === 'warning') {
+    } else if (tone === 'warning' && !coverage) {
       overviewTitle = t(context.i18n, 'ui.practiceLogisticsOverviewAttentionTitle', 'Base logistica presente, ma conviene consolidare alcuni snodi');
       overviewDetail = t(context.i18n, 'ui.practiceLogisticsOverviewAttentionDetail', 'La tratta è leggibile, ma ci sono ancora passaggi o nodi di supporto che è meglio chiarire ora.');
-      if (topItem?.cardTitle) overviewDetail += ` ${t(context.i18n, 'ui.practiceOperationalHubOverviewNextSource', 'Prossimo fronte')}: ${topItem.cardTitle}.`;
     }
+    if (routeText) overviewDetail += ` ${routeText}.`;
+    if (topItem?.cardTitle) overviewDetail += ` ${t(context.i18n, 'ui.practiceOperationalHubOverviewNextSource', 'Prossimo fronte')}: ${topItem.cardTitle}.`;
 
     return {
       cards,
@@ -400,6 +417,7 @@ window.KedrixOnePracticeLogisticsBoard = (() => {
         title: overviewTitle,
         detail: overviewDetail,
         routeText,
+        flowLabel: coverage?.flowLabel || '',
         counts,
         topItem
       }
@@ -465,7 +483,8 @@ window.KedrixOnePracticeLogisticsBoard = (() => {
             <div class="practice-readiness-overview-title">${escape(utils, overview.title)}</div>
             <div class="practice-readiness-overview-detail">${escape(utils, overview.detail)}</div>
           </div>
-          <div class="practice-readiness-overview-side">
+          <div class="practice-readiness-overview-side practice-logistics-overview-side">
+            ${overview.flowLabel ? `<span class="count-chip"><strong>${escape(utils, overview.flowLabel)}</strong></span>` : ''}
             <span class="count-chip"><strong>${escape(utils, overview.routeText || '—')}</strong></span>
           </div>
         </div>

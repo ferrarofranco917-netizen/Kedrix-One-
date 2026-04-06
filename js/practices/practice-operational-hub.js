@@ -96,16 +96,17 @@ window.KedrixOnePracticeOperationalHub = (() => {
         title: logisticsSummary.overview?.title || t(i18n, 'ui.practiceOperationalHubSourceLogisticsFallbackTitle', 'Percorso logistico'),
         detail: logisticsSummary.overview?.detail || t(i18n, 'ui.practiceOperationalHubSourceLogisticsFallbackDetail', 'Controlla origine, destinazione, snodi intermedi e tempi minimi del percorso fisico.'),
         chips: [
+          logisticsSummary.overview?.flowLabel ? `${t(i18n, 'ui.practiceLogisticsFlowLabel', 'Flusso')}: ${logisticsSummary.overview.flowLabel}` : '',
           `${logisticsSummary.overview?.counts?.critical || 0} ${t(i18n, 'ui.practiceLogisticsCountCritical', 'essenziali')}`,
           `${logisticsSummary.overview?.counts?.attention || 0} ${t(i18n, 'ui.practiceLogisticsCountAttention', 'da chiarire')}`,
           `${logisticsSummary.overview?.counts?.ready || 0} ${t(i18n, 'ui.practiceLogisticsCountReady', 'nodi pronti')}`
-        ],
+        ].filter(Boolean),
         action: logisticsSummary.overview?.topItem?.fieldName ? {
           kind: 'field',
           fieldName: logisticsSummary.overview.topItem.fieldName,
           label: t(i18n, 'ui.practiceOperationalHubSourceLogisticsAction', 'Vai al nodo logistico')
         } : null,
-        priorityLabel: logisticsSummary.overview?.topItem?.label || logisticsSummary.overview?.routeText || ''
+        priorityLabel: logisticsSummary.overview?.topItem?.label || logisticsSummary.overview?.title || logisticsSummary.overview?.routeText || ''
       },
       {
         key: 'documents',

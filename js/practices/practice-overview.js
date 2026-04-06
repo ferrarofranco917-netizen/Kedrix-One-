@@ -63,10 +63,13 @@ window.KedrixOnePracticeOverview = (() => {
       {
         key: 'route',
         label: t(i18n, 'ui.practiceOverviewRoute', 'Nodi logistici'),
-        value: logisticsRouteValue || joinParts([
-          getDynamicValue(draft, ['portLoading', 'airportDeparture', 'originRef', 'pickupPlace']),
-          getDynamicValue(draft, ['portDischarge', 'airportDestination', 'destinationRef', 'deliveryPlace'])
-        ], ' → ')
+        value: joinParts([
+          logisticsSummary?.overview?.title || '',
+          logisticsRouteValue || joinParts([
+            getDynamicValue(draft, ['portLoading', 'airportDeparture', 'originRef', 'pickupPlace']),
+            getDynamicValue(draft, ['portDischarge', 'airportDestination', 'destinationRef', 'deliveryPlace'])
+          ], ' → ')
+        ])
       },
       {
         key: 'transport',

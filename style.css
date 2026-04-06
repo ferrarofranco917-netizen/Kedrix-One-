@@ -3045,6 +3045,20 @@ body.dialog-open {
 .practice-logistics-item[data-status='attention'] {
   border-color: rgba(209, 146, 57, 0.18);
 }
+.practice-logistics-item[data-status='inactive'] {
+  border-color: rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.28);
+}
+.practice-logistics-item[data-status='inactive'] .practice-logistics-item-label,
+.practice-logistics-item[data-status='inactive'] .practice-logistics-item-value {
+  color: var(--muted);
+}
+.practice-logistics-overview-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
 .practice-logistics-item-main {
   min-width: 0;
 }
