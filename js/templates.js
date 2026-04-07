@@ -820,6 +820,45 @@ function renderPracticeListBreakdownCard(title, breakdown, options = {}) {
     </article>`;
 }
 
+
+function renderPracticeStatusBreakdown(statusBreakdown) {
+  const breakdown = statusBreakdown || {};
+  const rows = Array.isArray(breakdown.rows) ? breakdown.rows : [];
+  const compareEnabled = Boolean(breakdown.compareEnabled);
+  const activeOpen = Number(breakdown.activeOpenCount || 0);
+  const compareOpen = Number(breakdown.compareOpenCount || 0);
+  const openDelta = activeOpen - compareOpen;
+
+  return `
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListStatusTitle', 'Distribuzione per stato'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListStatusHint', 'Leggi quanto pesa ogni stato nel range attivo e nel confronto, con focus immediato sulle pratiche ancora aperte.'))}</p>
+        </div>
+        <div class="practice-status-summary">
+          <span class="badge info">${U.escapeHtml(T.t('ui.practiceListOpenStatuses', 'Pratiche aperte'))}</span>
+          <span class="practice-status-summary-value">${U.escapeHtml(String(activeOpen))}</span>
+          <span class="table-meta-cell">${compareEnabled ? `${U.escapeHtml(T.t('ui.practiceListCompareShort', 'Confronto'))}: ${U.escapeHtml(String(compareOpen))} · ${U.escapeHtml(T.t('ui.practiceListDeltaShort', 'Delta'))}: ${openDelta > 0 ? '+' : ''}${U.escapeHtml(String(openDelta))}` : U.escapeHtml(T.t('ui.practiceListNoComparisonRange', 'Nessun confronto impostato'))}</span>
+        </div>
+      </div>
+      <div class="practice-compare-grid practice-status-grid">
+        <div class="practice-compare-row head">
+          <span>${U.escapeHtml(T.t('ui.status', 'Stato'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListActiveShort', 'Attivo'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListCompareShort', 'Confronto'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListDeltaShort', 'Delta'))}</span>
+        </div>
+        ${rows.length ? rows.map((row) => `<div class="practice-compare-row">
+          <span class="practice-compare-label">${U.escapeHtml(row.label || '—')}</span>
+          <span>${U.escapeHtml(String(row.active || 0))}</span>
+          <span>${compareEnabled ? U.escapeHtml(String(row.compare || 0)) : '—'}</span>
+          <span>${compareEnabled ? `<span class="badge ${row.delta > 0 ? '' : row.delta < 0 ? 'warning' : 'info'}">${row.delta > 0 ? '+' : ''}${U.escapeHtml(String(row.delta || 0))}</span>` : '—'}</span>
+        </div>`).join('') : `<div class="entity-breakdown-empty">${U.escapeHtml(T.t('ui.practiceListNoStatusRows', 'Nessuno stato coerente con i filtri attivi.'))}</div>`}
+      </div>
+    </section>`;
+}
+
 function practiceList(state, filtered = [], insights = {}) {
   const filters = state.practiceListFilters || {};
   const practiceTypes = [
@@ -998,6 +1037,8 @@ function practiceList(state, filtered = [], insights = {}) {
         </div>`).join('')}
       </div>
     </section>
+
+    ${renderPracticeStatusBreakdown(insights.statusBreakdown)}
 
     <section class="panel">
       <div class="panel-head">

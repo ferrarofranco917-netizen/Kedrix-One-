@@ -39,6 +39,7 @@
   const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
   const PracticeListBreakdowns = window.KedrixOnePracticeListBreakdowns || null;
   const PracticeListTable = window.KedrixOnePracticeListTable || null;
+  const PracticeListStatusBreakdowns = window.KedrixOnePracticeListStatusBreakdowns || null;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
@@ -417,6 +418,9 @@
 
     if (PracticeListBreakdowns && typeof PracticeListBreakdowns.buildSubjectBreakdowns === 'function') {
       baseMetrics.subjectBreakdowns = PracticeListBreakdowns.buildSubjectBreakdowns(baseMetrics, 5);
+    }
+    if (PracticeListStatusBreakdowns && typeof PracticeListStatusBreakdowns.build === 'function') {
+      baseMetrics.statusBreakdown = PracticeListStatusBreakdowns.build(baseMetrics);
     }
 
     return baseMetrics;

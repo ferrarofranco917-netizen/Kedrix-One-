@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r14-practice-table-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r16-practice-status-v1';
 const FILES = [
   './',
   './index.html',
@@ -20,6 +20,7 @@ const FILES = [
   './js/i18n.js',
   './js/search/practice-list-breakdowns.js',
   './js/search/practice-list-table.js',
+  './js/search/practice-list-status-breakdowns.js',
   './js/master-data/entity-records.js',
   './js/master-data/vat-autofill.js',
   './js/master-data/logistics-archives.js',
