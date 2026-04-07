@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r6-practice-list-analytics-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r7-practice-save-gate-v1';
 const FILES = [
   './',
   './index.html',

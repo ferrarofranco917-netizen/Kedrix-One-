@@ -7,7 +7,7 @@ window.KedrixOnePracticeOverview = (() => {
   const PracticeLogisticsBoard = window.KedrixOnePracticeLogisticsBoard;
   const PracticeDocumentReadinessBoard = window.KedrixOnePracticeDocumentReadinessBoard;
   const PracticeOperationalHub = window.KedrixOnePracticeOperationalHub;
-  const PracticeCalmStart = window.KedrixOnePracticeCalmStart || null;
+  const PracticeCalmStart = window.KedrixOnePracticeCalmStart;
 
   function escape(utils, value) {
     return utils && typeof utils.escapeHtml === 'function'
@@ -143,35 +143,6 @@ window.KedrixOnePracticeOverview = (() => {
     ].filter(Boolean);
   }
 
-  function renderCalmStartMessage(options = {}) {
-    const { i18n, utils } = options;
-    const title = t(i18n, 'ui.practiceCalmStartTitle', 'Avvio tranquillo della pratica');
-    const detail = t(i18n, 'ui.practiceCalmStartDetail', 'I board operativi e gli alert di completezza compariranno quando proverai a salvare. Per ora puoi compilare la pratica senza una parete di segnalazioni.');
-    const tips = [
-      t(i18n, 'ui.practiceCalmStartTipIdentity', 'Completa prima identità, cliente, data e categoria.'),
-      t(i18n, 'ui.practiceCalmStartTipTabs', 'Apri i tab Pratica, Dettaglio, Note e Allegati solo quando ti servono.'),
-      t(i18n, 'ui.practiceCalmStartTipSave', 'Al primo tentativo di salvataggio emergeranno automaticamente i controlli rilevanti.')
-    ];
-    return `
-      <section class="panel inset-panel practice-calm-start-panel" data-practice-calm-start>
-        <div class="panel-head">
-          <div>
-            <div class="practice-overview-kicker">${escape(utils, t(i18n, 'ui.practiceCalmStartKicker', 'Modalità iniziale pulita'))}</div>
-            <h4 class="panel-title">${escape(utils, title)}</h4>
-            <p class="panel-subtitle">${escape(utils, detail)}</p>
-          </div>
-        </div>
-        <div class="practice-overview-grid">
-          ${tips.map((tip, index) => `
-            <article class="practice-overview-card" data-overview-key="calm-start-${index + 1}">
-              <div class="practice-overview-card-label">${escape(utils, t(i18n, 'ui.practiceCalmStartStepLabel', 'Passo {{count}}').replace('{{count}}', String(index + 1)))}</div>
-              <div class="practice-overview-card-value">${escape(utils, tip)}</div>
-            </article>`).join('')}
-        </div>
-      </section>`;
-  }
-
-
   function render(options = {}) {
     const { draft = {}, i18n, utils } = options;
     if (!draft || !String(draft.practiceType || '').trim()) return '';
@@ -180,25 +151,23 @@ window.KedrixOnePracticeOverview = (() => {
     const clientName = String(draft.clientName || '').trim() || t(i18n, 'ui.clientRequired', 'Cliente');
     const cards = buildSummaryCards(options.state || null, draft, options.type, options.companyConfig, i18n);
     const badges = buildBadges(draft, i18n);
-    const suppressOverviewBoards = PracticeCalmStart && typeof PracticeCalmStart.shouldSuppressOverviewBoards === 'function'
-      ? PracticeCalmStart.shouldSuppressOverviewBoards({ state: options.state || null, draft })
-      : false;
-    const calmStartHtml = suppressOverviewBoards
-      ? renderCalmStartMessage(options)
-      : '';
-    const operationalHubHtml = !suppressOverviewBoards && PracticeOperationalHub && typeof PracticeOperationalHub.render === 'function'
+    const suppressBoards = PracticeCalmStart && typeof PracticeCalmStart.shouldSuppressBoards === 'function'
+      ? PracticeCalmStart.shouldSuppressBoards({ state: options.state || null, draft })
+      : (!String(draft?.editingPracticeId || '').trim() && !(Array.isArray(options.state?._practiceValidationErrors) && options.state._practiceValidationErrors.length));
+
+    const operationalHubHtml = !suppressBoards && PracticeOperationalHub && typeof PracticeOperationalHub.render === 'function'
       ? PracticeOperationalHub.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
-    const logisticsBoardHtml = !suppressOverviewBoards && PracticeLogisticsBoard && typeof PracticeLogisticsBoard.render === 'function'
+    const logisticsBoardHtml = !suppressBoards && PracticeLogisticsBoard && typeof PracticeLogisticsBoard.render === 'function'
       ? PracticeLogisticsBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
-    const readinessBoardHtml = !suppressOverviewBoards && PracticeReadinessBoard && typeof PracticeReadinessBoard.render === 'function'
+    const readinessBoardHtml = !suppressBoards && PracticeReadinessBoard && typeof PracticeReadinessBoard.render === 'function'
       ? PracticeReadinessBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
-    const practiceDocumentReadinessHtml = !suppressOverviewBoards && PracticeDocumentReadinessBoard && typeof PracticeDocumentReadinessBoard.render === 'function'
+    const practiceDocumentReadinessHtml = !suppressBoards && PracticeDocumentReadinessBoard && typeof PracticeDocumentReadinessBoard.render === 'function'
       ? PracticeDocumentReadinessBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
-    const linkedPartiesBoardHtml = !suppressOverviewBoards && LinkedPartiesBoard && typeof LinkedPartiesBoard.render === 'function'
+    const linkedPartiesBoardHtml = !suppressBoards && LinkedPartiesBoard && typeof LinkedPartiesBoard.render === 'function'
       ? LinkedPartiesBoard.render({ state: options.state || null, draft, type: options.type, companyConfig: options.companyConfig, i18n, utils })
       : '';
 
@@ -214,7 +183,6 @@ window.KedrixOnePracticeOverview = (() => {
             ${badges.map((badge) => `<span class="badge ${badge.kind === 'info' ? 'info' : ''}">${escape(utils, badge.value)}</span>`).join('')}
           </div>
         </div>
-        ${calmStartHtml}
         ${operationalHubHtml}
         ${logisticsBoardHtml}
         ${readinessBoardHtml}
