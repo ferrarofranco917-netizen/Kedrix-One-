@@ -23,6 +23,8 @@ window.KedrixOneTemplates = (() => {
   const DocumentCompleteness = window.KedrixOneDocumentCompleteness || null;
   const DocumentCategories = window.KedrixOneDocumentCategories;
   const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
+  const PracticeListBreakdowns = window.KedrixOnePracticeListBreakdowns || null;
+  const PracticeListTable = window.KedrixOnePracticeListTable || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -784,6 +786,40 @@ function practicesHub(state, module) {
     </section>`;
 }
 
+function renderPracticeListBreakdownCard(title, breakdown, options = {}) {
+  const compareEnabled = Boolean(breakdown && breakdown.compareEnabled);
+  const rows = Array.isArray(breakdown && breakdown.rows) ? breakdown.rows : [];
+  const emptyText = options.emptyText || T.t('ui.practiceListNoEntityRows', 'Nessun soggetto coerente con i filtri attivi.');
+  const primaryDistinct = breakdown && Number.isFinite(breakdown.primaryDistinctCount) ? breakdown.primaryDistinctCount : 0;
+  const comparisonDistinct = breakdown && Number.isFinite(breakdown.comparisonDistinctCount) ? breakdown.comparisonDistinctCount : 0;
+
+  return `
+    <article class="entity-breakdown-card">
+      <div class="entity-breakdown-head">
+        <div>
+          <h4>${U.escapeHtml(title)}</h4>
+          <div class="entity-breakdown-meta">${U.escapeHtml(T.t('ui.practiceListDistinctSubjects', 'Soggetti distinti'))}: ${U.escapeHtml(String(primaryDistinct))}${compareEnabled ? ` · ${U.escapeHtml(T.t('ui.practiceListCompareShort', 'Confronto'))}: ${U.escapeHtml(String(comparisonDistinct))}` : ''}</div>
+        </div>
+        <span class="badge info">Top ${U.escapeHtml(String(rows.length || 5))}</span>
+      </div>
+      <div class="entity-breakdown-grid">
+        <div class="entity-breakdown-row head">
+          <span>${U.escapeHtml(T.t('ui.practiceListEntityLabel', 'Soggetto'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListActiveShort', 'Attivo'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListCompareShort', 'Confronto'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListDeltaShort', 'Delta'))}</span>
+        </div>
+        ${rows.length ? rows.map((row) => `
+          <div class="entity-breakdown-row">
+            <span class="entity-breakdown-label" title="${U.escapeHtml(row.label)}">${U.escapeHtml(row.label)}</span>
+            <span>${U.escapeHtml(String(row.primaryCount || 0))}</span>
+            <span>${compareEnabled ? U.escapeHtml(String(row.comparisonCount || 0)) : '—'}</span>
+            <span>${compareEnabled ? `${row.deltaCount > 0 ? '+' : ''}${U.escapeHtml(String(row.deltaCount || 0))}` : '—'}</span>
+          </div>`).join('') : `<div class="entity-breakdown-empty">${U.escapeHtml(emptyText)}</div>`}
+      </div>
+    </article>`;
+}
+
 function practiceList(state, filtered = [], insights = {}) {
   const filters = state.practiceListFilters || {};
   const practiceTypes = [
@@ -818,7 +854,35 @@ function practiceList(state, filtered = [], insights = {}) {
   const deltaTone = insights.deltaCount > 0 ? 'success' : insights.deltaCount < 0 ? 'warning' : 'info';
   const helper = PracticeListAnalytics && typeof PracticeListAnalytics.extractValues === 'function'
     ? PracticeListAnalytics
-    : { extractValues: (practice) => ({ importer: practice.importer || '', exporter: practice.shipper || '', destination: practice.port || '', container: practice.containerCode || '', booking: practice.booking || '', practiceDate: practice.practiceDate || '' }) };
+    : { extractValues: (practice) => ({ importer: practice.importer || '', exporter: practice.shipper || '', destination: practice.port || '', container: practice.containerCode || '', booking: practice.booking || '', policy: practice.policyNumber || practice.mbl || practice.mawb || '', practiceDate: practice.practiceDate || '' }) };
+  const subjectBreakdowns = insights.subjectBreakdowns || (PracticeListBreakdowns && typeof PracticeListBreakdowns.buildSubjectBreakdowns === 'function'
+    ? PracticeListBreakdowns.buildSubjectBreakdowns(insights, 5)
+    : {});
+  const sortDefaults = PracticeListTable && typeof PracticeListTable.defaultSort === 'function'
+    ? PracticeListTable.defaultSort()
+    : { sortBy: 'practiceDate', sortDirection: 'desc' };
+  const sortOptions = PracticeListTable && typeof PracticeListTable.sortOptions === 'function'
+    ? PracticeListTable.sortOptions(T)
+    : [
+        { value: 'practiceDate', label: T.t('ui.practiceListSortByDate', 'Data pratica') },
+        { value: 'reference', label: T.t('ui.practiceListSortByReference', 'Numero pratica') },
+        { value: 'client', label: T.t('ui.practiceListSortByClient', 'Cliente') }
+      ];
+  const sortDirectionOptions = PracticeListTable && typeof PracticeListTable.directionOptions === 'function'
+    ? PracticeListTable.directionOptions(T)
+    : [
+        { value: 'desc', label: T.t('ui.sortDirectionDesc', 'Discendente') },
+        { value: 'asc', label: T.t('ui.sortDirectionAsc', 'Ascendente') }
+      ];
+  const directionRows = PracticeListTable && typeof PracticeListTable.buildDirectionRows === 'function'
+    ? PracticeListTable.buildDirectionRows(insights)
+    : [
+        { key: 'import', labelKey: 'ui.importWord', fallback: 'Import', active: Number(insights.primaryImportCount || 0), compare: Number(insights.compareImportCount || 0), delta: Number(insights.primaryImportCount || 0) - Number(insights.compareImportCount || 0) },
+        { key: 'export', labelKey: 'ui.exportWord', fallback: 'Export', active: Number(insights.primaryExportCount || 0), compare: Number(insights.compareExportCount || 0), delta: Number(insights.primaryExportCount || 0) - Number(insights.compareExportCount || 0) },
+        { key: 'warehouse', labelKey: 'ui.typeWarehouse', fallback: 'Magazzino', active: Number(insights.primaryWarehouseCount || 0), compare: Number(insights.compareWarehouseCount || 0), delta: Number(insights.primaryWarehouseCount || 0) - Number(insights.compareWarehouseCount || 0) }
+      ];
+  const activeSortBy = filters.sortBy || sortDefaults.sortBy;
+  const activeSortDirection = filters.sortDirection || sortDefaults.sortDirection;
 
   return `
     <section class="hero">
@@ -894,28 +958,80 @@ function practiceList(state, filtered = [], insights = {}) {
         <div class="field"><label for="practiceListCompareDateFrom">${U.escapeHtml(T.t('ui.compareDateFrom', 'Confronta da'))}</label><input id="practiceListCompareDateFrom" type="date" data-practice-list-filter="compareDateFrom" value="${U.escapeHtml(filters.compareDateFrom || '')}" /></div>
         <div class="field"><label for="practiceListCompareDateTo">${U.escapeHtml(T.t('ui.compareDateTo', 'Confronta a'))}</label><input id="practiceListCompareDateTo" type="date" data-practice-list-filter="compareDateTo" value="${U.escapeHtml(filters.compareDateTo || '')}" /></div>
       </div>
+      <div class="practice-list-toolbar-row">
+        <div class="practice-list-toolbar-left">
+          <span class="badge info">${U.escapeHtml(T.t('ui.practiceListSortBadge', 'Lettura elenco'))}</span>
+          <span class="table-meta-cell">${U.escapeHtml(T.t('ui.practiceListSortHint', 'Ordina l’elenco e leggi subito il confronto attivo vs periodo confronto senza cambiare vista.'))}</span>
+        </div>
+        <div class="practice-list-toolbar-right">
+          <div class="field compact">
+            <label for="practiceListSortBy">${U.escapeHtml(T.t('ui.practiceListSortBy', 'Ordina per'))}</label>
+            <select id="practiceListSortBy" data-practice-list-filter="sortBy">${sortOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${activeSortBy === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select>
+          </div>
+          <div class="field compact">
+            <label for="practiceListSortDirection">${U.escapeHtml(T.t('ui.practiceListSortDirection', 'Verso'))}</label>
+            <select id="practiceListSortDirection" data-practice-list-filter="sortDirection">${sortDirectionOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${activeSortDirection === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListDirectionCompareTitle', 'Confronto per direzione'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListDirectionCompareHint', 'Import, export e magazzino letti in parallelo tra range attivo e periodo di confronto.'))}</p>
+        </div>
+      </div>
+      <div class="practice-compare-grid">
+        <div class="practice-compare-row head">
+          <span>${U.escapeHtml(T.t('ui.direction', 'Direzione'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListActiveShort', 'Attivo'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListCompareShort', 'Confronto'))}</span>
+          <span>${U.escapeHtml(T.t('ui.practiceListDeltaShort', 'Delta'))}</span>
+        </div>
+        ${directionRows.map((row) => `<div class="practice-compare-row">
+          <span class="practice-compare-label">${U.escapeHtml(T.t(row.labelKey, row.fallback))}</span>
+          <span>${U.escapeHtml(String(row.active || 0))}</span>
+          <span>${U.escapeHtml(String(row.compare || 0))}</span>
+          <span><span class="badge ${row.delta > 0 ? '' : row.delta < 0 ? 'warning' : 'info'}">${row.delta > 0 ? '+' : ''}${U.escapeHtml(String(row.delta || 0))}</span></span>
+        </div>`).join('')}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListSubjectsTitle', 'Distribuzione per soggetti'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListSubjectsHint', 'Leggi subito quante pratiche hai per cliente, importatore e mittente/esportatore nel range attivo e, se impostato, nel periodo di confronto.'))}</p>
+        </div>
+      </div>
+      <div class="practice-subject-breakdown-grid">
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListClientsBreakdown', 'Clienti'), subjectBreakdowns.client, { emptyText: T.t('ui.practiceListNoEntityRows', 'Nessun soggetto coerente con i filtri attivi.') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListImportersBreakdown', 'Importatori'), subjectBreakdowns.importer, { emptyText: T.t('ui.practiceListNoEntityRows', 'Nessun soggetto coerente con i filtri attivi.') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListExportersBreakdown', 'Mittenti / esportatori'), subjectBreakdowns.exporter, { emptyText: T.t('ui.practiceListNoEntityRows', 'Nessun soggetto coerente con i filtri attivi.') })}
+      </div>
     </section>
 
     <section class="table-panel" id="practiceListSection">
       <div class="panel-head">
         <div>
-          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListResultsTitle', 'Risultati elenco pratiche'))}</h3>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListResultsTitle', 'Risultati gestione pratiche'))}</h3>
           <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListResultsHint', 'Apri una pratica nel workspace interno all’app per lavorarla e salvarla senza sporcare la lista.'))}</p>
         </div>
         <div class="table-toolbar-summary">${U.escapeHtml(String(filtered.length))} ${U.escapeHtml(T.t('ui.visiblePractices', 'pratiche visibili'))}</div>
       </div>
       <div class="table-wrap">
-        <table class="table">
+        <table class="table practice-list-table">
           <thead>
             <tr>
               <th>${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</th>
+              <th>${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))}</th>
               <th>${U.escapeHtml(T.t('ui.practiceTypeDisplay', 'Tipologia'))}</th>
               <th>${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</th>
               <th>${U.escapeHtml(T.t('ui.importer', 'Importatore'))}</th>
-              <th>${U.escapeHtml(T.t('ui.shipper', 'Mittente / esportatore'))}</th>
-              <th>${U.escapeHtml(T.t('ui.containerCode', 'Container / telaio'))}</th>
-              <th>${U.escapeHtml(T.t('ui.bookingWord', 'Booking'))}</th>
-              <th>${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))}</th>
+              <th>${U.escapeHtml(T.t('ui.destinationDirectory', 'Destinazione'))}</th>
+              <th>${U.escapeHtml(T.t('ui.practiceListTransportRefs', 'Riferimenti trasporto'))}</th>
               <th>${U.escapeHtml(T.t('ui.status', 'Stato'))}</th>
               <th>${U.escapeHtml(T.t('ui.companyAction', 'Azione'))}</th>
             </tr>
@@ -923,23 +1039,42 @@ function practiceList(state, filtered = [], insights = {}) {
           <tbody>
             ${filtered.length ? filtered.map((practice) => {
               const values = helper.extractValues(practice);
+              const draftTone = practice.draftIncomplete ? 'warning' : 'info';
+              const draftLabel = practice.draftIncomplete
+                ? T.t('ui.practiceListDraftIncomplete', 'Bozza incompleta')
+                : T.t('ui.practiceListDraftComplete', 'Completa');
+              const refs = [values.container, values.booking, values.policy].filter((item) => String(item || '').trim());
               return `<tr>
-                <td>${U.escapeHtml(practice.reference || '—')}</td>
-                <td>${U.escapeHtml(practice.practiceTypeLabel || practice.practiceType || '—')}</td>
+                <td>
+                  <div class="table-title-cell">${U.escapeHtml(practice.reference || '—')}</div>
+                  <div class="table-meta-cell">${U.escapeHtml(practice.category || '—')}</div>
+                </td>
+                <td>${U.escapeHtml(U.formatDate ? U.formatDate(values.practiceDate || practice.practiceDate || '') : (values.practiceDate || practice.practiceDate || '—'))}</td>
+                <td>
+                  <div class="table-title-cell">${U.escapeHtml(practice.practiceTypeLabel || practice.practiceType || '—')}</div>
+                  <div class="table-meta-cell">${U.escapeHtml(values.exporter || '—')}</div>
+                </td>
                 <td>${U.escapeHtml(practice.clientName || practice.client || '—')}</td>
                 <td>${U.escapeHtml(values.importer || '—')}</td>
-                <td>${U.escapeHtml(values.exporter || '—')}</td>
-                <td>${U.escapeHtml(values.container || '—')}</td>
-                <td>${U.escapeHtml(values.booking || '—')}</td>
-                <td>${U.escapeHtml(values.practiceDate || '—')}</td>
-                <td><span class="badge ${practice.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(practice.status || '—')}</span></td>
+                <td>${U.escapeHtml(values.destination || '—')}</td>
+                <td>
+                  <div class="practice-list-ref-stack">
+                    ${refs.length ? refs.map((item) => `<span class="tag-pill practice-list-ref-pill">${U.escapeHtml(item)}</span>`).join('') : `<span class="table-meta-cell">${U.escapeHtml(T.t('ui.practiceListNoTransportRefs', 'Nessun riferimento'))}</span>`}
+                  </div>
+                </td>
+                <td>
+                  <div class="practice-list-status-stack">
+                    <span class="badge ${practice.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(practice.status || '—')}</span>
+                    <span class="badge ${draftTone}">${U.escapeHtml(draftLabel)}</span>
+                  </div>
+                </td>
                 <td><button class="btn secondary small-btn" type="button" data-open-practice-id="${U.escapeHtml(practice.id)}">${U.escapeHtml(T.t('ui.openPracticeWorkspaceAction', 'Apri workspace'))}</button></td>
               </tr>`;
-            }).join('') : `<tr><td colspan="10"><div class="empty-text">${U.escapeHtml(T.t('ui.noSearchResults', 'Nessun risultato coerente con la ricerca inserita.'))}</div></td></tr>`}
+            }).join('') : `<tr><td colspan="9"><div class="empty-text">${U.escapeHtml(T.t('ui.noSearchResults', 'Nessun risultato coerente con la ricerca inserita.'))}</div></td></tr>`}
           </tbody>
         </table>
       </div>
-    </section>`;
+    </section>`;;
 }
 
 function contacts(state, module) {

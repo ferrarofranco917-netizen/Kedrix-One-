@@ -25,7 +25,9 @@ window.KedrixOnePracticeListAnalytics = (() => {
       dateFrom: '',
       dateTo: '',
       compareDateFrom: '',
-      compareDateTo: ''
+      compareDateTo: '',
+      sortBy: 'practiceDate',
+      sortDirection: 'desc'
     };
   }
 

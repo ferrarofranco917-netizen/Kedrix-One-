@@ -37,6 +37,8 @@
   const PracticeDuplicate = window.KedrixOnePracticeDuplicate;
   const PracticeSearchUI = window.KedrixOnePracticeSearchUI;
   const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
+  const PracticeListBreakdowns = window.KedrixOnePracticeListBreakdowns || null;
+  const PracticeListTable = window.KedrixOnePracticeListTable || null;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
@@ -61,7 +63,7 @@
     const defaults = PracticeListAnalytics && typeof PracticeListAnalytics.defaultFilters === 'function'
       ? PracticeListAnalytics.defaultFilters()
       : {
-          quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: ''
+          quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '', sortBy: 'practiceDate', sortDirection: 'desc'
         };
     const current = state.practiceListFilters && typeof state.practiceListFilters === 'object' ? state.practiceListFilters : {};
     state.practiceListFilters = { ...defaults, ...current };
@@ -350,7 +352,10 @@
   function filteredPractices() {
     const filters = currentPracticeListFilters();
     if (PracticeListAnalytics && typeof PracticeListAnalytics.filterPractices === 'function') {
-      return PracticeListAnalytics.filterPractices(state.practices, filters);
+      const filtered = PracticeListAnalytics.filterPractices(state.practices, filters);
+      return PracticeListTable && typeof PracticeListTable.sortPractices === 'function'
+        ? PracticeListTable.sortPractices(filtered, filters)
+        : filtered;
     }
     const query = Utils.normalize(filters.quick || state.filterText);
     return state.practices.filter((practice) => {
@@ -389,25 +394,32 @@
 
   function practiceListInsights() {
     const filters = currentPracticeListFilters();
-    if (PracticeListAnalytics && typeof PracticeListAnalytics.buildMetrics === 'function') {
-      return PracticeListAnalytics.buildMetrics(state.practices, filters);
+    const baseMetrics = (PracticeListAnalytics && typeof PracticeListAnalytics.buildMetrics === 'function')
+      ? PracticeListAnalytics.buildMetrics(state.practices, filters)
+      : (() => {
+          const primary = filteredPractices();
+          return {
+            primary,
+            comparison: [],
+            primaryCount: primary.length,
+            compareCount: 0,
+            deltaCount: primary.length,
+            primaryImportCount: primary.filter((practice) => String(practice.practiceType || '').includes('import')).length,
+            primaryExportCount: primary.filter((practice) => String(practice.practiceType || '').includes('export')).length,
+            primaryWarehouseCount: primary.filter((practice) => String(practice.practiceType || '').includes('warehouse')).length,
+            compareImportCount: 0,
+            compareExportCount: 0,
+            compareWarehouseCount: 0,
+            compareEnabled: false,
+            totalScopedCount: primary.length
+          };
+        })();
+
+    if (PracticeListBreakdowns && typeof PracticeListBreakdowns.buildSubjectBreakdowns === 'function') {
+      baseMetrics.subjectBreakdowns = PracticeListBreakdowns.buildSubjectBreakdowns(baseMetrics, 5);
     }
-    const primary = filteredPractices();
-    return {
-      primary,
-      comparison: [],
-      primaryCount: primary.length,
-      compareCount: 0,
-      deltaCount: primary.length,
-      primaryImportCount: primary.filter((practice) => String(practice.practiceType || '').includes('import')).length,
-      primaryExportCount: primary.filter((practice) => String(practice.practiceType || '').includes('export')).length,
-      primaryWarehouseCount: primary.filter((practice) => String(practice.practiceType || '').includes('warehouse')).length,
-      compareImportCount: 0,
-      compareExportCount: 0,
-      compareWarehouseCount: 0,
-      compareEnabled: false,
-      totalScopedCount: primary.length
-    };
+
+    return baseMetrics;
   }
 
   function selectedPractice() {
@@ -2336,7 +2348,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     if (action.dataset.action === 'reset-practice-list-filters') {
       const defaults = PracticeListAnalytics && typeof PracticeListAnalytics.defaultFilters === 'function'
         ? PracticeListAnalytics.defaultFilters()
-        : { quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '' };
+        : { quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '', sortBy: 'practiceDate', sortDirection: 'desc' };
       state.practiceListFilters = { ...defaults };
       state.filterText = '';
       state.statusFilter = 'Tutti';

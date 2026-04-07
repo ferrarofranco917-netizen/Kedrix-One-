@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r12-practice-save-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r14-practice-table-v1';
 const FILES = [
   './',
   './index.html',
@@ -18,6 +18,8 @@ const FILES = [
   './js/ui/app-feedback.js',
   './js/wisemind.js',
   './js/i18n.js',
+  './js/search/practice-list-breakdowns.js',
+  './js/search/practice-list-table.js',
   './js/master-data/entity-records.js',
   './js/master-data/vat-autofill.js',
   './js/master-data/logistics-archives.js',
@@ -52,7 +54,6 @@ const FILES = [
   './js/practices/form-layout.js',
   './js/practices/linked-parties-board.js',
   './js/practices/practice-overview.js',
-  './js/practices/practice-calm-start.js',
   './js/practices/form-renderer.js',
   './js/practices/open-edit.js',
   './js/practices/identity.js',
