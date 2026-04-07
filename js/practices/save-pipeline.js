@@ -84,7 +84,8 @@ window.KedrixOnePracticeSavePipeline = (() => {
       companyConfig,
       practiceTypeLabel,
       buildCurrentPracticeReference,
-      nextPracticeId
+      nextPracticeId,
+      validationErrors = []
     } = options;
 
     const existingRecord = draft.editingPracticeId ? ((state && state.practices) || []).find((item) => item.id === draft.editingPracticeId) : null;
@@ -160,7 +161,9 @@ window.KedrixOnePracticeSavePipeline = (() => {
         dynamicLabels,
         attachmentOwnerKey,
         attachmentCount: attachmentItems.length,
-        attachmentUpdatedAt: attachmentItems.length ? attachmentItems[0].importedAt || '' : ''
+        attachmentUpdatedAt: attachmentItems.length ? attachmentItems[0].importedAt || '' : '',
+        isIncompleteDraft: Array.isArray(validationErrors) && validationErrors.length > 0,
+        validationErrors: Array.isArray(validationErrors) ? validationErrors.map((error) => ({ ...error })) : []
       }
     };
   }
@@ -215,7 +218,8 @@ window.KedrixOnePracticeSavePipeline = (() => {
       render,
       loadPracticeIntoDraft,
       focusPracticeEditor,
-      syncSavedPracticeSessions
+      syncSavedPracticeSessions,
+      toastKind = 'success'
     } = options;
 
     const matchedClient = typeof getClientById === 'function' ? getClientById(draft.clientId) : null;
@@ -241,7 +245,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
       });
     }
 
-    if (typeof toast === 'function') toast(isEditing ? logTexts.updatedToast : logTexts.createdToast, 'success');
+    if (typeof toast === 'function') toast(isEditing ? logTexts.updatedToast : logTexts.createdToast, toastKind);
 
     state.selectedPracticeId = record.id;
     state.practiceDuplicateSource = null;
@@ -284,11 +288,15 @@ window.KedrixOnePracticeSavePipeline = (() => {
       render,
       loadPracticeIntoDraft,
       focusPracticeEditor,
-      syncSavedPracticeSessions
+      syncSavedPracticeSessions,
+      allowIncomplete = false,
+      validationErrors = []
     } = options;
 
-    const preSaveResult = runPreSaveHooks({ state, draft });
-    if (!preSaveResult.valid) return { ok: false, errors: preSaveResult.errors };
+    if (!allowIncomplete) {
+      const preSaveResult = runPreSaveHooks({ state, draft });
+      if (!preSaveResult.valid) return { ok: false, errors: preSaveResult.errors };
+    }
 
     const { record, existingRecord } = buildRecord({
       state,
@@ -299,13 +307,23 @@ window.KedrixOnePracticeSavePipeline = (() => {
       companyConfig,
       practiceTypeLabel,
       buildCurrentPracticeReference,
-      nextPracticeId
+      nextPracticeId,
+      validationErrors: allowIncomplete ? validationErrors : []
     });
 
-    const updatedLabel = typeof i18n?.t === 'function' ? i18n.t('ui.practiceUpdated', 'Pratica aggiornata') : 'Pratica aggiornata';
-    const createdLabel = typeof i18n?.t === 'function' ? i18n.t('ui.practiceSaved', 'Pratica salvata') : 'Pratica salvata';
-    const updatedLogPrefix = typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'Practice updated' : 'Pratica aggiornata';
-    const createdLogPrefix = typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'Practice created' : 'Creata pratica';
+    const isIncomplete = allowIncomplete && Array.isArray(validationErrors) && validationErrors.length > 0;
+    const updatedLabel = typeof i18n?.t === 'function'
+      ? (isIncomplete ? i18n.t('ui.practiceDraftSaved', 'Bozza pratica salvata') : i18n.t('ui.practiceUpdated', 'Pratica aggiornata'))
+      : (isIncomplete ? 'Bozza pratica salvata' : 'Pratica aggiornata');
+    const createdLabel = typeof i18n?.t === 'function'
+      ? (isIncomplete ? i18n.t('ui.practiceDraftSaved', 'Bozza pratica salvata') : i18n.t('ui.practiceSaved', 'Pratica salvata'))
+      : (isIncomplete ? 'Bozza pratica salvata' : 'Pratica salvata');
+    const updatedLogPrefix = isIncomplete
+      ? (typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'Draft updated' : 'Bozza aggiornata')
+      : (typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'Practice updated' : 'Pratica aggiornata');
+    const createdLogPrefix = isIncomplete
+      ? (typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'Draft created' : 'Creata bozza pratica')
+      : (typeof i18n?.getLanguage === 'function' && i18n.getLanguage() === 'en' ? 'Practice created' : 'Creata pratica');
 
     const result = commitRecord({
       state,
@@ -322,6 +340,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
       loadPracticeIntoDraft,
       focusPracticeEditor,
       syncSavedPracticeSessions,
+      toastKind: isIncomplete ? 'warning' : 'success',
       logTexts: {
         updated: `${updatedLogPrefix} ${record.reference}.`,
         created: `${createdLogPrefix} ${record.reference}.`,

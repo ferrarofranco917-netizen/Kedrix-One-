@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r10-practice-save-real-check-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r11-draft-save-v1';
 const FILES = [
   './',
   './index.html',
@@ -52,6 +52,7 @@ const FILES = [
   './js/practices/form-layout.js',
   './js/practices/linked-parties-board.js',
   './js/practices/practice-overview.js',
+  './js/practices/practice-calm-start.js',
   './js/practices/form-renderer.js',
   './js/practices/open-edit.js',
   './js/practices/identity.js',
