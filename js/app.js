@@ -22,7 +22,6 @@
   const PracticeOpenEdit = window.KedrixOnePracticeOpenEdit;
   const PracticeIdentity = window.KedrixOnePracticeIdentity;
   const PracticeWorkspace = window.KedrixOnePracticeWorkspace;
-  const PracticeCalmStart = window.KedrixOnePracticeCalmStart || null;
   const PracticePersistence = window.KedrixOnePracticePersistence;
   const PracticeSavePipeline = window.KedrixOnePracticeSavePipeline;
   const PracticeContainerIntegrity = window.KedrixOnePracticeContainerIntegrity;
@@ -103,6 +102,37 @@
 
   function save() {
     Storage.save(state);
+  }
+
+  function getActivePracticeSessionId() {
+    return String(state.practiceWorkspace?.activeSessionId || '').trim();
+  }
+
+  function ensurePracticeUiState() {
+    if (!state.practiceUi || typeof state.practiceUi !== 'object') state.practiceUi = {};
+    if (!state.practiceUi.saveAttemptsBySession || typeof state.practiceUi.saveAttemptsBySession !== 'object') {
+      state.practiceUi.saveAttemptsBySession = {};
+    }
+    return state.practiceUi;
+  }
+
+  function markPracticeSaveAttempted(attempted = true, sessionId = '') {
+    const uiState = ensurePracticeUiState();
+    const key = String(sessionId || getActivePracticeSessionId() || 'global').trim() || 'global';
+    uiState.saveAttemptsBySession[key] = Boolean(attempted);
+    return uiState.saveAttemptsBySession[key];
+  }
+
+  function hasPracticeSaveAttempt(sessionId = '') {
+    const uiState = ensurePracticeUiState();
+    const key = String(sessionId || getActivePracticeSessionId() || 'global').trim() || 'global';
+    return Boolean(uiState.saveAttemptsBySession[key]);
+  }
+
+  function resetPracticeSaveAttempt(sessionId = '') {
+    const uiState = ensurePracticeUiState();
+    const key = String(sessionId || getActivePracticeSessionId() || 'global').trim() || 'global';
+    delete uiState.saveAttemptsBySession[key];
   }
 
   function resolveDefaultPracticeTab(draft = null, fallback = '') {
@@ -640,6 +670,7 @@
     }
     loadPracticeIntoDraft(normalizedPracticeId);
     state._practiceValidationErrors = [];
+    resetPracticeSaveAttempt();
     state.practiceSearchPreviewId = source === 'search' ? normalizedPracticeId : '';
     state.practiceOpenSource = source;
     save();
@@ -696,6 +727,7 @@
           openPracticeDraftSession(nextDraft, { source: duplicateOptions.source || 'duplicate' });
           state.practiceTab = 'practice';
           state._practiceValidationErrors = [];
+          resetPracticeSaveAttempt();
           state.practiceSearchPreviewId = '';
           state.practiceDuplicateSource = duplicateOptions.practiceDuplicateSource || state.practiceDuplicateSource || null;
           state.practiceOpenSource = duplicateOptions.source || 'duplicate';
@@ -799,6 +831,7 @@
       state.practiceTab = initialPracticeTab;
       setActivePracticeSessionTab(state.practiceTab);
       state._practiceValidationErrors = [];
+      resetPracticeSaveAttempt();
       state.practiceSearchPreviewId = '';
       state.practiceOpenSource = '';
       state.practiceDuplicateSource = null;
@@ -825,6 +858,7 @@
     };
     state.practiceTab = options.practiceTab || 'practice';
     state._practiceValidationErrors = [];
+    resetPracticeSaveAttempt();
     state.practiceSearchPreviewId = '';
     state.practiceOpenSource = '';
     state.practiceDuplicateSource = null;
@@ -881,6 +915,7 @@
       state.selectedPracticeId = practiceId;
       state.practiceTab = options.practiceTab || 'practice';
       state._practiceValidationErrors = [];
+      resetPracticeSaveAttempt();
       state.practiceDuplicateSource = null;
       PracticeWorkspace.syncActiveDraft(state, { createEmptyDraft: createEmptyPracticeDraft });
       return;
@@ -894,6 +929,7 @@
     state.selectedPracticeId = practice.id;
     state.practiceTab = 'practice';
     state._practiceValidationErrors = [];
+    resetPracticeSaveAttempt();
     state.practiceDuplicateSource = null;
     state.draftPractice = {
       editingPracticeId: practice.id,
@@ -1378,17 +1414,10 @@
       draft.practiceType = practiceType.value || '';
       draft.dynamicData = {};
       draft.category = '';
-      const keepCurrentTab = PracticeCalmStart && typeof PracticeCalmStart.shouldStayOnStartAfterTypeSelection === 'function'
-        ? PracticeCalmStart.shouldStayOnStartAfterTypeSelection({ state, draft })
-        : (!String(draft.editingPracticeId || '').trim() && String(state.practiceTab || '').trim() === 'start');
-      if (!keepCurrentTab) {
-        state.practiceTab = 'practice';
-        setActivePracticeSessionTab('practice');
-      } else {
-        state.practiceTab = 'start';
-        setActivePracticeSessionTab('start');
-      }
+      state.practiceTab = 'practice';
+      setActivePracticeSessionTab('practice');
       state._practiceValidationErrors = [];
+      resetPracticeSaveAttempt();
       clearValidationState();
       persistIdentity({ refreshValidation: false });
       render();
@@ -1420,10 +1449,13 @@
 
     form?.addEventListener('submit', (event) => {
       event.preventDefault();
-      persistIdentity({ refreshValidation: false });
-      if (PracticeCalmStart && typeof PracticeCalmStart.markSaveAttempted === 'function') {
-        PracticeCalmStart.markSaveAttempted(state);
+      if (typeof state._persistActivePracticeDraft === 'function') {
+        state._persistActivePracticeDraft({ markDirty: false, refreshValidation: false, normalize: true });
+      } else {
+        persistIdentity({ refreshValidation: false, markDirty: false });
+        flushVisibleDynamicFields({ normalize: true });
       }
+      markPracticeSaveAttempted(true);
 
       const validation = validatePracticeDraft(draft);
       if (!validation.valid) {
@@ -1471,6 +1503,7 @@
           state._practiceValidationErrors = result.errors;
           applyValidationState(result.errors);
         } else if (result.ok) {
+          resetPracticeSaveAttempt();
           markActivePracticeSessionDirty(false);
           if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
             PracticeAttachments.syncRecordSummary(state, result.record);
@@ -1572,6 +1605,7 @@
         toast(I18N.t('ui.practiceSaved', 'Pratica salvata correttamente'), 'success');
       }
 
+      resetPracticeSaveAttempt();
       markActivePracticeSessionDirty(false);
       if (PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
         PracticeAttachments.syncRecordSummary(state, record);
