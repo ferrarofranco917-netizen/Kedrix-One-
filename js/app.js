@@ -1219,7 +1219,8 @@
           buildCurrentPracticeReference,
           save,
           updateVerificationBannerState,
-          refreshValidation: shouldRefreshValidation ? refreshValidationState : null
+          refreshValidation: shouldRefreshValidation ? refreshValidationState : null,
+          resolveCategoryOptions: getPracticeCategoryOptions
         });
       } else {
         draft.practiceType = practiceType?.value || '';
@@ -1393,6 +1394,7 @@
     });
 
     practiceDate?.addEventListener('change', () => persistIdentity());
+    category?.addEventListener('input', () => persistIdentity());
     category?.addEventListener('change', () => persistIdentity());
     practiceStatus?.addEventListener('change', () => persistIdentity());
 
@@ -1411,14 +1413,15 @@
 
     form?.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (typeof state._persistActivePracticeDraft === 'function') {
-        state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
-      } else {
-        persistIdentity({ refreshValidation: false });
-      }
+      persistIdentity({ refreshValidation: false });
+      flushVisibleDynamicFields({ normalize: true });
+      save();
+      updateVerificationBannerState(draft);
+      refreshContainerIntegrityState();
+      refreshWeightIntegrityState();
+      refreshFieldRelationState();
 
       const validation = validatePracticeDraft(draft);
-      const canPersistIncompleteDraft = Boolean(String(draft.practiceType || '').trim() && String(draft.clientName || '').trim() && String(draft.practiceDate || '').trim());
       if (!validation.valid) {
         state._practiceValidationErrors = validation.errors;
         const firstInvalid = validation.errors[0];
@@ -1431,44 +1434,54 @@
           if (firstInvalid) focusField(firstInvalid.field, firstInvalid.tab);
         }
 
-        if (canPersistIncompleteDraft && PracticeSavePipeline && typeof PracticeSavePipeline.saveDraft === 'function') {
-          const result = PracticeSavePipeline.saveDraft({
-            state,
-            draft,
-            i18n: I18N,
-            getClientById,
-            getPracticeSchema,
-            buildDynamicLabelsForType,
-            normalizeSeaPortField,
-            companyConfig: state.companyConfig,
-            practiceTypeLabel,
-            buildCurrentPracticeReference,
-            nextPracticeId: Utils.nextPracticeId,
-            commitPracticeNumber: Utils.commitPracticeNumber,
-            nextLogId: Utils.nextLogId,
-            nowStamp: Utils.nowStamp,
-            toast,
-            save,
-            render,
-            loadPracticeIntoDraft,
-            focusPracticeEditor,
-            syncSavedPracticeSessions,
-            allowIncomplete: true,
-            validationErrors: validation.errors
-          });
-          if (!result.ok && Array.isArray(result.errors) && result.errors.length) {
-            state._practiceValidationErrors = result.errors;
-            applyValidationState(result.errors);
-          } else if (result.ok) {
-            markActivePracticeSessionDirty(false);
-            if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
-              PracticeAttachments.syncRecordSummary(state, result.record);
+        let draftSaved = false;
+        if (PracticeSavePipeline && typeof PracticeSavePipeline.saveDraft === 'function') {
+          const minimumReady = typeof PracticeSavePipeline.hasMinimumIdentity === 'function'
+            ? PracticeSavePipeline.hasMinimumIdentity(draft)
+            : Boolean(String(draft.practiceType || '').trim() && String(draft.clientName || '').trim() && String(draft.practiceDate || '').trim());
+          if (minimumReady) {
+            const result = PracticeSavePipeline.saveDraft({
+              state,
+              draft,
+              i18n: I18N,
+              getClientById,
+              getPracticeSchema,
+              buildDynamicLabelsForType,
+              normalizeSeaPortField,
+              companyConfig: state.companyConfig,
+              practiceTypeLabel,
+              buildCurrentPracticeReference,
+              nextPracticeId: Utils.nextPracticeId,
+              commitPracticeNumber: Utils.commitPracticeNumber,
+              nextLogId: Utils.nextLogId,
+              nowStamp: Utils.nowStamp,
+              toast,
+              save,
+              render,
+              loadPracticeIntoDraft,
+              focusPracticeEditor,
+              syncSavedPracticeSessions,
+              saveMode: 'draft',
+              validationErrors: validation.errors
+            });
+            if (result.ok) {
+              draftSaved = true;
+              markActivePracticeSessionDirty(false);
+              if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
+                PracticeAttachments.syncRecordSummary(state, result.record);
+              }
+            } else if (Array.isArray(result.errors) && result.errors.length) {
+              state._practiceValidationErrors = result.errors;
+              applyValidationState(result.errors);
             }
           }
-          return;
         }
-
-        toast(I18N.t('ui.validationBlockedSave', 'Salvataggio bloccato: completa i controlli evidenziati.'), 'warning');
+        toast(
+          draftSaved
+            ? I18N.t('ui.validationSavedAsDraft', 'Bozza salvata: completa i controlli evidenziati.')
+            : I18N.t('ui.validationBlockedSave', 'Salvataggio bloccato: completa i controlli evidenziati.'),
+          'warning'
+        );
         return;
       }
 
@@ -1496,7 +1509,9 @@
           render,
           loadPracticeIntoDraft,
           focusPracticeEditor,
-          syncSavedPracticeSessions
+          syncSavedPracticeSessions,
+          saveMode: 'final',
+          validationErrors: []
         });
         if (!result.ok && Array.isArray(result.errors) && result.errors.length) {
           state._practiceValidationErrors = result.errors;

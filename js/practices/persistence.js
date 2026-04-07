@@ -15,16 +15,30 @@ window.KedrixOnePracticePersistence = (() => {
       save,
       updateVerificationBannerState,
       refreshValidation,
+      resolveCategoryOptions,
       defaultStatus = 'In attesa documenti'
     } = options;
 
     if (!draft) return null;
 
-    draft.practiceType = practiceType?.value || '';
+    const nextPracticeType = practiceType?.value || draft.practiceType || '';
+    const nextCategoryValue = String(category?.value || '').trim();
+    const allowedCategories = typeof resolveCategoryOptions === 'function'
+      ? resolveCategoryOptions(nextPracticeType)
+      : [];
+
+    draft.practiceType = nextPracticeType;
     draft.clientName = clientName?.value || '';
     draft.clientId = clientId?.value || '';
     draft.practiceDate = practiceDate?.value || new Date().toISOString().slice(0, 10);
-    draft.category = category?.value || '';
+    if (nextCategoryValue) {
+      draft.category = nextCategoryValue;
+    } else if (!String(draft.category || '').trim()) {
+      draft.category = '';
+    } else if (Array.isArray(allowedCategories) && allowedCategories.length && !allowedCategories.includes(draft.category)) {
+      draft.category = '';
+    }
+    if (category && draft.category && category.value !== draft.category) category.value = draft.category;
     draft.status = practiceStatus?.value || defaultStatus;
     draft.generatedReference = draft.practiceType && typeof buildCurrentPracticeReference === 'function'
       ? buildCurrentPracticeReference()
