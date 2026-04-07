@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r8-practice-save-persist-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r9-practice-save-persistence-v1';
 const FILES = [
   './',
   './index.html',
@@ -52,7 +52,6 @@ const FILES = [
   './js/practices/form-layout.js',
   './js/practices/linked-parties-board.js',
   './js/practices/practice-overview.js',
-  './js/practices/practice-calm-start.js',
   './js/practices/form-renderer.js',
   './js/practices/open-edit.js',
   './js/practices/identity.js',
@@ -65,8 +64,8 @@ const FILES = [
   './js/documents/document-relations.js',
   './js/documents/document-completeness.js',
   './js/documents/document-engine.js',
-  './js/search/practice-search-ui.js',
   './js/search/practice-list-analytics.js',
+  './js/search/practice-search-ui.js',
   './js/module-registry.js',
   './js/licensing.js',
   './js/templates.js',
