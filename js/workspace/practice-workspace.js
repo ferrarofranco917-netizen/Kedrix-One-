@@ -30,6 +30,7 @@ window.KedrixOnePracticeWorkspace = (() => {
       lastTouchedAt: session.lastTouchedAt || session.openedAt || nowIso(),
       isDirty: Boolean(session.isDirty),
       uiState: {
+        ...uiState,
         tab: String(uiState.tab || session.tab || 'practice').trim() || 'practice'
       },
       draft: cloneDraft(session.draft && typeof session.draft === 'object' ? session.draft : fallbackDraft)

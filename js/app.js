@@ -22,6 +22,7 @@
   const PracticeOpenEdit = window.KedrixOnePracticeOpenEdit;
   const PracticeIdentity = window.KedrixOnePracticeIdentity;
   const PracticeWorkspace = window.KedrixOnePracticeWorkspace;
+  const PracticeCalmStart = window.KedrixOnePracticeCalmStart || null;
   const PracticePersistence = window.KedrixOnePracticePersistence;
   const PracticeSavePipeline = window.KedrixOnePracticeSavePipeline;
   const PracticeContainerIntegrity = window.KedrixOnePracticeContainerIntegrity;
@@ -1377,8 +1378,16 @@
       draft.practiceType = practiceType.value || '';
       draft.dynamicData = {};
       draft.category = '';
-      state.practiceTab = 'practice';
-      setActivePracticeSessionTab('practice');
+      const keepCurrentTab = PracticeCalmStart && typeof PracticeCalmStart.shouldStayOnStartAfterTypeSelection === 'function'
+        ? PracticeCalmStart.shouldStayOnStartAfterTypeSelection({ state, draft })
+        : (!String(draft.editingPracticeId || '').trim() && String(state.practiceTab || '').trim() === 'start');
+      if (!keepCurrentTab) {
+        state.practiceTab = 'practice';
+        setActivePracticeSessionTab('practice');
+      } else {
+        state.practiceTab = 'start';
+        setActivePracticeSessionTab('start');
+      }
       state._practiceValidationErrors = [];
       clearValidationState();
       persistIdentity({ refreshValidation: false });
@@ -1412,6 +1421,9 @@
     form?.addEventListener('submit', (event) => {
       event.preventDefault();
       persistIdentity({ refreshValidation: false });
+      if (PracticeCalmStart && typeof PracticeCalmStart.markSaveAttempted === 'function') {
+        PracticeCalmStart.markSaveAttempted(state);
+      }
 
       const validation = validatePracticeDraft(draft);
       if (!validation.valid) {
