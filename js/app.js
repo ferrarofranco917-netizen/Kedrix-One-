@@ -1412,15 +1412,11 @@
     form?.addEventListener('submit', (event) => {
       event.preventDefault();
       if (typeof state._persistActivePracticeDraft === 'function') {
-        state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
+        state._persistActivePracticeDraft({ markDirty: false, refreshValidation: false, normalize: true });
       } else {
         persistIdentity({ refreshValidation: false });
         flushVisibleDynamicFields({ normalize: true });
         save();
-        updateVerificationBannerState(draft);
-        refreshContainerIntegrityState();
-        refreshWeightIntegrityState();
-        refreshFieldRelationState();
       }
 
       const validation = validatePracticeDraft(draft);
@@ -1473,7 +1469,6 @@
           if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
             PracticeAttachments.syncRecordSummary(state, result.record);
           }
-          save();
         }
         return;
       }
