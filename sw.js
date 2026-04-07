@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r5-practice-save-alerts-real-repo-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r6-practice-list-analytics-v1';
 const FILES = [
   './',
   './index.html',
@@ -66,6 +66,7 @@ const FILES = [
   './js/documents/document-completeness.js',
   './js/documents/document-engine.js',
   './js/search/practice-search-ui.js',
+  './js/search/practice-list-analytics.js',
   './js/module-registry.js',
   './js/licensing.js',
   './js/templates.js',
