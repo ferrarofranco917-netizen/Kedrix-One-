@@ -9,6 +9,7 @@ window.KedrixOnePracticeListAnalytics = (() => {
     return {
       quick: '',
       status: 'all',
+      draftState: 'all',
       direction: 'all',
       practiceType: '',
       reference: '',
@@ -140,11 +141,16 @@ window.KedrixOnePracticeListAnalytics = (() => {
         ].some((item) => includesFilter(item, filters.quick));
 
       const statusMatches = !filters.status || filters.status === 'all' || includesFilter(values.status, filters.status);
+      const draftState = String(filters.draftState || 'all').trim() || 'all';
+      const draftMatches = draftState === 'all'
+        || (draftState === 'incomplete' && Boolean(practice?.draftIncomplete))
+        || (draftState === 'complete' && !practice?.draftIncomplete);
       const directionMatches = !filters.direction || filters.direction === 'all' || values.direction === String(filters.direction || '').toLowerCase();
       const typeMatches = !filters.practiceType || values.practiceType === String(filters.practiceType || '').trim();
 
       return quickMatches
         && statusMatches
+        && draftMatches
         && directionMatches
         && typeMatches
         && includesFilter(values.reference, filters.reference)
@@ -179,6 +185,7 @@ window.KedrixOnePracticeListAnalytics = (() => {
       ...filters,
       quick: '',
       status: 'all',
+      draftState: 'all',
       direction: 'all',
       practiceType: '',
       reference: '',
