@@ -40,6 +40,7 @@
   const PracticeListBreakdowns = window.KedrixOnePracticeListBreakdowns || null;
   const PracticeListTable = window.KedrixOnePracticeListTable || null;
   const PracticeListStatusBreakdowns = window.KedrixOnePracticeListStatusBreakdowns || null;
+  const PracticeListPresets = window.KedrixOnePracticeListPresets || null;
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
@@ -64,7 +65,7 @@
     const defaults = PracticeListAnalytics && typeof PracticeListAnalytics.defaultFilters === 'function'
       ? PracticeListAnalytics.defaultFilters()
       : {
-          quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '', sortBy: 'practiceDate', sortDirection: 'desc'
+          quick: '', status: 'all', draftState: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '', sortBy: 'practiceDate', sortDirection: 'desc'
         };
     const current = state.practiceListFilters && typeof state.practiceListFilters === 'object' ? state.practiceListFilters : {};
     state.practiceListFilters = { ...defaults, ...current };
@@ -634,7 +635,7 @@
   function openPracticeForEditing(practiceId, options = {}) {
     const normalizedPracticeId = String(practiceId || '').trim();
     const source = options.source || 'manual';
-    const targetRoute = 'practices';
+    const targetRoute = 'practices/workspace';
     if (!normalizedPracticeId) return;
     if (currentRoute() !== targetRoute && options.forceImmediate !== true) {
       state._pendingPracticeOpen = { practiceId: normalizedPracticeId, source };
@@ -666,7 +667,7 @@
     if (!normalizedPracticeId) return;
     state._pendingPracticeOpen = { practiceId: normalizedPracticeId, source: 'documents' };
     save();
-    navigate('practices');
+    navigate('practices/workspace');
   }
 
   function consumePendingPracticeOpen() {
@@ -970,7 +971,7 @@
     const normalized = safeRoute(route);
     const changed = normalized !== state.currentRoute;
 
-    if (normalized !== 'practices') {
+    if (normalized !== 'practices' && normalized !== 'practices/workspace') {
       state.pendingPracticeFieldFocus = null;
       if (typeof state._persistActivePracticeDraft === 'function') state._persistActivePracticeDraft = null;
     }
@@ -1012,6 +1013,23 @@
   function bindPracticeListEvents() {
     const filters = currentPracticeListFilters();
     const primaryInputIds = ['practiceListQuick', 'practiceListReference', 'practiceListClient', 'practiceListImporter', 'practiceListExporter', 'practiceListConsignee', 'practiceListContainer', 'practiceListBooking', 'practiceListPolicy', 'practiceListVessel', 'practiceListOrigin', 'practiceListDestination', 'practiceListDateFrom', 'practiceListDateTo', 'practiceListCompareDateFrom', 'practiceListCompareDateTo'];
+
+    main.querySelectorAll('[data-practice-list-preset]').forEach((node) => {
+      if (node.dataset.boundPracticeListPreset === '1') return;
+      node.dataset.boundPracticeListPreset = '1';
+      node.addEventListener('click', () => {
+        const presetId = String(node.dataset.practiceListPreset || '').trim() || 'all';
+        const nextFilters = PracticeListPresets && typeof PracticeListPresets.applyPreset === 'function'
+          ? PracticeListPresets.applyPreset(currentPracticeListFilters(), presetId)
+          : currentPracticeListFilters();
+        state.practiceListFilters = { ...currentPracticeListFilters(), ...nextFilters };
+        state.filterText = state.practiceListFilters.quick || '';
+        state.statusFilter = state.practiceListFilters.status === 'all' ? 'Tutti' : (state.practiceListFilters.status || 'Tutti');
+        save();
+        render();
+        toast(I18N.t('ui.practiceListPresetApplied', 'Vista rapida applicata'), 'info');
+      });
+    });
 
     main.querySelectorAll('[data-practice-list-filter]').forEach((node) => {
       const filterKey = String(node.dataset.practiceListFilter || '').trim();
@@ -1394,8 +1412,9 @@
       draft.practiceType = practiceType.value || '';
       draft.dynamicData = {};
       draft.category = '';
-      state.practiceTab = 'practice';
-      setActivePracticeSessionTab('practice');
+      const nextTab = String(state.practiceTab || '').trim() || resolveDefaultPracticeTab(draft);
+      state.practiceTab = nextTab;
+      setActivePracticeSessionTab(nextTab);
       state._practiceValidationErrors = [];
       clearValidationState();
       persistIdentity({ refreshValidation: false });
@@ -1844,8 +1863,14 @@ function renderDocumentPreviewPanel() {
 
     if (route === 'practices') {
       ensurePracticeWorkspace();
+      main.innerHTML = Templates.practicesHub(state, module);
+      return;
+    }
+
+    if (route === 'practices/workspace') {
+      ensurePracticeWorkspace();
       if (!hasOpenPracticeWorkspace()) {
-        main.innerHTML = Templates.practicesHub(state, module);
+        navigate('practices/gestione-pratiche', { replaceHash: true });
         return;
       }
       main.innerHTML = Templates.practices(state, selectedPractice(), filteredPractices(), practiceSearchResults());
@@ -2130,7 +2155,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       if (routeAction.id === 'newPracticeButton') {
         resetPracticeDraft();
         save();
-        navigate(routeAction.dataset.routeAction || 'practices');
+        navigate(routeAction.dataset.routeAction || 'practices/workspace');
         toast(I18N.t('ui.newDraft', 'Nuova pratica'), 'info');
         return;
       }
@@ -2352,7 +2377,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     if (action.dataset.action === 'reset-practice-list-filters') {
       const defaults = PracticeListAnalytics && typeof PracticeListAnalytics.defaultFilters === 'function'
         ? PracticeListAnalytics.defaultFilters()
-        : { quick: '', status: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '', sortBy: 'practiceDate', sortDirection: 'desc' };
+        : { quick: '', status: 'all', draftState: 'all', direction: 'all', practiceType: '', reference: '', client: '', importer: '', exporter: '', consignee: '', container: '', booking: '', policy: '', vessel: '', origin: '', destination: '', dateFrom: '', dateTo: '', compareDateFrom: '', compareDateTo: '', sortBy: 'practiceDate', sortDirection: 'desc' };
       state.practiceListFilters = { ...defaults };
       state.filterText = '';
       state.statusFilter = 'Tutti';

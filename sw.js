@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r29-practice-list-party-gaps-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r30-practices-hub-vs-list-v1';
 const FILES = [
   './',
   './index.html',

@@ -411,6 +411,21 @@ window.KedrixOneModules = (() => {
     });
   });
 
+  ROUTE_MAP['practices/workspace'] = {
+    route: 'practices/workspace',
+    type: 'submodule',
+    moduleKey: 'practices',
+    moduleLabel: 'Pratiche',
+    submoduleKey: 'workspace',
+    submoduleLabel: 'Workspace pratica',
+    title: 'Workspace pratica',
+    fullTitle: 'Pratiche / Workspace pratica',
+    description: 'Maschera interna dedicata alla lavorazione della pratica, separata da hub e gestione pratiche.',
+    category: 'operations',
+    tierHint: 'base',
+    submoduleCount: (MODULE_MAP.practices?.submodules || []).length
+  };
+
   function list() {
     return MODULES.map((module) => localizeModule(module));
   }
