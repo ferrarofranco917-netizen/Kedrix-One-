@@ -25,6 +25,13 @@ window.KedrixOneTemplates = (() => {
   const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
   const PracticeListBreakdowns = window.KedrixOnePracticeListBreakdowns || null;
   const PracticeListTable = window.KedrixOnePracticeListTable || null;
+  const PracticeListOperationalGaps = window.KedrixOnePracticeListOperationalGaps || null;
+  const PracticeListLanes = window.KedrixOnePracticeListLanes || null;
+  const PracticeListLogisticsNodes = window.KedrixOnePracticeListLogisticsNodes || null;
+  const PracticeListTransportReferences = window.KedrixOnePracticeListTransportReferences || null;
+  const PracticeListTopClients = window.KedrixOnePracticeListTopClients || null;
+  const PracticeListOperationalNetwork = window.KedrixOnePracticeListOperationalNetwork || null;
+  const PracticeListShippingProfiles = window.KedrixOnePracticeListShippingProfiles || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -337,7 +344,7 @@ window.KedrixOneTemplates = (() => {
                 </select>
               </div>
 
-              <div class="field" data-practice-dependent data-field-wrap="clientName">
+              <div class="field" data-field-wrap="clientName">
                 <div class="field-label-row">
                   <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} <span class="required-mark">*</span></label>
                   ${(() => {
@@ -361,7 +368,7 @@ window.KedrixOneTemplates = (() => {
                 <input id="clientId" name="clientId" type="hidden" value="${U.escapeHtml(draft.clientId || '')}" />
               </div>
 
-              <div class="field" data-practice-dependent data-field-wrap="practiceDate">
+              <div class="field" data-field-wrap="practiceDate">
                 <label for="practiceDate">${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))} <span class="required-mark">*</span></label>
                 <input id="practiceDate" name="practiceDate" type="date" value="${U.escapeHtml(draft.practiceDate || new Date().toISOString().slice(0, 10))}" ${draft.practiceType ? '' : 'disabled'} required />
               </div>
@@ -381,7 +388,7 @@ window.KedrixOneTemplates = (() => {
                 <div class="field-hint">${U.escapeHtml(T.t('ui.categoryHint', 'La categoria viene filtrata in base al tipo pratica selezionato.'))}</div>
               </div>
 
-              <div class="field" data-practice-dependent data-field-wrap="status">
+              <div class="field" data-field-wrap="status">
                 <label for="status">${U.escapeHtml(T.t('ui.status', 'Stato'))}</label>
                 <select id="status" name="status" ${draft.practiceType ? '' : 'disabled'}>
                   ${['In attesa documenti', 'Operativa', 'Sdoganamento', 'Chiusa'].map((option) => `<option value="${U.escapeHtml(option)}" ${draft.status === option ? 'selected' : ''}>${U.escapeHtml(option)}</option>`).join('')}
@@ -792,13 +799,14 @@ function renderPracticeListBreakdownCard(title, breakdown, options = {}) {
   const emptyText = options.emptyText || T.t('ui.practiceListNoEntityRows', 'Nessun soggetto coerente con i filtri attivi.');
   const primaryDistinct = breakdown && Number.isFinite(breakdown.primaryDistinctCount) ? breakdown.primaryDistinctCount : 0;
   const comparisonDistinct = breakdown && Number.isFinite(breakdown.comparisonDistinctCount) ? breakdown.comparisonDistinctCount : 0;
+  const distinctLabel = options.distinctLabel || T.t('ui.practiceListDistinctSubjects', 'Soggetti distinti');
 
   return `
     <article class="entity-breakdown-card">
       <div class="entity-breakdown-head">
         <div>
           <h4>${U.escapeHtml(title)}</h4>
-          <div class="entity-breakdown-meta">${U.escapeHtml(T.t('ui.practiceListDistinctSubjects', 'Soggetti distinti'))}: ${U.escapeHtml(String(primaryDistinct))}${compareEnabled ? ` · ${U.escapeHtml(T.t('ui.practiceListCompareShort', 'Confronto'))}: ${U.escapeHtml(String(comparisonDistinct))}` : ''}</div>
+          <div class="entity-breakdown-meta">${U.escapeHtml(distinctLabel)}: ${U.escapeHtml(String(primaryDistinct))}${compareEnabled ? ` · ${U.escapeHtml(T.t('ui.practiceListCompareShort', 'Confronto'))}: ${U.escapeHtml(String(comparisonDistinct))}` : ''}</div>
         </div>
         <span class="badge info">Top ${U.escapeHtml(String(rows.length || 5))}</span>
       </div>
@@ -820,6 +828,37 @@ function renderPracticeListBreakdownCard(title, breakdown, options = {}) {
     </article>`;
 }
 
+
+
+function renderPracticeOperationalGaps(cards = []) {
+  const safeCards = Array.isArray(cards) ? cards : [];
+  return `
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListOperationalGapsTitle', 'Gap operativi da monitorare'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListOperationalGapsHint', 'Una lettura veloce del range attivo per capire dove mancano ancora riferimenti o completamenti importanti.'))}</p>
+        </div>
+      </div>
+      <div class="practice-gap-grid">
+        ${safeCards.map((card) => `
+          <article class="practice-gap-card" data-tone="${U.escapeHtml(card.tone || 'info')}">
+            <div class="practice-gap-head">
+              <div>
+                <h4>${U.escapeHtml(T.t(card.labelKey, card.fallback || 'Gap'))}</h4>
+                <div class="practice-gap-meta">${U.escapeHtml(T.t(card.hintKey, card.hintFallback || ''))}</div>
+              </div>
+              <span class="badge ${card.tone === 'warning' ? 'warning' : 'info'}">${U.escapeHtml(String(card.count || 0))}</span>
+            </div>
+            <div class="practice-gap-list">
+              ${(Array.isArray(card.examples) && card.examples.length)
+                ? card.examples.map((item) => `<div class="practice-gap-item"><strong>${U.escapeHtml(item.reference || '—')}</strong><span>${U.escapeHtml(item.client || '—')}</span><span class="table-meta-cell">${U.escapeHtml(item.status || '—')}</span></div>`).join('')
+                : `<div class="practice-gap-empty">${U.escapeHtml(T.t('ui.practiceListOperationalGapsEmpty', 'Nessuna pratica nel range attivo per questo controllo.'))}</div>`}
+            </div>
+          </article>`).join('')}
+      </div>
+    </section>`;
+}
 
 function renderPracticeStatusBreakdown(statusBreakdown) {
   const breakdown = statusBreakdown || {};
@@ -897,6 +936,24 @@ function practiceList(state, filtered = [], insights = {}) {
   const subjectBreakdowns = insights.subjectBreakdowns || (PracticeListBreakdowns && typeof PracticeListBreakdowns.buildSubjectBreakdowns === 'function'
     ? PracticeListBreakdowns.buildSubjectBreakdowns(insights, 5)
     : {});
+  const laneBreakdowns = insights.laneBreakdowns || (PracticeListLanes && typeof PracticeListLanes.buildLaneBreakdowns === 'function'
+    ? PracticeListLanes.buildLaneBreakdowns(insights, 5)
+    : {});
+  const nodeBreakdowns = insights.nodeBreakdowns || (PracticeListLogisticsNodes && typeof PracticeListLogisticsNodes.buildNodeBreakdowns === 'function'
+    ? PracticeListLogisticsNodes.buildNodeBreakdowns(insights, 5)
+    : {});
+  const transportReferenceBreakdowns = insights.transportReferenceBreakdowns || (PracticeListTransportReferences && typeof PracticeListTransportReferences.buildTransportReferenceBreakdowns === 'function'
+    ? PracticeListTransportReferences.buildTransportReferenceBreakdowns(insights, 5)
+    : {});
+  const topClientBreakdowns = insights.topClientBreakdowns || (PracticeListTopClients && typeof PracticeListTopClients.buildTopClientBreakdowns === 'function'
+    ? PracticeListTopClients.buildTopClientBreakdowns(insights, 5)
+    : {});
+  const operationalNetworkBreakdowns = insights.operationalNetworkBreakdowns || (PracticeListOperationalNetwork && typeof PracticeListOperationalNetwork.buildOperationalNetworkBreakdowns === 'function'
+    ? PracticeListOperationalNetwork.buildOperationalNetworkBreakdowns(insights, 5)
+    : {});
+  const shippingProfileBreakdowns = insights.shippingProfileBreakdowns || (PracticeListShippingProfiles && typeof PracticeListShippingProfiles.buildShippingProfileBreakdowns === 'function'
+    ? PracticeListShippingProfiles.buildShippingProfileBreakdowns(insights, 5)
+    : {});
   const sortDefaults = PracticeListTable && typeof PracticeListTable.defaultSort === 'function'
     ? PracticeListTable.defaultSort()
     : { sortBy: 'practiceDate', sortDirection: 'desc' };
@@ -920,8 +977,12 @@ function practiceList(state, filtered = [], insights = {}) {
         { key: 'export', labelKey: 'ui.exportWord', fallback: 'Export', active: Number(insights.primaryExportCount || 0), compare: Number(insights.compareExportCount || 0), delta: Number(insights.primaryExportCount || 0) - Number(insights.compareExportCount || 0) },
         { key: 'warehouse', labelKey: 'ui.typeWarehouse', fallback: 'Magazzino', active: Number(insights.primaryWarehouseCount || 0), compare: Number(insights.compareWarehouseCount || 0), delta: Number(insights.primaryWarehouseCount || 0) - Number(insights.compareWarehouseCount || 0) }
       ];
-  const activeSortBy = filters.sortBy || sortDefaults.sortBy;
-  const activeSortDirection = filters.sortDirection || sortDefaults.sortDirection;
+  const presetItems = PracticeListPresets && typeof PracticeListPresets.list === 'function'
+    ? PracticeListPresets.list((key, fallback) => T.t(key, fallback))
+    : [];
+  const activePreset = PracticeListPresets && typeof PracticeListPresets.detectActivePreset === 'function'
+    ? PracticeListPresets.detectActivePreset(filters)
+    : '';
 
   return `
     <section class="hero">
@@ -961,6 +1022,18 @@ function practiceList(state, filtered = [], insights = {}) {
         <div class="kpi-value">${U.escapeHtml(String(insights.totalScopedCount || filtered.length || 0))}</div>
         <div class="kpi-hint">${U.escapeHtml(T.t('ui.practiceListScopedTotalHint', 'Record coerenti con i filtri non temporali applicati.'))}</div>
       </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListQuickViewsTitle', 'Viste rapide operative'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListQuickViewsHint', 'Applica in un click i focus più usati senza sporcare date, confronto periodo e ordinamento attivo.'))}</p>
+        </div>
+      </div>
+      <div class="practice-list-presets">
+        ${presetItems.map((item) => `<button class="btn ${activePreset === item.id ? '' : 'secondary'} practice-list-preset-btn" type="button" data-practice-list-preset="${U.escapeHtml(item.id)}" title="${U.escapeHtml(item.description || '')}">${U.escapeHtml(item.label)}</button>`).join('')}
+      </div>
     </section>
 
     <section class="panel">
@@ -1038,7 +1111,94 @@ function practiceList(state, filtered = [], insights = {}) {
       </div>
     </section>
 
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListLanesTitle', 'Corridoi operativi'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListLanesHint', 'Leggi subito le combinazioni origine → destinazione più presenti in import, export e magazzino nel range attivo e nel confronto.'))}</p>
+        </div>
+      </div>
+      <div class="practice-subject-breakdown-grid">
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListImportLanes', 'Corridoi import'), laneBreakdowns.import, { emptyText: T.t('ui.practiceListNoLaneRows', 'Nessun corridoio coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctLanes', 'Corridoi distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListExportLanes', 'Corridoi export'), laneBreakdowns.export, { emptyText: T.t('ui.practiceListNoLaneRows', 'Nessun corridoio coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctLanes', 'Corridoi distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListWarehouseLanes', 'Corridoi magazzino'), laneBreakdowns.warehouse, { emptyText: T.t('ui.practiceListNoLaneRows', 'Nessun corridoio coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctLanes', 'Corridoi distinti') })}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListTopClientsTitle', 'Clienti più attivi'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListTopClientsHint', 'Leggi subito i clienti più presenti nel range attivo e nel confronto, con focus totale, import ed export.'))}</p>
+        </div>
+      </div>
+      <div class="practice-subject-breakdown-grid">
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListTopClientsOverall', 'Top clienti complessivi'), topClientBreakdowns.all, { emptyText: T.t('ui.practiceListNoTopClientRows', 'Nessun cliente coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctClients', 'Clienti distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListTopClientsImport', 'Top clienti import'), topClientBreakdowns.import, { emptyText: T.t('ui.practiceListNoTopClientRows', 'Nessun cliente coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctClients', 'Clienti distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListTopClientsExport', 'Top clienti export'), topClientBreakdowns.export, { emptyText: T.t('ui.practiceListNoTopClientRows', 'Nessun cliente coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctClients', 'Clienti distinti') })}
+      </div>
+    </section>
+
+
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListOperationalNetworkTitle', 'Rete operativa ricorrente'))}</h3>
+      <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListOperationalNetworkHint', 'Leggi subito vettori, dogane e terminal più ricorrenti nel range attivo e nel confronto, senza uscire dalla gestione pratiche.'))}</p>
+    </div>
+  </div>
+  <div class="practice-subject-breakdown-grid">
+    ${renderPracticeListBreakdownCard(T.t('ui.practiceListRecurringCarriers', 'Vettori ricorrenti'), operationalNetworkBreakdowns.carrier, { emptyText: T.t('ui.practiceListNoOperationalNetworkRows', 'Nessun nodo operativo coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctOperationalNetwork', 'Voci distinte') })}
+    ${renderPracticeListBreakdownCard(T.t('ui.practiceListRecurringCustomsOffices', 'Dogane ricorrenti'), operationalNetworkBreakdowns.customsOffice, { emptyText: T.t('ui.practiceListNoOperationalNetworkRows', 'Nessun nodo operativo coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctOperationalNetwork', 'Voci distinte') })}
+    ${renderPracticeListBreakdownCard(T.t('ui.practiceListRecurringTerminals', 'Terminal ricorrenti'), operationalNetworkBreakdowns.terminal, { emptyText: T.t('ui.practiceListNoOperationalNetworkRows', 'Nessun nodo operativo coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctOperationalNetwork', 'Voci distinte') })}
+  </div>
+
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListShippingProfilesTitle', 'Profili marittimi ricorrenti'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListShippingProfilesHint', 'Leggi subito compagnie, nave/viaggio e profili compagnia + viaggio più ricorrenti nel range attivo e nel confronto.'))}</p>
+        </div>
+      </div>
+      <div class="practice-subject-breakdown-grid">
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListShippingCompanies', 'Compagnie ricorrenti'), shippingProfileBreakdowns.shippingCompany, { emptyText: T.t('ui.practiceListNoShippingProfileRows', 'Nessun profilo marittimo coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctShippingProfiles', 'Profili distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListVesselVoyages', 'Navi / viaggi ricorrenti'), shippingProfileBreakdowns.vesselVoyage, { emptyText: T.t('ui.practiceListNoShippingProfileRows', 'Nessun profilo marittimo coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctShippingProfiles', 'Profili distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListSeaProfiles', 'Compagnia + nave / viaggio'), shippingProfileBreakdowns.seaProfile, { emptyText: T.t('ui.practiceListNoShippingProfileRows', 'Nessun profilo marittimo coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctShippingProfiles', 'Profili distinti') })}
+      </div>
+    </section></section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListTransportRefsTitle', 'Riferimenti trasporto ricorrenti'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListTransportRefsHint', 'Leggi subito booking, container e polizze/BL/AWB più ricorrenti nel range attivo e nel confronto.'))}</p>
+        </div>
+      </div>
+      <div class="practice-subject-breakdown-grid">
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListBookingRefs', 'Booking ricorrenti'), transportReferenceBreakdowns.booking, { emptyText: T.t('ui.practiceListNoTransportRefRows', 'Nessun riferimento trasporto coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctTransportRefs', 'Riferimenti distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListContainerRefs', 'Container / telai ricorrenti'), transportReferenceBreakdowns.container, { emptyText: T.t('ui.practiceListNoTransportRefRows', 'Nessun riferimento trasporto coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctTransportRefs', 'Riferimenti distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListPolicyRefs', 'Polizze / BL / AWB ricorrenti'), transportReferenceBreakdowns.policy, { emptyText: T.t('ui.practiceListNoTransportRefRows', 'Nessun riferimento trasporto coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctTransportRefs', 'Riferimenti distinti') })}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3 class="panel-title">${U.escapeHtml(T.t('ui.practiceListNodesTitle', 'Nodi logistici ricorrenti'))}</h3>
+          <p class="panel-subtitle">${U.escapeHtml(T.t('ui.practiceListNodesHint', 'Leggi subito le origini e le destinazioni più ricorrenti nel range attivo e nel confronto, senza uscire dalla gestione pratiche.'))}</p>
+        </div>
+      </div>
+      <div class="practice-subject-breakdown-grid">
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListOriginNodes', 'Origini più ricorrenti'), nodeBreakdowns.origin, { emptyText: T.t('ui.practiceListNoNodeRows', 'Nessun nodo logistico coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctNodes', 'Nodi distinti') })}
+        ${renderPracticeListBreakdownCard(T.t('ui.practiceListDestinationNodes', 'Destinazioni più ricorrenti'), nodeBreakdowns.destination, { emptyText: T.t('ui.practiceListNoNodeRows', 'Nessun nodo logistico coerente con i filtri attivi.'), distinctLabel: T.t('ui.practiceListDistinctNodes', 'Nodi distinti') })}
+      </div>
+    </section>
+
     ${renderPracticeStatusBreakdown(insights.statusBreakdown)}
+
+    ${renderPracticeOperationalGaps(operationalGapCards)}
 
     <section class="panel">
       <div class="panel-head">

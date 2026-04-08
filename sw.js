@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r16-practice-status-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r25-practice-list-shipping-profiles-v1';
 const FILES = [
   './',
   './index.html',
@@ -21,6 +21,14 @@ const FILES = [
   './js/search/practice-list-breakdowns.js',
   './js/search/practice-list-table.js',
   './js/search/practice-list-status-breakdowns.js',
+  './js/search/practice-list-presets.js',
+  './js/search/practice-list-operational-gaps.js',
+  './js/search/practice-list-lanes.js',
+  './js/search/practice-list-logistics-nodes.js',
+  './js/search/practice-list-transport-references.js',
+  './js/search/practice-list-top-clients.js',
+  './js/search/practice-list-operational-network.js',
+  './js/search/practice-list-shipping-profiles.js',
   './js/master-data/entity-records.js',
   './js/master-data/vat-autofill.js',
   './js/master-data/logistics-archives.js',
