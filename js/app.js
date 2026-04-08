@@ -1888,12 +1888,12 @@ function renderDocumentPreviewPanel() {
         main.innerHTML = `
           <section class="hero">
             <div class="hero-meta">HOTFIX AQ2R31 · render guard</div>
-            <h2>${U.escapeHtml(I18N.t('ui.practiceListTitle', 'Gestione pratiche'))}</h2>
-            <p>${U.escapeHtml(I18N.t('ui.practiceListRenderErrorHint', 'La vista Gestione pratiche ha intercettato un errore di rendering. Controlla la console e applica il delta consolidato AQ2R31.'))}</p>
+            <h2>${Utils.escapeHtml(I18N.t('ui.practiceListTitle', 'Gestione pratiche'))}</h2>
+            <p>${Utils.escapeHtml(I18N.t('ui.practiceListRenderErrorHint', 'La vista Gestione pratiche ha intercettato un errore di rendering. Controlla la console e applica il delta AQ2R32.'))}</p>
           </section>
           <section class="panel">
-            <div class="panel-head"><div><h3 class="panel-title">${U.escapeHtml(I18N.t('ui.renderError', 'Errore di rendering'))}</h3></div></div>
-            <div class="empty-text">${U.escapeHtml(String(error && error.message ? error.message : error || 'Unknown render error'))}</div>
+            <div class="panel-head"><div><h3 class="panel-title">${Utils.escapeHtml(I18N.t('ui.renderError', 'Errore di rendering'))}</h3></div></div>
+            <div class="empty-text">${Utils.escapeHtml(String(error && error.message ? error.message : error || 'Unknown render error'))}</div>
           </section>`;
       }
       return;
