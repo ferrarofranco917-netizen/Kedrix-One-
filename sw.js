@@ -1,4 +1,5 @@
-const CACHE = 'kedrix-one-hotfix-aq2r30-practices-hub-vs-list-v1';
+// AQ2R31 consolidated render guard
+const CACHE = 'kedrix-one-hotfix-aq2r31-practices-hub-vs-list-v1';
 const FILES = [
   './',
   './index.html',

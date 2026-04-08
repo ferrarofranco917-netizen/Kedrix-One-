@@ -25,6 +25,18 @@ window.KedrixOneTemplates = (() => {
   const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
   const PracticeListBreakdowns = window.KedrixOnePracticeListBreakdowns || null;
   const PracticeListTable = window.KedrixOnePracticeListTable || null;
+  const PracticeListStatusBreakdowns = window.KedrixOnePracticeListStatusBreakdowns || null;
+  const PracticeListPresets = window.KedrixOnePracticeListPresets || null;
+  const PracticeListOperationalGaps = window.KedrixOnePracticeListOperationalGaps || null;
+  const PracticeListLanes = window.KedrixOnePracticeListLanes || null;
+  const PracticeListLogisticsNodes = window.KedrixOnePracticeListLogisticsNodes || null;
+  const PracticeListTransportReferences = window.KedrixOnePracticeListTransportReferences || null;
+  const PracticeListTopClients = window.KedrixOnePracticeListTopClients || null;
+  const PracticeListOperationalNetwork = window.KedrixOnePracticeListOperationalNetwork || null;
+  const PracticeListShippingProfiles = window.KedrixOnePracticeListShippingProfiles || null;
+  const PracticeListCustomsProfiles = window.KedrixOnePracticeListCustomsProfiles || null;
+  const PracticeListPartyPairs = window.KedrixOnePracticeListPartyPairs || null;
+  const PracticeListPartyGaps = window.KedrixOnePracticeListPartyGaps || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
