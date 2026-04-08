@@ -1,4 +1,4 @@
-const CACHE = 'kedrix-one-hotfix-aq2r25-practice-list-shipping-profiles-v1';
+const CACHE = 'kedrix-one-hotfix-aq2r26-practice-list-modules-consolidated-v1';
 const FILES = [
   './',
   './index.html',
