@@ -1,112 +1,56 @@
-// AQ2R31 consolidated render guard
-const CACHE = 'kedrix-one-hotfix-aq2r31-practices-hub-vs-list-v1';
-const FILES = [
+// AQ2R33 cache neutralization for audit phase
+const STATIC_CACHE = 'kedrix-one-hotfix-aq2r33-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-hotfix-aq2r33-runtime-v1';
+const STATIC_FILES = [
   './',
   './index.html',
   './style.css',
   './manifest.json',
   './favicon.ico',
-  './brand/kedrix-one-mark.svg',
-  './js/storage.js',
-  './js/data/ports.js',
-  './js/data/customs.js',
-  './js/data/taric.js',
-  './js/data/goods-master.js',
-  './js/data/transport-units.js',
-  './js/config/integrations-endpoints.js',
-  './js/data.js',
-  './js/utils.js',
-  './js/ui/app-feedback.js',
-  './js/wisemind.js',
-  './js/i18n.js',
-  './js/search/practice-list-breakdowns.js',
-  './js/search/practice-list-table.js',
-  './js/search/practice-list-status-breakdowns.js',
-  './js/search/practice-list-presets.js',
-  './js/search/practice-list-operational-gaps.js',
-  './js/search/practice-list-lanes.js',
-  './js/search/practice-list-logistics-nodes.js',
-  './js/search/practice-list-transport-references.js',
-  './js/search/practice-list-top-clients.js',
-  './js/search/practice-list-operational-network.js',
-  './js/search/practice-list-shipping-profiles.js',
-  './js/search/practice-list-customs-profiles.js',
-  './js/search/practice-list-party-pairs.js',
-  './js/search/practice-list-party-gaps.js',
-  './js/master-data/entity-records.js',
-  './js/master-data/vat-autofill.js',
-  './js/master-data/logistics-archives.js',
-  './js/master-data/master-data-overview.js',
-  './js/import/import-csv-reader.js',
-  './js/import/import-excel-reader.js',
-  './js/import/import-mapper.js',
-  './js/import/import-validator.js',
-  './js/import/import-master-data-commit.js',
-  './js/import/import-logistics-commit.js',
-  './js/import/import-manager.js',
-  './js/import/import-practice-mapper.js',
-  './js/import/import-practice-validator.js',
-  './js/import/import-practice-commit.js',
-  './js/import/import-practice-manager.js',
-  './js/import/import-document-reference-manager.js',
-  './js/import/import-document-reference-commit.js',
-  './js/import/import-document-reference-validator.js',
-  './js/import/import-document-reference-mapper.js',
-  './js/master-data/quick-add.js',
-  './js/practice-schemas.js',
-  './js/practices/practice-readiness-board.js',
-  './js/practices/practice-logistics-intelligence.js',
-  './js/practices/practice-logistics-board.js',
-  './js/practices/practice-document-readiness.js',
-  './js/practices/practice-operational-hub.js',
-  './js/practices/linked-entity-summary.js',
-  './js/practices/sea-schema-cleanup.js',
-  './js/practices/reference-normalizer.js',
-  './js/practices/verification.js',
-  './js/practices/draft-validator.js',
-  './js/practices/form-layout.js',
-  './js/practices/linked-parties-board.js',
-  './js/practices/practice-overview.js',
-  './js/practices/form-renderer.js',
-  './js/practices/open-edit.js',
-  './js/practices/identity.js',
-  './js/practices/persistence.js',
-  './js/practices/save-pipeline.js',
-  './js/practices/container-integrity.js',
-  './js/practices/weight-integrity.js',
-  './js/practices/attachments.js',
-  './js/practices/duplicate.js',
-  './js/documents/document-relations.js',
-  './js/documents/document-completeness.js',
-  './js/documents/document-engine.js',
-  './js/search/practice-search-ui.js',
-  './js/search/practice-list-analytics.js',
-  './js/module-registry.js',
-  './js/licensing.js',
-  './js/templates.js',
-  './js/search-index.js',
-  './js/app.js'
+  './brand/kedrix-one-mark.svg'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(FILES))
+    caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => caches.open(STATIC_CACHE))
+      .then((cache) => cache.addAll(STATIC_FILES))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
-    )
+    caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  const sameOrigin = url.origin === self.location.origin;
+  const isCodeAsset = sameOrigin && /\.(?:js|css|html|json)$/i.test(url.pathname);
+
+  if (isCodeAsset) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, clone)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+      if (!sameOrigin) return response;
+      const clone = response.clone();
+      caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, clone)).catch(() => {});
+      return response;
+    }))
   );
 });

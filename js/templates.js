@@ -925,6 +925,8 @@ function practiceList(state, filtered = [], insights = {}) {
         { value: 'desc', label: T.t('ui.sortDirectionDesc', 'Discendente') },
         { value: 'asc', label: T.t('ui.sortDirectionAsc', 'Ascendente') }
       ];
+  const activeSortBy = filters.sortBy || sortDefaults.sortBy || 'practiceDate';
+  const activeSortDirection = filters.sortDirection || sortDefaults.sortDirection || 'desc';
   const directionRows = PracticeListTable && typeof PracticeListTable.buildDirectionRows === 'function'
     ? PracticeListTable.buildDirectionRows(insights)
     : [
