@@ -44,6 +44,8 @@
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const CustomsInstructionsWorkspace = window.KedrixOneCustomsInstructionsWorkspace || null;
+  const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -59,6 +61,9 @@
   const MasterDataQuickAdd = getMasterDataQuickAdd();
   if (MasterDataQuickAdd && typeof MasterDataQuickAdd.ensureModuleState === 'function') {
     MasterDataQuickAdd.ensureModuleState(state);
+  }
+  if (CustomsInstructionsModule && typeof CustomsInstructionsModule.ensureState === 'function') {
+    CustomsInstructionsModule.ensureState(state);
   }
 
   function ensurePracticeListState() {
@@ -1958,46 +1963,13 @@ function renderDocumentPreviewPanel() {
     }
 
     if (route === 'practices/istruzioni-di-sdoganamento') {
-      const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
       if (!CustomsInstructionsModule || typeof CustomsInstructionsModule.render !== 'function') {
-        main.innerHTML = `
-          <section class="hero">
-            <div class="hero-meta">AQ21B · customs instructions module missing</div>
-            <h2>${Utils.escapeHtml(I18N.t('submodules.practices/istruzioni-di-sdoganamento', 'Istruzioni di sdoganamento'))}</h2>
-            <p>${Utils.escapeHtml(I18N.t('ui.customsInstructionsMissingModuleHint', 'Il renderer reale del sottomodulo non è stato caricato. Verifica che esistano index.html aggiornato e i file js/customs-instructions/*.'))}</p>
-          </section>
-          <section class="panel">
-            <div class="panel-head"><div><h3 class="panel-title">AQ21B</h3></div></div>
-            <div class="empty-text">Missing window.KedrixOneCustomsInstructionsModule</div>
-          </section>`;
+        main.innerHTML = Templates.submodulePlaceholder(module, routeMeta);
         return;
       }
       CustomsInstructionsModule.ensureState?.(state);
-      main.innerHTML = CustomsInstructionsModule.render(state, {
-        i18n: I18N,
-        utils: Utils
-      });
-      CustomsInstructionsModule.bind?.({
-        root: main,
-        state,
-        i18n: I18N,
-        utils: Utils,
-        save,
-        render,
-        navigate,
-        toast,
-        getSelectedPractice: () => selectedPractice(),
-        confirmClose: async () => {
-          if (!AppFeedback || typeof AppFeedback.confirm !== 'function') return false;
-          return AppFeedback.confirm({
-            title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
-            message: I18N.t('ui.workspaceDirtyCloseMessage', 'Questa maschera contiene modifiche non salvate. Se la chiudi adesso, le modifiche andranno perse.'),
-            confirmLabel: I18N.t('ui.workspaceDiscardMask', 'Chiudi senza salvare'),
-            cancelLabel: I18N.t('ui.workspaceKeepMask', 'Torna alla maschera'),
-            tone: 'warning'
-          });
-        }
-      });
+      main.innerHTML = CustomsInstructionsModule.render(state, { i18n: I18N });
+      bindCustomsInstructionsEvents();
       return;
     }
 
@@ -2050,6 +2022,39 @@ function renderDocumentPreviewPanel() {
           // ignore selection restore errors on unsupported input types
         }
       }
+    });
+  }
+
+
+  async function confirmCloseCustomsInstructionSession(sessionId) {
+    if (!CustomsInstructionsWorkspace || typeof CustomsInstructionsWorkspace.hasSessionUnsavedChanges !== 'function') return true;
+    const hasUnsaved = CustomsInstructionsWorkspace.hasSessionUnsavedChanges(state, sessionId, {
+      createEmptyDraft: () => CustomsInstructionsModule && typeof CustomsInstructionsModule.createEmptyDraft === 'function'
+        ? CustomsInstructionsModule.createEmptyDraft(state)
+        : {}
+    });
+    if (!hasUnsaved) return true;
+    if (!AppFeedback || typeof AppFeedback.confirm !== 'function') return false;
+    return AppFeedback.confirm({
+      title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
+      message: I18N.t('ui.workspaceDirtyCloseMessage', 'Questa maschera contiene modifiche non salvate. Se la chiudi adesso, le modifiche andranno perse.'),
+      confirmLabel: I18N.t('ui.workspaceDiscardMask', 'Chiudi senza salvare'),
+      cancelLabel: I18N.t('ui.workspaceKeepMask', 'Torna alla maschera'),
+      tone: 'warning'
+    });
+  }
+
+  function bindCustomsInstructionsEvents() {
+    if (!CustomsInstructionsModule || typeof CustomsInstructionsModule.bind !== 'function') return;
+    CustomsInstructionsModule.bind({
+      root: main,
+      state,
+      save,
+      render,
+      toast,
+      i18n: I18N,
+      getSelectedPractice: selectedPractice,
+      confirmClose: confirmCloseCustomsInstructionSession
     });
   }
 
@@ -2346,6 +2351,8 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
 
     const linkPracticeEntity = event.target.closest('[data-link-practice-entity-field]');
     const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const CustomsInstructionsWorkspace = window.KedrixOneCustomsInstructionsWorkspace || null;
+  const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
     if (linkPracticeEntity && MasterDataEntities && typeof MasterDataEntities.getEntityRecordById === 'function' && typeof MasterDataEntities.applyLinkedRecordToDraft === 'function') {
       if (typeof state._persistActivePracticeDraft === 'function') {
         state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
