@@ -77,6 +77,21 @@
 
   ensurePracticeListState();
 
+  if (Utils && typeof Utils.reconcilePracticeReferenceDuplicates === 'function') {
+    const reconciliation = Utils.reconcilePracticeReferenceDuplicates(state);
+    if (reconciliation && reconciliation.changed) {
+      if (Utils && typeof Utils.syncNumberingRuleToReference === 'function') {
+        (state.practices || []).forEach((practice) => {
+          const matchedClient = (state.clients || []).find((client) => String(client.id || '').trim() === String(practice.clientId || '').trim()) || null;
+          if (matchedClient) {
+            Utils.syncNumberingRuleToReference(matchedClient.numberingRule, practice.reference, practice.practiceDate);
+          }
+        });
+      }
+      Storage.save(state);
+    }
+  }
+
   sanitizeLegacyPortSuggestions();
 
   if (PracticeContainerIntegrity && typeof PracticeContainerIntegrity.registerPreSaveHook === 'function') {
@@ -710,9 +725,9 @@
         i18n: I18N,
         buildCurrentPracticeReference,
         createDuplicateSafeDraft: PracticeIdentity && typeof PracticeIdentity.createDuplicateSafeDraft === 'function'
-          ? PracticeIdentity.createDuplicateSafeDraft
+          ? ((practice, duplicateOptions = {}) => PracticeIdentity.createDuplicateSafeDraft(practice, { ...duplicateOptions, state }))
           : (PracticeSavePipeline && typeof PracticeSavePipeline.createDuplicateSafeDraft === 'function'
-            ? PracticeSavePipeline.createDuplicateSafeDraft
+            ? ((practice, duplicateOptions = {}) => PracticeSavePipeline.createDuplicateSafeDraft(practice, { ...duplicateOptions, state }))
             : null),
         extractPracticeDynamicData,
         openDraftSession: (nextDraft, duplicateOptions = {}) => {
@@ -877,17 +892,34 @@
   }
 
   function buildCurrentPracticeReference() {
+    const draft = ensureDraftPractice();
+    const activeSessionId = state?.practiceWorkspace?.activeSessionId || '';
     if (PracticeIdentity && typeof PracticeIdentity.buildCurrentPracticeReference === 'function') {
       return PracticeIdentity.buildCurrentPracticeReference(state, {
         getClientById,
         buildPracticeReference: Utils.buildPracticeReference,
-        buildFallbackPracticeReference: Utils.buildFallbackPracticeReference
+        buildFallbackPracticeReference: Utils.buildFallbackPracticeReference,
+        ensureUniquePracticeReference: Utils.ensureUniquePracticeReference,
+        listTakenPracticeReferences: Utils.listTakenPracticeReferences,
+        excludePracticeId: draft.editingPracticeId || '',
+        excludeSessionId: activeSessionId
       });
     }
-    const draft = ensureDraftPractice();
     const matchedClient = getClientById(draft.clientId);
-    if (matchedClient) return Utils.buildPracticeReference(matchedClient.numberingRule, draft.practiceDate);
-    return Utils.buildFallbackPracticeReference(draft.clientName || 'PR', state.practices, draft.practiceDate);
+    const baseReference = matchedClient
+      ? Utils.buildPracticeReference(matchedClient.numberingRule, draft.practiceDate)
+      : Utils.buildFallbackPracticeReference(draft.clientName || 'PR', state.practices, draft.practiceDate);
+    if (Utils && typeof Utils.ensureUniquePracticeReference === 'function' && typeof Utils.listTakenPracticeReferences === 'function') {
+      return Utils.ensureUniquePracticeReference(baseReference, {
+        takenReferences: Utils.listTakenPracticeReferences(state, {
+          excludePracticeId: draft.editingPracticeId || '',
+          excludeSessionId: activeSessionId
+        }),
+        fallbackPrefix: Utils.deriveClientPrefix ? Utils.deriveClientPrefix(draft.clientName || 'PR') : 'PR',
+        dateValue: draft.practiceDate
+      });
+    }
+    return baseReference;
   }
 
   function loadPracticeIntoDraft(practiceId, options = {}) {
@@ -1495,6 +1527,7 @@
               buildCurrentPracticeReference,
               nextPracticeId: Utils.nextPracticeId,
               commitPracticeNumber: Utils.commitPracticeNumber,
+              syncNumberingRuleToReference: Utils.syncNumberingRuleToReference,
               nextLogId: Utils.nextLogId,
               nowStamp: Utils.nowStamp,
               toast,
@@ -1544,6 +1577,7 @@
           buildCurrentPracticeReference,
           nextPracticeId: Utils.nextPracticeId,
           commitPracticeNumber: Utils.commitPracticeNumber,
+          syncNumberingRuleToReference: Utils.syncNumberingRuleToReference,
           nextLogId: Utils.nextLogId,
           nowStamp: Utils.nowStamp,
           toast,
@@ -1579,6 +1613,18 @@
         : (draft.dynamicData.portDischarge || '');
       if (normalizedSeaPortLoading) draft.dynamicData.portLoading = normalizedSeaPortLoading;
       if (normalizedSeaPortDischarge) draft.dynamicData.portDischarge = normalizedSeaPortDischarge;
+
+      const provisionalReference = String(draft.generatedReference || buildCurrentPracticeReference() || '').trim();
+      draft.generatedReference = Utils && typeof Utils.ensureUniquePracticeReference === 'function' && typeof Utils.listTakenPracticeReferences === 'function'
+        ? Utils.ensureUniquePracticeReference(provisionalReference, {
+            takenReferences: Utils.listTakenPracticeReferences(state, {
+              excludePracticeId: draft.editingPracticeId || '',
+              excludeSessionId: state?.practiceWorkspace?.activeSessionId || ''
+            }),
+            fallbackPrefix: Utils.deriveClientPrefix ? Utils.deriveClientPrefix(draft.clientName || 'PR') : 'PR',
+            dateValue: draft.practiceDate
+          })
+        : provisionalReference;
 
       const record = {
         id: draft.editingPracticeId || Utils.nextPracticeId(state.practices),

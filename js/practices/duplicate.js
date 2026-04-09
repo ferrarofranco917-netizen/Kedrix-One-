@@ -46,13 +46,14 @@ window.KedrixOnePracticeDuplicate = (() => {
       createDuplicateSafeDraft,
       extractPracticeDynamicData,
       practiceDate,
+      state,
       defaultStatus = 'In attesa documenti'
     } = options;
 
     if (!practice || typeof practice !== 'object') return null;
 
     const baseDraft = typeof createDuplicateSafeDraft === 'function'
-      ? createDuplicateSafeDraft(practice, { extractPracticeDynamicData, practiceDate })
+      ? createDuplicateSafeDraft(practice, { extractPracticeDynamicData, practiceDate, state })
       : null;
 
     const nextDraft = baseDraft || {
@@ -100,7 +101,8 @@ window.KedrixOnePracticeDuplicate = (() => {
 
     const nextDraft = buildDuplicateDraft(sourcePractice, {
       createDuplicateSafeDraft,
-      extractPracticeDynamicData
+      extractPracticeDynamicData,
+      state
     });
 
     if (!nextDraft) return { ok: false, reason: 'duplicate-draft-build-failed' };

@@ -92,17 +92,33 @@ window.KedrixOnePracticeIdentity = (() => {
     const {
       getClientById,
       buildPracticeReference,
-      buildFallbackPracticeReference
+      buildFallbackPracticeReference,
+      ensureUniquePracticeReference,
+      listTakenPracticeReferences,
+      excludePracticeId = '',
+      excludeSessionId = ''
     } = options;
 
     const draft = ensureDraft(state);
     const matchedClient = typeof getClientById === 'function' ? getClientById(draft.clientId) : null;
-    if (matchedClient && typeof buildPracticeReference === 'function') {
-      return buildPracticeReference(matchedClient.numberingRule, draft.practiceDate);
+    const baseReference = matchedClient && typeof buildPracticeReference === 'function'
+      ? buildPracticeReference(matchedClient.numberingRule, draft.practiceDate)
+      : (typeof buildFallbackPracticeReference === 'function'
+        ? buildFallbackPracticeReference(draft.clientName || 'PR', (state && state.practices) || [], draft.practiceDate)
+        : '');
+
+    if (typeof ensureUniquePracticeReference === 'function' && typeof listTakenPracticeReferences === 'function') {
+      return ensureUniquePracticeReference(baseReference, {
+        takenReferences: listTakenPracticeReferences(state, {
+          excludePracticeId: excludePracticeId || draft.editingPracticeId || '',
+          excludeSessionId
+        }),
+        fallbackPrefix: matchedClient?.numberingRule?.prefix || draft.clientName || 'PR',
+        dateValue: draft.practiceDate
+      });
     }
-    return typeof buildFallbackPracticeReference === 'function'
-      ? buildFallbackPracticeReference(draft.clientName || 'PR', (state && state.practices) || [], draft.practiceDate)
-      : '';
+
+    return baseReference;
   }
 
   function loadPracticeIntoDraft(state, practiceId, options = {}) {

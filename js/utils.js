@@ -124,6 +124,59 @@ window.KedrixOneUtils = (() => {
   }
 
 
+
+  function reconcilePracticeReferenceDuplicates(state) {
+    const practices = Array.isArray(state?.practices) ? state.practices : [];
+    if (!practices.length) return { changed: false, changes: [] };
+
+    const reserved = new Set(
+      practices
+        .map((practice) => normalize(practice?.reference || practice?.generatedReference || ''))
+        .filter(Boolean)
+    );
+    const seen = new Set();
+    const changes = [];
+
+    practices.forEach((practice) => {
+      if (!practice || typeof practice !== 'object') return;
+      const currentReference = String(practice.reference || practice.generatedReference || '').trim();
+      if (!currentReference) return;
+      const normalizedReference = normalize(currentReference);
+      if (!normalizedReference) return;
+
+      if (!seen.has(normalizedReference)) {
+        seen.add(normalizedReference);
+        return;
+      }
+
+      const nextReference = ensureUniquePracticeReference(currentReference, {
+        takenReferences: reserved,
+        fallbackPrefix: deriveClientPrefix(practice.clientName || practice.client || 'PR'),
+        dateValue: practice.practiceDate || ''
+      });
+
+      if (normalize(nextReference) === normalizedReference) {
+        seen.add(normalizedReference);
+        return;
+      }
+
+      practice.reference = nextReference;
+      changes.push({
+        id: String(practice.id || '').trim(),
+        from: currentReference,
+        to: nextReference
+      });
+      const normalizedNextReference = normalize(nextReference);
+      reserved.add(normalizedNextReference);
+      seen.add(normalizedNextReference);
+    });
+
+    return {
+      changed: changes.length > 0,
+      changes
+    };
+  }
+
   function buildPracticeReference(rule, dateValue) {
     const workingRule = { ...(rule || {}) };
     const separator = workingRule.separator || '-';
@@ -208,6 +261,7 @@ window.KedrixOneUtils = (() => {
     listTakenPracticeReferences,
     ensureUniquePracticeReference,
     syncNumberingRuleToReference,
+    reconcilePracticeReferenceDuplicates,
     buildPracticeReference,
     commitPracticeNumber,
     deriveClientPrefix,
