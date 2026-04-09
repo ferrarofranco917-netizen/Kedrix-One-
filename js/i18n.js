@@ -1633,6 +1633,7 @@ Object.assign(dictionary.it.ui, {
   duplicatePractice: 'Duplica pratica',
   duplicatePracticeBannerKicker: 'Copia generata da pratica esistente',
   duplicateDraftReady: 'Copia pronta da personalizzare',
+  duplicateSourceReferenceBadge: 'Copiata da',
   practiceDuplicatedDraftReady: 'Copia pratica pronta',
   practiceDuplicatedToast: 'Pratica duplicata: nuova bozza pronta',
   duplicateUnavailable: 'Apri prima una pratica esistente da duplicare.'
@@ -1642,6 +1643,7 @@ Object.assign(dictionary.en.ui, {
   duplicatePractice: 'Duplicate practice',
   duplicatePracticeBannerKicker: 'Copy generated from an existing practice',
   duplicateDraftReady: 'Copy ready to customize',
+  duplicateSourceReferenceBadge: 'Copied from',
   practiceDuplicatedDraftReady: 'Practice copy ready',
   practiceDuplicatedToast: 'Practice duplicated: new draft ready',
   duplicateUnavailable: 'Open an existing practice before duplicating it.'

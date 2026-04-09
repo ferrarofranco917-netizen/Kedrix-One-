@@ -242,12 +242,14 @@
         draft: nextDraft,
         source: options.source || 'manual',
         createEmptyDraft: createEmptyPracticeDraft,
-        practiceTab: resolveDefaultPracticeTab(nextDraft, options.practiceTab)
+        practiceTab: resolveDefaultPracticeTab(nextDraft, options.practiceTab),
+        duplicateSource: options.duplicateSource || null
       });
       PracticeWorkspace.syncActiveDraft(state, { createEmptyDraft: createEmptyPracticeDraft });
       return state.draftPractice;
     }
     state.draftPractice = nextDraft;
+    state.practiceDuplicateSource = options.duplicateSource || null;
     return state.draftPractice;
   }
 
@@ -731,7 +733,10 @@
             : null),
         extractPracticeDynamicData,
         openDraftSession: (nextDraft, duplicateOptions = {}) => {
-          openPracticeDraftSession(nextDraft, { source: duplicateOptions.source || 'duplicate' });
+          openPracticeDraftSession(nextDraft, {
+            source: duplicateOptions.source || 'duplicate',
+            duplicateSource: duplicateOptions.practiceDuplicateSource || null
+          });
           state.practiceTab = 'practice';
           state._practiceValidationErrors = [];
           state.practiceSearchPreviewId = '';

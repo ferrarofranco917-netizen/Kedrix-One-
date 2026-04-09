@@ -210,6 +210,9 @@ window.KedrixOnePracticeWorkspace = (() => {
     state.draftPractice = active.draft;
     state.selectedPracticeId = String(active.draft?.editingPracticeId || '').trim();
     state.practiceTab = String(active.uiState?.tab || state.practiceTab || 'practice').trim() || 'practice';
+    state.practiceDuplicateSource = active.uiState && typeof active.uiState === 'object' && active.uiState.duplicateSource && typeof active.uiState.duplicateSource === 'object'
+      ? { ...active.uiState.duplicateSource }
+      : null;
     return active.draft;
   }
 
@@ -224,10 +227,19 @@ window.KedrixOnePracticeWorkspace = (() => {
   }
 
   function openDraftSession(state, options = {}) {
-    const { draft, source = 'manual', createEmptyDraft, isDirty = false, practiceTab = 'practice' } = options;
+    const { draft, source = 'manual', createEmptyDraft, isDirty = false, practiceTab = 'practice', duplicateSource = null } = options;
     const workspace = ensureState(state, { createEmptyDraft });
     if (!workspace) return null;
-    const session = createSession({ draft, source, createEmptyDraft, isDirty, uiState: { tab: practiceTab } });
+    const session = createSession({
+      draft,
+      source,
+      createEmptyDraft,
+      isDirty,
+      uiState: {
+        tab: practiceTab,
+        duplicateSource: duplicateSource && typeof duplicateSource === 'object' ? { ...duplicateSource } : null
+      }
+    });
     workspace.sessions = [session, ...workspace.sessions];
     workspace.activeSessionId = session.id;
     syncActiveDraft(state, { createEmptyDraft });
@@ -261,6 +273,7 @@ window.KedrixOnePracticeWorkspace = (() => {
       targetSession.isDirty = false;
       if (!targetSession.uiState || typeof targetSession.uiState !== 'object') targetSession.uiState = { tab: 'practice' };
       targetSession.uiState.tab = String(practiceTab || targetSession.uiState.tab || state.practiceTab || 'practice').trim() || 'practice';
+      targetSession.uiState.duplicateSource = null;
     } else if (existingSession) {
       targetSession = existingSession;
       if (refreshExisting) {
@@ -269,8 +282,9 @@ window.KedrixOnePracticeWorkspace = (() => {
       }
       if (!targetSession.uiState || typeof targetSession.uiState !== 'object') targetSession.uiState = { tab: 'practice' };
       if (practiceTab) targetSession.uiState.tab = String(practiceTab).trim() || 'practice';
+      targetSession.uiState.duplicateSource = null;
     } else {
-      targetSession = createSession({ draft: builtDraft, source, createEmptyDraft, isDirty: false, uiState: { tab: practiceTab || state.practiceTab || 'practice' } });
+      targetSession = createSession({ draft: builtDraft, source, createEmptyDraft, isDirty: false, uiState: { tab: practiceTab || state.practiceTab || 'practice', duplicateSource: null } });
       workspace.sessions = [targetSession, ...workspace.sessions];
     }
 
@@ -303,7 +317,9 @@ window.KedrixOnePracticeWorkspace = (() => {
         : { tab: 'practice' };
       session.draft = cloneDraft(rebuiltDraft);
       session.uiState = {
-        tab: String(existingUiState.tab || 'practice').trim() || 'practice'
+        ...existingUiState,
+        tab: String(existingUiState.tab || 'practice').trim() || 'practice',
+        duplicateSource: null
       };
       if (!keepDirty) {
         session.isDirty = false;

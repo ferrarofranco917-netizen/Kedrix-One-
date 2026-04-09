@@ -42,22 +42,6 @@ window.KedrixOneTemplates = (() => {
     return window.KedrixOneMasterDataQuickAdd;
   }
 
-  function formatPracticeSaveTimestamp(value) {
-    if (!value) return '—';
-    try {
-      const locale = T && typeof T.getLanguage === 'function' && T.getLanguage() === 'en' ? 'en-GB' : 'it-IT';
-      return new Date(value).toLocaleString(locale, {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return String(value || '');
-    }
-  }
-
   function sidebar(modules, activeRoute, expandedModules) {
     const expanded = new Set(expandedModules || []);
     const activeRoot = activeRoute.split('/')[0];
@@ -224,16 +208,16 @@ window.KedrixOneTemplates = (() => {
     const dynamicPanelTitle = currentTabKey === 'attachments'
       ? T.t('ui.attachmentsPanelShellTitle', fallbackByLanguage('Gestione allegati', 'Attachment management'))
       : currentTabKey === 'practice'
-        ? T.t('ui.practiceArchitectureTitle', fallbackByLanguage('Blocco operativo principale', 'Main operational block'))
+        ? T.t('ui.practiceArchitectureTitle', fallbackByLanguage('Architettura operativa pratica', 'Practice operational architecture'))
         : currentTabKey === 'detail'
           ? T.t('ui.practiceDetailArchitectureTitle', fallbackByLanguage('Dettaglio specialistico', 'Specialist detail'))
           : T.t('ui.practiceNotesArchitectureTitle', fallbackByLanguage('Note pratica', 'Practice notes'));
     const dynamicPanelSubtitle = currentTabKey === 'attachments'
       ? T.t('ui.attachmentsPanelShellSubtitle', fallbackByLanguage('Import, elenco, apertura e rimozione controllata degli allegati collegati alla pratica.', 'Import, list, open and remove attachments linked to the current practice in a controlled way.'))
       : currentTabKey === 'practice'
-        ? T.t('ui.practiceArchitectureHint', fallbackByLanguage('Campi operativi centrali della pratica: soggetti, trasporto, nodi logistici, dogana ed elementi economici essenziali.', 'Core operational practice fields: parties, transport, logistics nodes, customs and essential economics.'))
+        ? T.t('ui.practiceArchitectureHint', fallbackByLanguage('Overview operativa a blocchi: identità, soggetti collegati, trasporto, nodi logistici, dogana ed elementi economici essenziali.', 'Block-based operational overview: identity, linked parties, transport, logistics nodes, customs and essential economics.'))
         : currentTabKey === 'detail'
-          ? T.t('ui.practiceDetailArchitectureHint', fallbackByLanguage("Campi tecnici e specialistici separati dal blocco operativo principale per mantenere ordine e leggibilità.", 'Technical and specialist fields separated from the main operational block to preserve order and readability.'))
+          ? T.t('ui.practiceDetailArchitectureHint', fallbackByLanguage("Campi tecnici e specialistici separati dall'overview della pratica per mantenere ordine e leggibilità.", 'Technical and specialist fields separated from the main practice overview to preserve order and readability.'))
           : T.t('ui.practiceNotesArchitectureHint', fallbackByLanguage('Area dedicata alle note operative della pratica, mantenuta separata ma sempre coerente con il record attivo.', 'Dedicated area for practice operational notes, kept separate but aligned with the active record.'));
     const selectedType = practiceTypes.find((item) => item.value === draft.practiceType) || null;
     const categoryOptions = draft.practiceType ? PracticeSchemas.getCategoryOptions(draft.practiceType) : [];
@@ -262,27 +246,6 @@ window.KedrixOneTemplates = (() => {
       : (verificationLabels.length ? `${T.t('ui.customsVerificationTypePrefix', 'Tipo:')} ${verificationLabels.join(' · ')}` : T.t('ui.verificationBannerHint', 'Verifiche doganali attive sulla unità.'));
     const isEditing = Boolean(draft.editingPracticeId);
     const duplicateSource = state.practiceDuplicateSource || null;
-    const activeSaveMeta = state._lastPracticeSaveMeta
-      && String(state._lastPracticeSaveMeta.practiceId || '').trim()
-      && String(draft.editingPracticeId || '').trim() === String(state._lastPracticeSaveMeta.practiceId || '').trim()
-      ? state._lastPracticeSaveMeta
-      : null;
-    const saveMetaBadgeClass = activeSaveMeta && activeSaveMeta.mode === 'draft' ? 'warning' : 'success';
-    const saveMetaBadgeText = activeSaveMeta
-      ? (activeSaveMeta.mode === 'draft'
-        ? T.t('ui.practiceDraftSavedBadge', fallbackByLanguage('Bozza salvata', 'Draft saved'))
-        : T.t('ui.practiceSavedBadge', fallbackByLanguage('Salvataggio confermato', 'Save confirmed')))
-      : '';
-    const saveMetaKicker = activeSaveMeta
-      ? T.t('ui.practiceSaveBannerKicker', fallbackByLanguage('Conferma interna di salvataggio', 'Internal save confirmation'))
-      : '';
-    const saveMetaDetail = activeSaveMeta
-      ? T.t('ui.practiceSaveBannerDetail', fallbackByLanguage('I dati attualmente visibili corrispondono al record salvato nell’app.', 'The data currently shown matches the record saved in the app.'))
-      : '';
-    const saveMetaTimestamp = activeSaveMeta ? formatPracticeSaveTimestamp(activeSaveMeta.savedAt) : '';
-    const saveMetaTabLabel = activeSaveMeta
-      ? (tabs.find((tab) => tab.key === String(activeSaveMeta.returnTab || 'practice').trim())?.label || currentTab.label)
-      : '';
     const editSourceLabel = state.practiceOpenSource === 'search'
       ? T.t('ui.openedFromSearch', 'Aperta da ricerca')
       : state.practiceOpenSource === 'list'
@@ -370,25 +333,13 @@ window.KedrixOneTemplates = (() => {
               <div class="edit-session-banner" id="practiceEditBanner">
                 <div>
                   <div class="summary-kicker">${U.escapeHtml(T.t('ui.duplicatePracticeBannerKicker', 'Copia generata da pratica esistente'))}</div>
-                  <div class="edit-session-title">${U.escapeHtml(duplicateSource.reference || draft.generatedReference || '—')}</div>
-                  <div class="edit-session-subtitle">${U.escapeHtml(duplicateSource.clientName || draft.clientName || '—')}</div>
+                  <div class="edit-session-title">${U.escapeHtml(draft.generatedReference || '—')}</div>
+                  <div class="edit-session-subtitle">${U.escapeHtml(draft.clientName || duplicateSource.clientName || '—')}</div>
                 </div>
                 <div class="edit-session-meta">
                   <span class="badge info">${U.escapeHtml(T.t('ui.duplicateDraftReady', 'Copia pronta da personalizzare'))}</span>
+                  <span class="badge info">${U.escapeHtml(T.t('ui.duplicateSourceReferenceBadge', 'Copiata da'))} ${U.escapeHtml(duplicateSource.reference || '—')}</span>
                 </div>
-              </div>` : ''}
-            ${activeSaveMeta ? `
-              <div class="edit-session-banner" id="practiceSaveBanner">
-                <div>
-                  <div class="summary-kicker">${U.escapeHtml(saveMetaKicker)}</div>
-                  <div class="edit-session-title">${U.escapeHtml(activeSaveMeta.reference || draft.generatedReference || '—')}</div>
-                  <div class="edit-session-subtitle">${U.escapeHtml(`${activeSaveMeta.clientName || draft.clientName || '—'} · ${saveMetaTimestamp}`)}</div>
-                </div>
-                <div class="edit-session-meta">
-                  <span class="badge ${U.escapeHtml(saveMetaBadgeClass)}">${U.escapeHtml(saveMetaBadgeText)}</span>
-                  <span class="badge info">${U.escapeHtml(saveMetaTabLabel)}</span>
-                </div>
-                <div class="summary-text">${U.escapeHtml(saveMetaDetail)}</div>
               </div>` : ''}
             <div class="form-grid three">
               <div class="field" data-field-wrap="practiceType">
