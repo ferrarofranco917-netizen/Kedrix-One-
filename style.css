@@ -3888,6 +3888,79 @@ body.dialog-open {
 }
 
 
+
+.customs-instructions-launcher-grid.is-balanced {
+  align-items: stretch;
+}
+
+.customs-launcher-card {
+  display: grid;
+  gap: 12px;
+  min-height: 136px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.customs-launcher-card-primary {
+  align-content: space-between;
+}
+
+.customs-launcher-card-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.customs-launcher-card-copy h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.customs-launcher-card-copy p {
+  margin: 0;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+.customs-launcher-actions-row {
+  display: flex;
+  align-items: flex-end;
+}
+
+.customs-launcher-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+}
+
+.customs-tab-row {
+  gap: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.customs-tab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 40px;
+  border-radius: 9px;
+}
+
+.customs-tab-button.is-active {
+  background: linear-gradient(180deg, var(--a2), var(--a));
+  border-color: transparent;
+  color: #fff;
+}
+
 .customs-instructions-launcher-grid {
   display: grid;
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
@@ -3965,6 +4038,20 @@ body.dialog-open {
   .customs-instructions-practice-search,
   .customs-instructions-summary-pills {
     grid-template-columns: 1fr;
+  }
+
+  .customs-launcher-card,
+  .customs-launcher-card-primary {
+    min-height: auto;
+  }
+
+  .customs-tab-row {
+    width: 100%;
+  }
+
+  .customs-tab-button {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }
 

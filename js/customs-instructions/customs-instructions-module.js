@@ -488,10 +488,16 @@ window.KedrixOneCustomsInstructionsModule = (() => {
             <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenHint', 'Apri una nuova istruzione partendo dalla pratica attiva, usa le ultime pratiche recenti oppure cerca direttamente il numero pratica per mantenere il collegamento corretto.'))}</p>
           </div>
         </div>
-        <div class="customs-instructions-launcher-grid">
-          <button class="btn" type="button" data-customs-open-active-practice ${activePracticeId ? '' : 'disabled'}>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromActive', 'Nuova da pratica attiva'))}</button>
-          <div class="customs-instructions-launcher-stack">
-            <div class="customs-instructions-practice-picker">
+        <div class="customs-instructions-launcher-grid is-balanced">
+          <article class="customs-launcher-card customs-launcher-card-primary">
+            <div class="customs-launcher-card-copy">
+              <h4>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromActive', 'Nuova da pratica attiva'))}</h4>
+              <p>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromActiveHint', 'Usa subito la pratica già aperta nel workspace, mantenendo il collegamento madre senza passaggi intermedi.'))}</p>
+            </div>
+            <button class="btn customs-launcher-action" type="button" data-customs-open-active-practice ${activePracticeId ? '' : 'disabled'}>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromActive', 'Nuova da pratica attiva'))}</button>
+          </article>
+          <div class="customs-instructions-launcher-stack is-balanced">
+            <article class="customs-launcher-card">
               <div class="field customs-inline-field">
                 <label for="customsPracticePicker">${U.escapeHtml(i18n?.t('ui.customsInstructionsRecentPracticesLabel', 'Ultime pratiche recenti'))}</label>
                 <select id="customsPracticePicker" data-customs-practice-picker>
@@ -500,16 +506,20 @@ window.KedrixOneCustomsInstructionsModule = (() => {
                 </select>
                 <div class="field-hint">${U.escapeHtml(i18n?.t('ui.customsInstructionsRecentPracticesHint', 'Il menu mostra solo le ultime 30 pratiche per restare veloce anche con archivi molto grandi.'))}</div>
               </div>
-              <button class="btn secondary" type="button" data-customs-open-picked-practice>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenSelected', 'Apri da pratica selezionata'))}</button>
-            </div>
-            <div class="customs-instructions-practice-search">
+              <div class="customs-launcher-actions-row">
+                <button class="btn secondary customs-launcher-action" type="button" data-customs-open-picked-practice>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenSelected', 'Apri da pratica selezionata'))}</button>
+              </div>
+            </article>
+            <article class="customs-launcher-card">
               <div class="field customs-inline-field">
                 <label for="customsPracticeSearch">${U.escapeHtml(i18n?.t('ui.customsInstructionsSearchLabel', 'Cerca numero pratica'))}</label>
                 <input id="customsPracticeSearch" type="search" value="" placeholder="${U.escapeHtml(i18n?.t('ui.customsInstructionsSearchPlaceholder', 'Es. AP-2026-8'))}" data-customs-practice-search autocomplete="off">
                 <div class="field-hint">${U.escapeHtml(i18n?.t('ui.customsInstructionsSearchHint', 'Inserisci numero pratica o riferimento e apri direttamente la pratica madre senza scorrere tutto l’elenco.'))}</div>
               </div>
-              <button class="btn secondary" type="button" data-customs-open-search-practice>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromSearch', 'Apri da ricerca'))}</button>
-            </div>
+              <div class="customs-launcher-actions-row">
+                <button class="btn secondary customs-launcher-action" type="button" data-customs-open-search-practice>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromSearch', 'Apri da ricerca'))}</button>
+              </div>
+            </article>
           </div>
         </div>
       </section>`;
@@ -696,9 +706,9 @@ window.KedrixOneCustomsInstructionsModule = (() => {
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.customsInstructionsEditorTitle', 'Maschera istruzione'))}</h3>
             <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.customsInstructionsEditorHint', 'Le modifiche restano nella maschera interna fino al salvataggio. La chiusura controlla il dirty state prima di perdere dati.'))}</p>
           </div>
-          <div class="action-row">
-            <button class="btn secondary" type="button" data-customs-tab="general">${U.escapeHtml(i18n?.t('ui.general', 'Generale'))}</button>
-            <button class="btn secondary" type="button" data-customs-tab="texts">${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</button>
+          <div class="action-row customs-tab-row" role="tablist" aria-label="${U.escapeHtml(i18n?.t('ui.customsInstructionsTabsetLabel', 'Sezioni istruzione'))}">
+            <button class="btn secondary customs-tab-button ${activeTab === 'general' ? 'is-active' : ''}" type="button" data-customs-tab="general" role="tab" aria-selected="${activeTab === 'general' ? 'true' : 'false'}">${U.escapeHtml(i18n?.t('ui.general', 'Generale'))}</button>
+            <button class="btn secondary customs-tab-button ${activeTab === 'texts' ? 'is-active' : ''}" type="button" data-customs-tab="texts" role="tab" aria-selected="${activeTab === 'texts' ? 'true' : 'false'}">${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</button>
           </div>
         </div>
         <div class="customs-instructions-mode-bar">
