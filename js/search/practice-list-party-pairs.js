@@ -12,7 +12,7 @@ window.KedrixOnePracticeListPartyPairs = (() => {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;')
   };
-  const I18N = window.KedrixOneI18n || { t: (_path, fallback = '') => fallback };
+  const I18N = window.KedrixOneI18N || { t: (_path, fallback = '') => fallback };
 
   function normalize(value) {
     return Utils.normalize ? Utils.normalize(value) : String(value || '').trim().toUpperCase();
