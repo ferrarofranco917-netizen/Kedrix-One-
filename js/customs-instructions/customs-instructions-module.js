@@ -523,12 +523,55 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     return { label: labels[key] || key, type: types[key] || 'text' };
   }
 
+  function renderLineCardField(column, row, rowIndex, i18n, options = {}) {
+    const meta = lineColumnMeta(column, i18n);
+    const full = options.full ? ' full' : '';
+    const inputId = `customs-line-${rowIndex}-${column}`;
+    return `<div class="field customs-line-field${full}"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(meta.label)}</label><input id="${U.escapeHtml(inputId)}" type="${U.escapeHtml(meta.type)}" value="${U.escapeHtml(row?.[column] || '')}" data-customs-line-field="${U.escapeHtml(column)}" data-customs-line-index="${rowIndex}"></div>`;
+  }
+
+  function lineCardGroups(mode) {
+    if (mode === 'sea') {
+      return [
+        ['containerCode', 'transportUnitType'],
+        ['seals', 'loadingDate'],
+        ['taric'],
+        ['description'],
+        ['packageCount', 'netWeight'],
+        ['grossWeight', 'volume']
+      ];
+    }
+    return [
+      ['marksNumbers'],
+      ['description'],
+      ['packageCount', 'netWeight'],
+      ['grossWeight']
+    ];
+  }
+
   function renderLinesTable(draft, columns, i18n) {
     const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
-    return `<div class="table-wrap"><table class="table customs-instructions-lines-table"><thead><tr>${columns.map((column) => `<th>${U.escapeHtml(lineColumnMeta(column, i18n).label)}</th>`).join('')}<th>${U.escapeHtml(i18n?.t('ui.actions', 'Azioni'))}</th></tr></thead><tbody>${rows.length ? rows.map((row, rowIndex) => `<tr>${columns.map((column) => {
-      const meta = lineColumnMeta(column, i18n);
-      return `<td><input type="${U.escapeHtml(meta.type)}" value="${U.escapeHtml(row?.[column] || '')}" data-customs-line-field="${U.escapeHtml(column)}" data-customs-line-index="${rowIndex}"></td>`;
-    }).join('')}<td><button class="btn secondary small-btn" type="button" data-customs-remove-line="${rowIndex}">${U.escapeHtml(i18n?.t('ui.remove', 'Rimuovi'))}</button></td></tr>`).join('') : `<tr><td colspan="${columns.length + 1}" class="empty-text">${U.escapeHtml(i18n?.t('ui.customsInstructionsNoLines', 'Nessuna riga presente nella maschera attiva.'))}</td></tr>`}</tbody></table></div>`;
+    const mode = String(draft?.mode || '').trim();
+    const groups = lineCardGroups(mode);
+    if (!rows.length) {
+      return `<div class="empty-text">${U.escapeHtml(i18n?.t('ui.customsInstructionsNoLines', 'Nessuna riga presente nella maschera attiva.'))}</div>`;
+    }
+    return `<div class="customs-lines-stack">${rows.map((row, rowIndex) => {
+      const primaryValue = String(row?.containerCode || row?.marksNumbers || row?.description || '').trim();
+      const meta = primaryValue || (i18n?.t('ui.customsInstructionsLineDraft', 'Compila i campi della riga') || 'Compila i campi della riga');
+      return `<article class="customs-line-card">
+        <div class="customs-line-card-head">
+          <div>
+            <div class="customs-line-card-title">${U.escapeHtml((i18n?.t('ui.customsInstructionsLineTitle', 'Riga') || 'Riga') + ' ' + String(rowIndex + 1))}</div>
+            <div class="customs-line-card-meta">${U.escapeHtml(meta)}</div>
+          </div>
+          <button class="btn secondary small-btn" type="button" data-customs-remove-line="${rowIndex}">${U.escapeHtml(i18n?.t('ui.remove', 'Rimuovi'))}</button>
+        </div>
+        <div class="customs-line-grid ${mode === 'sea' ? 'is-sea' : 'is-compact'}">
+          ${groups.map((group) => group.map((column) => renderLineCardField(column, row, rowIndex, i18n, { full: column === 'description' })).join('')).join('')}
+        </div>
+      </article>`;
+    }).join('')}</div>`;
   }
 
   function renderTextsTab(draft, i18n) {

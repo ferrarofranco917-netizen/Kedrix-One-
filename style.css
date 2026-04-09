@@ -3888,68 +3888,152 @@ body.dialog-open {
 }
 
 
-.customs-instructions-launcher-grid,
-.customs-instructions-form-grid {
-  display: grid;
-  gap: 16px;
-}
-
 .customs-instructions-launcher-grid {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  align-items: end;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 12px;
 }
 
-.customs-instructions-practice-picker,
-.customs-instructions-currency-row {
+.customs-instructions-practice-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.customs-instructions-mode-bar {
   display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.customs-instructions-summary-pills {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.customs-instructions-form-grid {
+  margin-bottom: 18px;
+}
+
+.customs-instructions-currency-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
   gap: 10px;
-  align-items: center;
 }
 
 .customs-instructions-currency-row input,
 .customs-instructions-currency-row select,
 .customs-instructions-practice-picker select,
-.customs-instructions-practice-picker button {
-  flex: 1 1 auto;
+.customs-instructions-lines-table input {
+  width: 100%;
 }
 
-.customs-instructions-session-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.customs-instructions-lines-table td {
+  vertical-align: middle;
 }
 
-.customs-instructions-session-card {
-  border: 1px solid rgba(120, 167, 255, 0.18);
-  border-radius: 14px;
-  padding: 12px 14px;
-  min-width: 240px;
-  background: rgba(5, 19, 37, 0.66);
-}
-
-.customs-instructions-session-card.is-active {
-  border-color: rgba(120, 167, 255, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(120, 167, 255, 0.18);
-}
-
-.customs-instructions-session-meta,
-.customs-instructions-mode-bar,
 .customs-instructions-actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  margin-top: 16px;
 }
 
-.customs-instructions-lines-table input,
-.customs-instructions-lines-table select {
-  min-width: 100px;
-}
-
-@media (max-width: 900px) {
+@media (max-width: 980px) {
+  .customs-instructions-launcher-grid,
   .customs-instructions-practice-picker,
-  .customs-instructions-currency-row {
-    flex-direction: column;
-    align-items: stretch;
+  .customs-instructions-summary-pills {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.customs-instructions-editor,
+.customs-instructions-launcher,
+.customs-instructions-workspace-panel,
+.customs-instructions-editor .panel,
+.customs-instructions-editor .table-panel,
+.customs-instructions-editor .field,
+.customs-instructions-editor .stack-item,
+.customs-lines-stack,
+.customs-line-card,
+.customs-line-grid {
+  min-width: 0;
+}
+
+.customs-instructions-summary-pills {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customs-instructions-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customs-lines-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.customs-line-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.customs-line-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.customs-line-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.customs-line-card-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.customs-line-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.customs-line-field.full {
+  grid-column: 1 / -1;
+}
+
+.customs-instructions-lines-panel .table-wrap {
+  overflow-x: visible;
+  border: 0;
+}
+
+.customs-instructions-lines-table {
+  min-width: 0;
+}
+
+@media (max-width: 1400px) {
+  .customs-instructions-launcher-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customs-instructions-practice-picker {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .customs-instructions-summary-pills,
+  .customs-instructions-form-grid,
+  .customs-line-grid {
+    grid-template-columns: 1fr;
   }
 }
