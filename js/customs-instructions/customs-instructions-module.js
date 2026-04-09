@@ -112,9 +112,14 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   }
 
   function directionLabel(direction, i18n) {
-    return String(direction || '').trim() === 'export'
-      ? (i18n?.t('ui.customsInstructionsDirectionExport', 'Export') || 'Export')
-      : (i18n?.t('ui.customsInstructionsDirectionImport', 'Import') || 'Import');
+    const normalized = String(direction || '').trim();
+    if (normalized === 'export') {
+      return i18n?.t('ui.customsInstructionsDirectionExport', 'Export') || 'Export';
+    }
+    if (normalized === 'import') {
+      return i18n?.t('ui.customsInstructionsDirectionImport', 'Import') || 'Import';
+    }
+    return '—';
   }
 
   function buildLineColumns(mode) {
@@ -126,35 +131,45 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     return Object.fromEntries(columns.map((key) => [key, '']));
   }
 
-  function derivePartyLabels(mode, direction) {
+  function derivePartyLabels(mode, direction, i18n) {
     const isImport = direction === 'import';
     if (mode === 'sea') {
       return {
-        principalPartyLabel: isImport ? 'Importatore' : 'Esportatore',
-        senderPartyLabel: 'Mittente',
-        receiverPartyLabel: isImport ? 'Ricevitore' : 'Destinatario',
-        originNodeLabel: 'Porto imbarco',
-        destinationNodeLabel: 'Porto sbarco',
-        carrierReferenceLabel: isImport ? 'Nave / Viaggio' : 'Nave / Data viaggio'
+        principalPartyLabel: isImport
+          ? (i18n?.t('ui.customsInstructionsPrincipalImporter', 'Importatore') || 'Importatore')
+          : (i18n?.t('ui.customsInstructionsPrincipalExporter', 'Esportatore') || 'Esportatore'),
+        senderPartyLabel: i18n?.t('ui.customsInstructionsSender', 'Mittente') || 'Mittente',
+        receiverPartyLabel: isImport
+          ? (i18n?.t('ui.customsInstructionsReceiverImportSea', 'Ricevitore') || 'Ricevitore')
+          : (i18n?.t('ui.customsInstructionsReceiver', 'Destinatario') || 'Destinatario'),
+        originNodeLabel: i18n?.t('ui.customsInstructionsOriginPort', 'Porto imbarco') || 'Porto imbarco',
+        destinationNodeLabel: i18n?.t('ui.customsInstructionsDestinationPort', 'Porto sbarco') || 'Porto sbarco',
+        carrierReferenceLabel: isImport
+          ? (i18n?.t('ui.customsInstructionsCarrierReferenceSeaImport', 'Nave / Viaggio') || 'Nave / Viaggio')
+          : (i18n?.t('ui.customsInstructionsCarrierReferenceSeaExport', 'Nave / Data viaggio') || 'Nave / Data viaggio')
       };
     }
     if (mode === 'air') {
       return {
-        principalPartyLabel: isImport ? 'Importatore' : 'Esportatore',
-        senderPartyLabel: 'Mittente',
-        receiverPartyLabel: 'Destinatario',
-        originNodeLabel: 'Aeroporto partenza',
-        destinationNodeLabel: 'Aeroporto arrivo',
-        carrierReferenceLabel: 'MAWB / HAWB'
+        principalPartyLabel: isImport
+          ? (i18n?.t('ui.customsInstructionsPrincipalImporter', 'Importatore') || 'Importatore')
+          : (i18n?.t('ui.customsInstructionsPrincipalExporter', 'Esportatore') || 'Esportatore'),
+        senderPartyLabel: i18n?.t('ui.customsInstructionsSender', 'Mittente') || 'Mittente',
+        receiverPartyLabel: i18n?.t('ui.customsInstructionsReceiver', 'Destinatario') || 'Destinatario',
+        originNodeLabel: i18n?.t('ui.customsInstructionsOriginAirport', 'Aeroporto partenza') || 'Aeroporto partenza',
+        destinationNodeLabel: i18n?.t('ui.customsInstructionsDestinationAirport', 'Aeroporto arrivo') || 'Aeroporto arrivo',
+        carrierReferenceLabel: i18n?.t('ui.customsInstructionsCarrierReferenceAir', 'MAWB / HAWB') || 'MAWB / HAWB'
       };
     }
     return {
-      principalPartyLabel: isImport ? 'Importatore' : 'Esportatore',
-      senderPartyLabel: 'Mittente',
-      receiverPartyLabel: 'Destinatario',
-      originNodeLabel: 'Origine',
-      destinationNodeLabel: 'Destinazione',
-      carrierReferenceLabel: 'Targa mezzo'
+      principalPartyLabel: isImport
+        ? (i18n?.t('ui.customsInstructionsPrincipalImporter', 'Importatore') || 'Importatore')
+        : (i18n?.t('ui.customsInstructionsPrincipalExporter', 'Esportatore') || 'Esportatore'),
+      senderPartyLabel: i18n?.t('ui.customsInstructionsSender', 'Mittente') || 'Mittente',
+      receiverPartyLabel: i18n?.t('ui.customsInstructionsReceiver', 'Destinatario') || 'Destinatario',
+      originNodeLabel: i18n?.t('ui.customsInstructionsOriginNode', 'Origine') || 'Origine',
+      destinationNodeLabel: i18n?.t('ui.customsInstructionsDestinationNode', 'Destinazione') || 'Destinazione',
+      carrierReferenceLabel: i18n?.t('ui.customsInstructionsCarrierReferenceRoad', 'Targa mezzo') || 'Targa mezzo'
     };
   }
 
@@ -189,12 +204,12 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     return Array.isArray(items) ? items.length : 0;
   }
 
-  function buildDraftFromPractice(state, practice) {
+  function buildDraftFromPractice(state, practice, i18n) {
     if (!practice || typeof practice !== 'object') return createEmptyDraft(state);
     const dynamic = practice.dynamicData || {};
     const mode = normalizeMode(practice);
     const direction = normalizeDirection(practice);
-    const labels = derivePartyLabels(mode, direction);
+    const labels = derivePartyLabels(mode, direction, i18n);
     const attachmentOwnerKey = String(practice.attachmentOwnerKey || practice.id || '').trim();
     const sourceSnapshot = {
       practiceId: String(practice.id || '').trim(),
@@ -794,7 +809,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       return;
     }
     ensureState(state);
-    const draft = buildDraftFromPractice(state, practice);
+    const draft = buildDraftFromPractice(state, practice, helpers?.i18n);
     Workspace.openDraftSession(state, {
       draft,
       source: 'practice',
