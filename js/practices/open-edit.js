@@ -19,11 +19,13 @@ window.KedrixOnePracticeOpenEdit = (() => {
       const editorSection = document.getElementById('practiceEditorSection') || document.getElementById('practiceForm');
       const editBanner = document.getElementById('practiceEditBanner');
       const verificationBanner = document.getElementById('practiceVerificationBanner');
-      const dynamicPrimaryField = document.querySelector('#practiceDynamicFields input, #practiceDynamicFields select, #practiceDynamicFields textarea');
-      const identityPrimaryField = document.getElementById('clientName') || document.getElementById('practiceType');
+      const activeTab = document.querySelector('[data-practice-tab].active')?.dataset?.practiceTab || '';
+      const activeDynamicField = document.querySelector('#practiceDynamicFields input, #practiceDynamicFields select, #practiceDynamicFields textarea');
       const primaryField = source === 'save'
-        ? (dynamicPrimaryField || identityPrimaryField)
-        : (identityPrimaryField || dynamicPrimaryField);
+        ? (activeDynamicField || document.getElementById('clientName') || document.getElementById('practiceType'))
+        : activeTab && activeTab !== 'start'
+          ? (activeDynamicField || document.getElementById('clientName') || document.getElementById('practiceType'))
+          : (document.getElementById('clientName') || activeDynamicField || document.getElementById('practiceType'));
 
       flashNodes([editorSection, editBanner, verificationBanner]);
 

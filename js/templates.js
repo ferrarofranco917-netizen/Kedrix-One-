@@ -208,16 +208,16 @@ window.KedrixOneTemplates = (() => {
     const dynamicPanelTitle = currentTabKey === 'attachments'
       ? T.t('ui.attachmentsPanelShellTitle', fallbackByLanguage('Gestione allegati', 'Attachment management'))
       : currentTabKey === 'practice'
-        ? T.t('ui.practiceArchitectureTitle', fallbackByLanguage('Architettura operativa pratica', 'Practice operational architecture'))
+        ? T.t('ui.practiceArchitectureTitle', fallbackByLanguage('Blocco operativo principale', 'Main operational block'))
         : currentTabKey === 'detail'
           ? T.t('ui.practiceDetailArchitectureTitle', fallbackByLanguage('Dettaglio specialistico', 'Specialist detail'))
           : T.t('ui.practiceNotesArchitectureTitle', fallbackByLanguage('Note pratica', 'Practice notes'));
     const dynamicPanelSubtitle = currentTabKey === 'attachments'
       ? T.t('ui.attachmentsPanelShellSubtitle', fallbackByLanguage('Import, elenco, apertura e rimozione controllata degli allegati collegati alla pratica.', 'Import, list, open and remove attachments linked to the current practice in a controlled way.'))
       : currentTabKey === 'practice'
-        ? T.t('ui.practiceArchitectureHint', fallbackByLanguage('Overview operativa a blocchi: identità, soggetti collegati, trasporto, nodi logistici, dogana ed elementi economici essenziali.', 'Block-based operational overview: identity, linked parties, transport, logistics nodes, customs and essential economics.'))
+        ? T.t('ui.practiceArchitectureHint', fallbackByLanguage('Campi operativi centrali della pratica: soggetti, trasporto, nodi logistici, dogana ed elementi economici essenziali.', 'Core operational practice fields: parties, transport, logistics nodes, customs and essential economics.'))
         : currentTabKey === 'detail'
-          ? T.t('ui.practiceDetailArchitectureHint', fallbackByLanguage("Campi tecnici e specialistici separati dall'overview della pratica per mantenere ordine e leggibilità.", 'Technical and specialist fields separated from the main practice overview to preserve order and readability.'))
+          ? T.t('ui.practiceDetailArchitectureHint', fallbackByLanguage("Campi tecnici e specialistici separati dal blocco operativo principale per mantenere ordine e leggibilità.", 'Technical and specialist fields separated from the main operational block to preserve order and readability.'))
           : T.t('ui.practiceNotesArchitectureHint', fallbackByLanguage('Area dedicata alle note operative della pratica, mantenuta separata ma sempre coerente con il record attivo.', 'Dedicated area for practice operational notes, kept separate but aligned with the active record.'));
     const selectedType = practiceTypes.find((item) => item.value === draft.practiceType) || null;
     const categoryOptions = draft.practiceType ? PracticeSchemas.getCategoryOptions(draft.practiceType) : [];

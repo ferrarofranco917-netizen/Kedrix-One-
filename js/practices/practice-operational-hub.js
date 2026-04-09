@@ -172,13 +172,16 @@ window.KedrixOnePracticeOperationalHub = (() => {
 
   function renderActionCard(item, utils) {
     const buttonHtml = buildActionButton(item.action, utils);
+    const normalizedTitle = String(item.title || '').trim();
+    const normalizedDetail = String(item.detail || '').trim();
+    const showDetail = normalizedDetail && normalizedDetail !== normalizedTitle;
     return `
       <article class="practice-operational-hub-action-card" data-tone="${escape(utils, item.tone)}">
         <div class="practice-operational-hub-action-rank">${escape(utils, item.rankLabel)}</div>
         <div class="practice-operational-hub-action-main">
           <div class="practice-operational-hub-action-source">${escape(utils, item.sourceLabel)}</div>
           <div class="practice-operational-hub-action-title">${escape(utils, item.title)}</div>
-          ${item.detail && item.detail !== item.title ? `<div class="practice-operational-hub-action-detail">${escape(utils, item.detail)}</div>` : ''}
+          ${showDetail ? `<div class="practice-operational-hub-action-detail">${escape(utils, item.detail)}</div>` : ''}
         </div>
         <div class="practice-operational-hub-action-side">${buttonHtml}</div>
       </article>`;

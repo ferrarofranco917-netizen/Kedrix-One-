@@ -266,8 +266,12 @@ window.KedrixOnePracticeSavePipeline = (() => {
 
     state.selectedPracticeId = record.id;
     state.practiceDuplicateSource = null;
+    const returnTab = String(state.practiceTab || '').trim() === 'start'
+      ? 'practice'
+      : (String(state.practiceTab || '').trim() || 'practice');
+    state.practiceTab = returnTab;
     if (typeof loadPracticeIntoDraft === 'function') {
-      loadPracticeIntoDraft(record.id, { reuseActiveSession: true, source: 'save' });
+      loadPracticeIntoDraft(record.id, { reuseActiveSession: true, source: 'save', practiceTab: returnTab });
     }
     if (typeof syncSavedPracticeSessions === 'function') {
       syncSavedPracticeSessions(record);
