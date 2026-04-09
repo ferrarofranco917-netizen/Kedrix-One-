@@ -251,7 +251,11 @@
   }
 
   function markActivePracticeSessionDirty(isDirty = true) {
-    if (!PracticeWorkspace || typeof PracticeWorkspace.setActiveDirty !== 'function') return null;
+    if (!PracticeWorkspace) return null;
+    if (isDirty === false && typeof PracticeWorkspace.markActiveSessionSaved === 'function') {
+      return PracticeWorkspace.markActiveSessionSaved(state, { createEmptyDraft: createEmptyPracticeDraft });
+    }
+    if (typeof PracticeWorkspace.setActiveDirty !== 'function') return null;
     return PracticeWorkspace.setActiveDirty(state, isDirty, { createEmptyDraft: createEmptyPracticeDraft });
   }
 
@@ -266,7 +270,10 @@
   async function confirmClosePracticeSession(sessionId) {
     if (!PracticeWorkspace || typeof PracticeWorkspace.findSession !== 'function') return true;
     const session = PracticeWorkspace.findSession(state, sessionId, { createEmptyDraft: createEmptyPracticeDraft });
-    if (!session || !session.isDirty) return true;
+    const hasUnsaved = PracticeWorkspace && typeof PracticeWorkspace.hasSessionUnsavedChanges === 'function'
+      ? PracticeWorkspace.hasSessionUnsavedChanges(state, sessionId, { createEmptyDraft: createEmptyPracticeDraft })
+      : Boolean(session && session.isDirty);
+    if (!session || !hasUnsaved) return true;
     if (!AppFeedback || typeof AppFeedback.confirm !== 'function') return false;
     return AppFeedback.confirm({
       title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
