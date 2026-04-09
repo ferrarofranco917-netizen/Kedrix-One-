@@ -20,20 +20,33 @@ window.KedrixOnePracticeWorkspace = (() => {
     }
   }
 
+  function stableSerialize(value) {
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map((item) => stableSerialize(item)).join(',')}]`;
+    const keys = Object.keys(value).sort();
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${stableSerialize(value[key])}`).join(',')}}`;
+  }
+
+  function buildDraftSignature(draft = {}) {
+    return stableSerialize(cloneDraft(draft || {}));
+  }
+
   function normalizeSession(session = {}, createEmptyDraft) {
     const fallbackDraft = typeof createEmptyDraft === 'function' ? createEmptyDraft() : { dynamicData: {} };
     const uiState = session.uiState && typeof session.uiState === 'object' ? session.uiState : {};
+    const normalizedDraft = cloneDraft(session.draft && typeof session.draft === 'object' ? session.draft : fallbackDraft);
     return {
       id: String(session.id || '').trim() || nextSessionId(),
       source: String(session.source || '').trim() || 'manual',
       openedAt: session.openedAt || nowIso(),
       lastTouchedAt: session.lastTouchedAt || session.openedAt || nowIso(),
       isDirty: Boolean(session.isDirty),
+      savedDraftSignature: String(session.savedDraftSignature || '').trim() || buildDraftSignature(normalizedDraft),
       uiState: {
         ...uiState,
         tab: String(uiState.tab || session.tab || 'practice').trim() || 'practice'
       },
-      draft: cloneDraft(session.draft && typeof session.draft === 'object' ? session.draft : fallbackDraft)
+      draft: normalizedDraft
     };
   }
 
@@ -66,8 +79,15 @@ window.KedrixOnePracticeWorkspace = (() => {
       ? workspace.sessions.map((session) => normalizeSession(session, createEmptyDraft))
       : [];
 
+    if (!workspace.sessions.length) {
+      const seedDraft = state.draftPractice && typeof state.draftPractice === 'object'
+        ? cloneDraft(state.draftPractice)
+        : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : { dynamicData: {} });
+      workspace.sessions = [createSession({ draft: seedDraft, source: 'bootstrap', createEmptyDraft, uiState: { tab: String(state.practiceTab || 'practice').trim() || 'practice' } })];
+    }
+
     const activeExists = workspace.sessions.some((session) => session.id === workspace.activeSessionId);
-    workspace.activeSessionId = activeExists ? workspace.activeSessionId : (workspace.sessions[0]?.id || '');
+    if (!activeExists) workspace.activeSessionId = workspace.sessions[0].id;
     return workspace;
   }
 
@@ -102,12 +122,42 @@ window.KedrixOnePracticeWorkspace = (() => {
     return session;
   }
 
+  function markSessionSaved(state, sessionId, options = {}) {
+    const session = findSession(state, sessionId, options);
+    if (!session) return null;
+    session.isDirty = false;
+    session.savedDraftSignature = buildDraftSignature(session.draft || {});
+    touchSession(session);
+    return session;
+  }
+
+  function sessionHasUnsavedChanges(state, sessionId, options = {}) {
+    const session = findSession(state, sessionId, options);
+    if (!session) return false;
+    const currentSignature = buildDraftSignature(session.draft || {});
+    const savedSignature = String(session.savedDraftSignature || '').trim();
+    if (!savedSignature) {
+      session.savedDraftSignature = currentSignature;
+      session.isDirty = false;
+      return false;
+    }
+    const hasUnsavedChanges = currentSignature !== savedSignature;
+    if (!hasUnsavedChanges) session.isDirty = false;
+    return hasUnsavedChanges;
+  }
+
   function setActiveDirty(state, dirty = true, options = {}) {
     const active = getActiveSession(state, options);
     if (!active) return null;
     active.isDirty = Boolean(dirty);
     touchSession(active);
     return active;
+  }
+
+  function markActiveSaved(state, options = {}) {
+    const active = getActiveSession(state, options);
+    if (!active) return null;
+    return markSessionSaved(state, active.id, options);
   }
 
   function setSessionTab(state, sessionId, tab = 'practice', options = {}) {
@@ -130,15 +180,11 @@ window.KedrixOnePracticeWorkspace = (() => {
     const { createEmptyDraft } = options;
     const workspace = ensureState(state, { createEmptyDraft });
     if (!workspace) return null;
-    const active = getActiveSession(state, { createEmptyDraft });
+    let active = getActiveSession(state, { createEmptyDraft });
     if (!active) {
-      const fallbackDraft = state.draftPractice && typeof state.draftPractice === 'object'
-        ? state.draftPractice
-        : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : { dynamicData: {} });
-      state.draftPractice = fallbackDraft;
-      state.selectedPracticeId = String(fallbackDraft?.editingPracticeId || '').trim();
-      state.practiceTab = String(state.practiceTab || (state.selectedPracticeId ? 'practice' : 'start')).trim() || (state.selectedPracticeId ? 'practice' : 'start');
-      return fallbackDraft;
+      active = createSession({ createEmptyDraft, source: 'bootstrap', uiState: { tab: String(state.practiceTab || 'practice').trim() || 'practice' } });
+      workspace.sessions = [active];
+      workspace.activeSessionId = active.id;
     }
     touchSession(active);
     state.draftPractice = active.draft;
@@ -193,6 +239,7 @@ window.KedrixOnePracticeWorkspace = (() => {
       targetSession = activeSession;
       targetSession.draft = cloneDraft(builtDraft);
       targetSession.isDirty = false;
+      targetSession.savedDraftSignature = buildDraftSignature(targetSession.draft);
       if (!targetSession.uiState || typeof targetSession.uiState !== 'object') targetSession.uiState = { tab: 'practice' };
       targetSession.uiState.tab = String(practiceTab || targetSession.uiState.tab || state.practiceTab || 'practice').trim() || 'practice';
     } else if (existingSession) {
@@ -200,6 +247,7 @@ window.KedrixOnePracticeWorkspace = (() => {
       if (refreshExisting) {
         targetSession.draft = cloneDraft(builtDraft);
         targetSession.isDirty = false;
+        targetSession.savedDraftSignature = buildDraftSignature(targetSession.draft);
       }
       if (!targetSession.uiState || typeof targetSession.uiState !== 'object') targetSession.uiState = { tab: 'practice' };
       if (practiceTab) targetSession.uiState.tab = String(practiceTab).trim() || 'practice';
@@ -239,6 +287,7 @@ window.KedrixOnePracticeWorkspace = (() => {
       session.uiState = {
         tab: String(existingUiState.tab || 'practice').trim() || 'practice'
       };
+      session.savedDraftSignature = buildDraftSignature(session.draft);
       if (!keepDirty) session.isDirty = false;
       touchSession(session);
       touched.push(session);
@@ -259,10 +308,13 @@ window.KedrixOnePracticeWorkspace = (() => {
     if (index === -1) return getActiveSession(state, { createEmptyDraft });
 
     const [removed] = workspace.sessions.splice(index, 1);
+    if (!workspace.sessions.length) {
+      workspace.sessions = [createSession({ createEmptyDraft, source: 'new' })];
+    }
 
     if (workspace.activeSessionId === sessionId) {
-      const fallback = workspace.sessions[Math.max(0, index - 1)] || workspace.sessions[0] || null;
-      workspace.activeSessionId = fallback ? fallback.id : '';
+      const fallback = workspace.sessions[Math.max(0, index - 1)] || workspace.sessions[0];
+      workspace.activeSessionId = fallback.id;
     }
 
     syncActiveDraft(state, { createEmptyDraft });
@@ -319,6 +371,9 @@ window.KedrixOnePracticeWorkspace = (() => {
     setActiveTab,
     setSessionDirty,
     setSessionTab,
+    sessionHasUnsavedChanges,
+    markActiveSaved,
+    markSessionSaved,
     switchSession,
     syncActiveDraft
   };
