@@ -98,7 +98,7 @@ window.KedrixOnePracticeListPartyPairs = (() => {
     };
   }
 
-  function buildPairs(metrics = {}, limit = 5) {
+  function buildPairs(metrics = {}, limit = 4) {
     return {
       clientImporter: buildBreakdown(metrics, 'client_importer', limit),
       clientExporter: buildBreakdown(metrics, 'client_exporter', limit),
@@ -106,46 +106,47 @@ window.KedrixOnePracticeListPartyPairs = (() => {
     };
   }
 
+  function renderMetricChips(row, compareEnabled) {
+    const deltaBadge = compareEnabled
+      ? `<span class="badge ${row.deltaCount > 0 ? '' : row.deltaCount < 0 ? 'warning' : 'info'}">${row.deltaCount > 0 ? '+' : ''}${escapeHtml(String(row.deltaCount || 0))}</span>`
+      : `<span class="badge info">${escapeHtml(I18N.t('ui.practiceListNoComparisonShort', 'No confronto'))}</span>`;
+    return `<div class="practice-list-analytics-meta-row">
+      <span class="tag-pill practice-list-analytics-pill">${escapeHtml(I18N.t('ui.practiceListActiveCount', 'Attivo'))}: ${escapeHtml(String(row.primaryCount || 0))}</span>
+      <span class="tag-pill practice-list-analytics-pill muted">${escapeHtml(I18N.t('ui.practiceListCompareCount', 'Confronto'))}: ${escapeHtml(String(row.comparisonCount || 0))}</span>
+      ${deltaBadge}
+    </div>`;
+  }
+
   function renderCard(title, subtitle, data) {
     const rows = Array.isArray(data?.rows) ? data.rows : [];
     const compareEnabled = Boolean(data?.compareEnabled);
     const body = rows.length
-      ? `<div class="stack-list">${rows.map((row) => {
-          const delta = compareEnabled
-            ? `<span class="badge ${row.deltaCount > 0 ? '' : row.deltaCount < 0 ? 'warning' : 'info'}">${row.deltaCount > 0 ? '+' : ''}${escapeHtml(String(row.deltaCount || 0))}</span>`
-            : `<span class="badge info">${escapeHtml(I18N.t('ui.practiceListNoComparisonShort', 'No confronto'))}</span>`;
-          return `<div class="stack-item stack-item--analytics">
+      ? `<div class="stack-list">${rows.map((row) => `<div class="stack-item practice-list-analytics-item">
               <strong>${escapeHtml(row.label)}</strong>
-              <div class="stack-item-metrics">
-                <span class="metric-pill">${escapeHtml(I18N.t('ui.practiceListActiveCount', 'Attivo'))}: ${escapeHtml(String(row.primaryCount || 0))}</span>
-                <span class="metric-pill">${escapeHtml(I18N.t('ui.practiceListCompareCount', 'Confronto'))}: ${escapeHtml(String(row.comparisonCount || 0))}</span>
-                ${delta}
-              </div>
-            </div>`;
-        }).join('')}</div>`
+              ${renderMetricChips(row, compareEnabled)}
+            </div>`).join('')}</div>`
       : `<div class="empty-text">${escapeHtml(I18N.t('ui.practiceListNoPartyPairsData', 'Nessuna coppia soggetti coerente con il perimetro filtrato.'))}</div>`;
-    return `<article class="module-card module-card--analytics">
-      <div class="module-card-head">
-        <div>
-          <div class="module-card-title">${escapeHtml(title)}</div>
-          <div class="module-card-meta">${escapeHtml(subtitle)}</div>
-        </div>
+    return `<article class="module-card practice-list-analytics-card">
+      <div>
+        <div class="module-card-title">${escapeHtml(title)}</div>
+        <div class="module-card-meta">${escapeHtml(subtitle)}</div>
       </div>
       ${body}
     </article>`;
   }
 
   function renderSection(metrics = {}) {
-    const data = buildPairs(metrics, 5);
+    const data = buildPairs(metrics, 4);
     return `
-      <section class="panel practice-list-analytics-panel practice-list-analytics-panel--compact">
-        <div class="panel-head">
+      <details class="panel practice-list-collapsible-panel" data-practice-list-panel="party-pairs">
+        <summary class="panel-head practice-list-collapsible-summary">
           <div>
             <h3 class="panel-title">${escapeHtml(I18N.t('ui.practiceListPartyPairsTitle', 'Coppie soggetti ricorrenti'))}</h3>
-            <p class="panel-subtitle">${escapeHtml(I18N.t('ui.practiceListPartyPairsHint', 'Leggi le combinazioni più ricorrenti tra cliente, importatore, esportatore e destinatario nel range attivo e nel confronto.'))}</p>
+            <p class="panel-subtitle">${escapeHtml(I18N.t('ui.practiceListPartyPairsHint', 'Apri solo quando vuoi leggere gli abbinamenti soggetto più ricorrenti nel perimetro filtrato.'))}</p>
           </div>
-        </div>
-        <div class="module-card-grid">
+          <span class="badge info">${escapeHtml(I18N.t('ui.practiceListSecondaryPanel', 'Secondario'))}</span>
+        </summary>
+        <div class="module-card-grid practice-list-analytics-grid">
           ${renderCard(
             I18N.t('ui.practiceListClientImporterCard', 'Cliente + importatore'),
             I18N.t('ui.practiceListClientImporterHint', 'Abbinamenti più ricorrenti tra cliente commerciale e importatore.'),
@@ -162,7 +163,7 @@ window.KedrixOnePracticeListPartyPairs = (() => {
             data.importerConsignee
           )}
         </div>
-      </section>`;
+      </details>`;
   }
 
   function patchTemplates() {
