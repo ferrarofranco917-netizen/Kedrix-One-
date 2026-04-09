@@ -108,6 +108,23 @@
     Storage.save(state);
   }
 
+  function setLastPracticeSaveMeta(record, options = {}) {
+    if (!record || typeof record !== 'object') return null;
+    const mode = String(options.mode || 'final').trim() === 'draft' ? 'draft' : 'final';
+    const action = String(options.action || '').trim() || (String(record.id || '').trim() ? 'update' : 'create');
+    const returnTab = String(options.returnTab || state.practiceTab || 'practice').trim() || 'practice';
+    state._lastPracticeSaveMeta = {
+      practiceId: String(record.id || '').trim(),
+      reference: String(record.reference || '').trim(),
+      clientName: String(record.clientName || record.client || '').trim(),
+      mode,
+      action,
+      returnTab,
+      savedAt: new Date().toISOString()
+    };
+    return state._lastPracticeSaveMeta;
+  }
+
   function resolveDefaultPracticeTab(draft = null, fallback = '') {
     const sourceDraft = draft && typeof draft === 'object' ? draft : (state.draftPractice || {});
     const explicit = String(fallback || '').trim();
@@ -1505,6 +1522,13 @@
               if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
                 PracticeAttachments.syncRecordSummary(state, result.record);
               }
+              if (result.record) {
+                setLastPracticeSaveMeta(result.record, {
+                  mode: 'draft',
+                  action: result.mode === 'update' ? 'update' : 'create',
+                  returnTab: String(state.practiceTab || 'practice').trim() || 'practice'
+                });
+              }
             } else if (Array.isArray(result.errors) && result.errors.length) {
               state._practiceValidationErrors = result.errors;
               applyValidationState(result.errors);
@@ -1555,6 +1579,13 @@
           markActivePracticeSessionDirty(false);
           if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
             PracticeAttachments.syncRecordSummary(state, result.record);
+          }
+          if (result.record) {
+            setLastPracticeSaveMeta(result.record, {
+              mode: 'final',
+              action: result.mode === 'update' ? 'update' : 'create',
+              returnTab: String(state.practiceTab || 'practice').trim() || 'practice'
+            });
           }
         }
         return;
@@ -1661,6 +1692,11 @@
       const returnTab = String(state.practiceTab || '').trim() === 'start'
         ? 'practice'
         : (String(state.practiceTab || '').trim() || 'practice');
+      setLastPracticeSaveMeta(record, {
+        mode: 'final',
+        action: draft.editingPracticeId ? 'update' : 'create',
+        returnTab
+      });
       state.practiceTab = returnTab;
       loadPracticeIntoDraft(record.id, { reuseActiveSession: true, source: 'save', practiceTab: returnTab });
       state.practiceOpenSource = 'save';
@@ -2157,7 +2193,13 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
       if (!shouldClose) return;
       closePracticeDraftSession(sessionClose.dataset.practiceSessionClose);
       save();
+      if (!hasOpenPracticeWorkspace()) {
+        navigate('practices/gestione-pratiche');
+        toast(I18N.t('ui.workspaceMaskClosed', 'Maschera chiusa'), 'info');
+        return;
+      }
       render();
+      focusPracticeEditor('manual', ensureDraftPractice().editingPracticeId || '');
       toast(I18N.t('ui.workspaceMaskClosed', 'Maschera chiusa'), 'info');
       return;
     }

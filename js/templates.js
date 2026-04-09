@@ -42,6 +42,22 @@ window.KedrixOneTemplates = (() => {
     return window.KedrixOneMasterDataQuickAdd;
   }
 
+  function formatPracticeSaveTimestamp(value) {
+    if (!value) return '—';
+    try {
+      const locale = T && typeof T.getLanguage === 'function' && T.getLanguage() === 'en' ? 'en-GB' : 'it-IT';
+      return new Date(value).toLocaleString(locale, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return String(value || '');
+    }
+  }
+
   function sidebar(modules, activeRoute, expandedModules) {
     const expanded = new Set(expandedModules || []);
     const activeRoot = activeRoute.split('/')[0];
@@ -246,6 +262,27 @@ window.KedrixOneTemplates = (() => {
       : (verificationLabels.length ? `${T.t('ui.customsVerificationTypePrefix', 'Tipo:')} ${verificationLabels.join(' · ')}` : T.t('ui.verificationBannerHint', 'Verifiche doganali attive sulla unità.'));
     const isEditing = Boolean(draft.editingPracticeId);
     const duplicateSource = state.practiceDuplicateSource || null;
+    const activeSaveMeta = state._lastPracticeSaveMeta
+      && String(state._lastPracticeSaveMeta.practiceId || '').trim()
+      && String(draft.editingPracticeId || '').trim() === String(state._lastPracticeSaveMeta.practiceId || '').trim()
+      ? state._lastPracticeSaveMeta
+      : null;
+    const saveMetaBadgeClass = activeSaveMeta && activeSaveMeta.mode === 'draft' ? 'warning' : 'success';
+    const saveMetaBadgeText = activeSaveMeta
+      ? (activeSaveMeta.mode === 'draft'
+        ? T.t('ui.practiceDraftSavedBadge', fallbackByLanguage('Bozza salvata', 'Draft saved'))
+        : T.t('ui.practiceSavedBadge', fallbackByLanguage('Salvataggio confermato', 'Save confirmed')))
+      : '';
+    const saveMetaKicker = activeSaveMeta
+      ? T.t('ui.practiceSaveBannerKicker', fallbackByLanguage('Conferma interna di salvataggio', 'Internal save confirmation'))
+      : '';
+    const saveMetaDetail = activeSaveMeta
+      ? T.t('ui.practiceSaveBannerDetail', fallbackByLanguage('I dati attualmente visibili corrispondono al record salvato nell’app.', 'The data currently shown matches the record saved in the app.'))
+      : '';
+    const saveMetaTimestamp = activeSaveMeta ? formatPracticeSaveTimestamp(activeSaveMeta.savedAt) : '';
+    const saveMetaTabLabel = activeSaveMeta
+      ? (tabs.find((tab) => tab.key === String(activeSaveMeta.returnTab || 'practice').trim())?.label || currentTab.label)
+      : '';
     const editSourceLabel = state.practiceOpenSource === 'search'
       ? T.t('ui.openedFromSearch', 'Aperta da ricerca')
       : state.practiceOpenSource === 'list'
@@ -339,6 +376,19 @@ window.KedrixOneTemplates = (() => {
                 <div class="edit-session-meta">
                   <span class="badge info">${U.escapeHtml(T.t('ui.duplicateDraftReady', 'Copia pronta da personalizzare'))}</span>
                 </div>
+              </div>` : ''}
+            ${activeSaveMeta ? `
+              <div class="edit-session-banner" id="practiceSaveBanner">
+                <div>
+                  <div class="summary-kicker">${U.escapeHtml(saveMetaKicker)}</div>
+                  <div class="edit-session-title">${U.escapeHtml(activeSaveMeta.reference || draft.generatedReference || '—')}</div>
+                  <div class="edit-session-subtitle">${U.escapeHtml(`${activeSaveMeta.clientName || draft.clientName || '—'} · ${saveMetaTimestamp}`)}</div>
+                </div>
+                <div class="edit-session-meta">
+                  <span class="badge ${U.escapeHtml(saveMetaBadgeClass)}">${U.escapeHtml(saveMetaBadgeText)}</span>
+                  <span class="badge info">${U.escapeHtml(saveMetaTabLabel)}</span>
+                </div>
+                <div class="summary-text">${U.escapeHtml(saveMetaDetail)}</div>
               </div>` : ''}
             <div class="form-grid three">
               <div class="field" data-field-wrap="practiceType">
