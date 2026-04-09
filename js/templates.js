@@ -37,9 +37,47 @@ window.KedrixOneTemplates = (() => {
   const PracticeListCustomsProfiles = window.KedrixOnePracticeListCustomsProfiles || null;
   const PracticeListPartyPairs = window.KedrixOnePracticeListPartyPairs || null;
   const PracticeListPartyGaps = window.KedrixOnePracticeListPartyGaps || null;
+  const PracticeStatusI18n = window.KedrixOnePracticeStatusI18n || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
+  }
+
+  function normalizeStatusKey(value) {
+    return U.normalize ? U.normalize(value) : String(value || '').trim().toUpperCase();
+  }
+
+  function canonicalPracticeStatus(value) {
+    const raw = String(value || '').trim();
+    if (!raw || raw === 'all') return raw;
+    if (PracticeStatusI18n && typeof PracticeStatusI18n.toCanonicalStatus === 'function') {
+      return PracticeStatusI18n.toCanonicalStatus(raw);
+    }
+    const normalized = normalizeStatusKey(raw);
+    if (normalized === 'WAITING FOR DOCUMENTS' || normalized === 'IN ATTESA DOCUMENTI') return 'In attesa documenti';
+    if (normalized === 'OPERATIONAL' || normalized === 'OPERATIVA') return 'Operativa';
+    if (normalized === 'CUSTOMS CLEARANCE' || normalized === 'SDOGANAMENTO') return 'Sdoganamento';
+    if (normalized === 'CLOSED' || normalized === 'CHIUSA') return 'Chiusa';
+    return raw;
+  }
+
+  function localizedPracticeStatusLabel(value) {
+    if (PracticeStatusI18n && typeof PracticeStatusI18n.localizedStatusLabel === 'function') {
+      return PracticeStatusI18n.localizedStatusLabel(value, T);
+    }
+    const canonical = canonicalPracticeStatus(value);
+    switch (canonical) {
+      case 'In attesa documenti':
+        return T.t('ui.practiceListGapWaitingDocs', fallbackByLanguage('In attesa documenti', 'Waiting for documents'));
+      case 'Operativa':
+        return fallbackByLanguage('Operativa', 'Operational');
+      case 'Sdoganamento':
+        return fallbackByLanguage('Sdoganamento', 'Customs clearance');
+      case 'Chiusa':
+        return fallbackByLanguage('Chiusa', 'Closed');
+      default:
+        return String(value || '').trim() || '—';
+    }
   }
 
   function sidebar(modules, activeRoute, expandedModules) {
@@ -863,7 +901,7 @@ function renderPracticeStatusBreakdown(statusBreakdown) {
           <span>${U.escapeHtml(T.t('ui.practiceListDeltaShort', 'Delta'))}</span>
         </div>
         ${rows.length ? rows.map((row) => `<div class="practice-compare-row">
-          <span class="practice-compare-label">${U.escapeHtml(row.label || '—')}</span>
+          <span class="practice-compare-label">${U.escapeHtml(localizedPracticeStatusLabel(row.label || row.key || '—'))}</span>
           <span>${U.escapeHtml(String(row.active || 0))}</span>
           <span>${compareEnabled ? U.escapeHtml(String(row.compare || 0)) : '—'}</span>
           <span>${compareEnabled ? `<span class="badge ${row.delta > 0 ? '' : row.delta < 0 ? 'warning' : 'info'}">${row.delta > 0 ? '+' : ''}${U.escapeHtml(String(row.delta || 0))}</span>` : '—'}</span>
@@ -892,10 +930,10 @@ function practiceList(state, filtered = [], insights = {}) {
   ];
   const statusOptions = [
     { value: 'all', label: T.t('ui.allStatuses', 'Tutti gli stati') },
-    { value: 'In attesa documenti', label: 'In attesa documenti' },
-    { value: 'Operativa', label: 'Operativa' },
-    { value: 'Sdoganamento', label: 'Sdoganamento' },
-    { value: 'Chiusa', label: 'Chiusa' }
+    { value: 'In attesa documenti', label: localizedPracticeStatusLabel('In attesa documenti') },
+    { value: 'Operativa', label: localizedPracticeStatusLabel('Operativa') },
+    { value: 'Sdoganamento', label: localizedPracticeStatusLabel('Sdoganamento') },
+    { value: 'Chiusa', label: localizedPracticeStatusLabel('Chiusa') }
   ];
   const primaryLabel = filters.dateFrom || filters.dateTo
     ? `${filters.dateFrom || '…'} → ${filters.dateTo || '…'}`
