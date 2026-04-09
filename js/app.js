@@ -255,13 +255,6 @@
     return PracticeWorkspace.setActiveDirty(state, isDirty, { createEmptyDraft: createEmptyPracticeDraft });
   }
 
-  function markActivePracticeSessionSaved() {
-    if (!PracticeWorkspace || typeof PracticeWorkspace.markActiveSaved !== 'function') {
-      return markActivePracticeSessionDirty(false);
-    }
-    return PracticeWorkspace.markActiveSaved(state, { createEmptyDraft: createEmptyPracticeDraft });
-  }
-
   function setActivePracticeSessionTab(tab = 'practice') {
     if (!PracticeWorkspace || typeof PracticeWorkspace.setActiveTab !== 'function') {
       state.practiceTab = String(tab || 'practice').trim() || 'practice';
@@ -273,10 +266,7 @@
   async function confirmClosePracticeSession(sessionId) {
     if (!PracticeWorkspace || typeof PracticeWorkspace.findSession !== 'function') return true;
     const session = PracticeWorkspace.findSession(state, sessionId, { createEmptyDraft: createEmptyPracticeDraft });
-    const hasUnsavedChanges = PracticeWorkspace && typeof PracticeWorkspace.sessionHasUnsavedChanges === 'function'
-      ? PracticeWorkspace.sessionHasUnsavedChanges(state, sessionId, { createEmptyDraft: createEmptyPracticeDraft })
-      : Boolean(session && session.isDirty);
-    if (!session || !hasUnsavedChanges) return true;
+    if (!session || !session.isDirty) return true;
     if (!AppFeedback || typeof AppFeedback.confirm !== 'function') return false;
     return AppFeedback.confirm({
       title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
@@ -1511,7 +1501,7 @@
             });
             if (result.ok) {
               draftSaved = true;
-              markActivePracticeSessionSaved();
+              markActivePracticeSessionDirty(false);
               if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
                 PracticeAttachments.syncRecordSummary(state, result.record);
               }
@@ -1562,7 +1552,7 @@
           state._practiceValidationErrors = result.errors;
           applyValidationState(result.errors);
         } else if (result.ok) {
-          markActivePracticeSessionSaved();
+          markActivePracticeSessionDirty(false);
           if (result.record && PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
             PracticeAttachments.syncRecordSummary(state, result.record);
           }
@@ -1663,7 +1653,7 @@
         toast(I18N.t('ui.practiceSaved', 'Pratica salvata correttamente'), 'success');
       }
 
-      markActivePracticeSessionSaved();
+      markActivePracticeSessionDirty(false);
       if (PracticeAttachments && typeof PracticeAttachments.syncRecordSummary === 'function') {
         PracticeAttachments.syncRecordSummary(state, record);
       }
@@ -2376,7 +2366,13 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     }
 
     if (action.dataset.action === 'duplicate-practice-draft') {
-      duplicatePracticeDraft();
+      event.preventDefault();
+      event.stopPropagation();
+      const result = duplicatePracticeDraft();
+      if (!result || result.ok === false) {
+        toast(I18N.t('ui.duplicateUnavailable', 'Apri prima una pratica esistente da duplicare.'), 'warning');
+      }
+      return;
     }
 
     if (action.dataset.action === 'reset-demo') {

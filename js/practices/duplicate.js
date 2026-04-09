@@ -91,12 +91,36 @@ window.KedrixOnePracticeDuplicate = (() => {
       source = 'duplicate'
     } = options;
 
-    if (!state || !practiceId) return { ok: false, reason: 'missing-practice-id' };
+    if (!state) return { ok: false, reason: 'missing-state' };
 
-    const sourcePractice = ((state && state.practices) || []).find((item) => item.id === practiceId) || null;
-    if (!sourcePractice) return { ok: false, reason: 'practice-not-found' };
+    const activeDraft = state.draftPractice && typeof state.draftPractice === 'object'
+      ? state.draftPractice
+      : null;
+    const sourcePracticeId = String(practiceId || activeDraft?.editingPracticeId || state.selectedPracticeId || '').trim();
+    if (!sourcePracticeId) return { ok: false, reason: 'missing-practice-id' };
 
-    const nextDraft = buildDuplicateDraft(sourcePractice, {
+    const sourcePractice = ((state && state.practices) || []).find((item) => item.id === sourcePracticeId) || null;
+    const sourceRecord = activeDraft && String(activeDraft.editingPracticeId || '').trim() === sourcePracticeId
+      ? {
+          ...(sourcePractice || {}),
+          ...activeDraft,
+          id: sourcePracticeId,
+          reference: String(activeDraft.generatedReference || sourcePractice?.reference || '').trim(),
+          client: activeDraft.clientName || sourcePractice?.client || '',
+          clientName: activeDraft.clientName || sourcePractice?.clientName || '',
+          linkedEntities: {
+            ...((sourcePractice && sourcePractice.linkedEntities) || {}),
+            ...((activeDraft && activeDraft.linkedEntities) || {})
+          },
+          dynamicData: {
+            ...((sourcePractice && sourcePractice.dynamicData) || {}),
+            ...((activeDraft && activeDraft.dynamicData) || {})
+          }
+        }
+      : sourcePractice;
+    if (!sourceRecord) return { ok: false, reason: 'practice-not-found' };
+
+    const nextDraft = buildDuplicateDraft(sourceRecord, {
       createDuplicateSafeDraft,
       extractPracticeDynamicData
     });
@@ -104,11 +128,11 @@ window.KedrixOnePracticeDuplicate = (() => {
     if (!nextDraft) return { ok: false, reason: 'duplicate-draft-build-failed' };
 
     const duplicateContext = {
-      id: sourcePractice.id,
-      reference: sourcePractice.reference || '',
-      clientName: sourcePractice.clientName || sourcePractice.client || '',
-      practiceType: sourcePractice.practiceType || '',
-      practiceTypeLabel: sourcePractice.practiceTypeLabel || sourcePractice.practiceType || ''
+      id: sourceRecord.id,
+      reference: sourceRecord.reference || '',
+      clientName: sourceRecord.clientName || sourceRecord.client || '',
+      practiceType: sourceRecord.practiceType || '',
+      practiceTypeLabel: sourceRecord.practiceTypeLabel || sourceRecord.practiceType || ''
     };
 
     if (typeof openDraftSession === 'function') {
@@ -147,7 +171,7 @@ window.KedrixOnePracticeDuplicate = (() => {
     return {
       ok: true,
       draft: state.draftPractice,
-      sourcePractice
+      sourcePractice: sourceRecord
     };
   }
 
