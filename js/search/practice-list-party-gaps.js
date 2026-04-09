@@ -91,11 +91,12 @@ window.KedrixOnePracticeListPartyGaps = (() => {
   function renderExamples(examples = []) {
     if (!examples.length) return '';
     return `<div class="stack-list">${examples.map((item) => `
-      <div class="stack-item">
-        <strong>${escapeHtml(item.reference)}</strong>
-        <span>${escapeHtml(item.client)}</span>
-        <span>${escapeHtml(item.practiceType)}</span>
-        <span class="badge info">${escapeHtml(item.status)}</span>
+      <div class="stack-item stack-item--analytics">
+        <div class="stack-item-head">
+          <strong>${escapeHtml(item.reference)}</strong>
+          <span class="badge info">${escapeHtml(item.status)}</span>
+        </div>
+        <div class="stack-item-meta">${escapeHtml(item.client)} · ${escapeHtml(item.practiceType)}</div>
       </div>
     `).join('')}</div>`;
   }
@@ -111,12 +112,14 @@ window.KedrixOnePracticeListPartyGaps = (() => {
       ? `${renderExamples(data.examples)}`
       : `<div class="empty-text">${escapeHtml(I18N.t(`ui.practiceList${def.key}Empty`, def.empty))}</div>`;
 
-    return `<article class="module-card">
-      <div>
-        <div class="module-card-title">${escapeHtml(I18N.t(`ui.practiceList${def.key}Title`, def.title))}</div>
-        <div class="module-card-meta">${escapeHtml(I18N.t(`ui.practiceList${def.key}Hint`, def.subtitle))}</div>
+    return `<article class="module-card module-card--analytics">
+      <div class="module-card-head">
+        <div>
+          <div class="module-card-title">${escapeHtml(I18N.t(`ui.practiceList${def.key}Title`, def.title))}</div>
+          <div class="module-card-meta">${escapeHtml(I18N.t(`ui.practiceList${def.key}Hint`, def.subtitle))}</div>
+        </div>
       </div>
-      <div class="kpi-grid practice-list-gap-kpis" style="margin-bottom:12px;">
+      <div class="kpi-grid analytics-kpi-grid">
         <div class="kpi-card compact">
           <div class="kpi-label">${escapeHtml(I18N.t('ui.practiceListActiveCount', 'Attivo'))}</div>
           <div class="kpi-value">${escapeHtml(String(data.activeCount || 0))}</div>
@@ -136,7 +139,7 @@ window.KedrixOnePracticeListPartyGaps = (() => {
 
   function renderSection(metrics = {}) {
     return `
-      <section class="panel">
+      <section class="panel practice-list-analytics-panel practice-list-analytics-panel--compact">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${escapeHtml(I18N.t('ui.practiceListPartyGapsTitle', 'Gap anagrafici soggetti'))}</h3>

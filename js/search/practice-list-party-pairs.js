@@ -114,18 +114,22 @@ window.KedrixOnePracticeListPartyPairs = (() => {
           const delta = compareEnabled
             ? `<span class="badge ${row.deltaCount > 0 ? '' : row.deltaCount < 0 ? 'warning' : 'info'}">${row.deltaCount > 0 ? '+' : ''}${escapeHtml(String(row.deltaCount || 0))}</span>`
             : `<span class="badge info">${escapeHtml(I18N.t('ui.practiceListNoComparisonShort', 'No confronto'))}</span>`;
-          return `<div class="stack-item">
+          return `<div class="stack-item stack-item--analytics">
               <strong>${escapeHtml(row.label)}</strong>
-              <span>${escapeHtml(I18N.t('ui.practiceListActiveCount', 'Attivo'))}: ${escapeHtml(String(row.primaryCount || 0))}</span>
-              <span>${escapeHtml(I18N.t('ui.practiceListCompareCount', 'Confronto'))}: ${escapeHtml(String(row.comparisonCount || 0))}</span>
-              ${delta}
+              <div class="stack-item-metrics">
+                <span class="metric-pill">${escapeHtml(I18N.t('ui.practiceListActiveCount', 'Attivo'))}: ${escapeHtml(String(row.primaryCount || 0))}</span>
+                <span class="metric-pill">${escapeHtml(I18N.t('ui.practiceListCompareCount', 'Confronto'))}: ${escapeHtml(String(row.comparisonCount || 0))}</span>
+                ${delta}
+              </div>
             </div>`;
         }).join('')}</div>`
       : `<div class="empty-text">${escapeHtml(I18N.t('ui.practiceListNoPartyPairsData', 'Nessuna coppia soggetti coerente con il perimetro filtrato.'))}</div>`;
-    return `<article class="module-card">
-      <div>
-        <div class="module-card-title">${escapeHtml(title)}</div>
-        <div class="module-card-meta">${escapeHtml(subtitle)}</div>
+    return `<article class="module-card module-card--analytics">
+      <div class="module-card-head">
+        <div>
+          <div class="module-card-title">${escapeHtml(title)}</div>
+          <div class="module-card-meta">${escapeHtml(subtitle)}</div>
+        </div>
       </div>
       ${body}
     </article>`;
@@ -134,7 +138,7 @@ window.KedrixOnePracticeListPartyPairs = (() => {
   function renderSection(metrics = {}) {
     const data = buildPairs(metrics, 5);
     return `
-      <section class="panel">
+      <section class="panel practice-list-analytics-panel practice-list-analytics-panel--compact">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${escapeHtml(I18N.t('ui.practiceListPartyPairsTitle', 'Coppie soggetti ricorrenti'))}</h3>
