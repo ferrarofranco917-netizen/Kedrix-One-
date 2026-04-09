@@ -3652,6 +3652,37 @@ body.dialog-open {
   font-weight: 600;
 }
 
+
+.practice-list-gap-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.practice-list-gap-kpis .kpi-card.compact {
+  min-width: 0;
+}
+
+.practice-list-gap-kpis .kpi-value {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-wrap: anywhere;
+}
+
+.practice-list-gap-kpis .kpi-value .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+
 .practice-list-table td {
   vertical-align: top;
 }
