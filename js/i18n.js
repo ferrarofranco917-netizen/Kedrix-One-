@@ -1634,6 +1634,7 @@ Object.assign(dictionary.it.ui, {
   duplicatePracticeBannerKicker: 'Copia generata da pratica esistente',
   duplicateDraftReady: 'Copia pronta da personalizzare',
   practiceDuplicatedDraftReady: 'Copia pratica pronta',
+  practiceDuplicatedToast: 'Pratica duplicata: nuova bozza pronta',
   duplicateUnavailable: 'Apri prima una pratica esistente da duplicare.'
 });
 
@@ -1642,6 +1643,7 @@ Object.assign(dictionary.en.ui, {
   duplicatePracticeBannerKicker: 'Copy generated from an existing practice',
   duplicateDraftReady: 'Copy ready to customize',
   practiceDuplicatedDraftReady: 'Practice copy ready',
+  practiceDuplicatedToast: 'Practice duplicated: new draft ready',
   duplicateUnavailable: 'Open an existing practice before duplicating it.'
 });
 

@@ -76,6 +76,45 @@ window.KedrixOnePracticeDuplicate = (() => {
     return nextDraft;
   }
 
+  function buildSourceRecordFromDraft(activeDraft, fallbackRecord = null) {
+    if (!activeDraft || typeof activeDraft !== 'object') return fallbackRecord;
+    const editingPracticeId = String(activeDraft.editingPracticeId || '').trim();
+    if (!editingPracticeId) return fallbackRecord;
+
+    return {
+      ...(fallbackRecord || {}),
+      ...activeDraft,
+      id: editingPracticeId,
+      reference: String(activeDraft.generatedReference || fallbackRecord?.reference || '').trim(),
+      client: activeDraft.clientName || fallbackRecord?.client || '',
+      clientName: activeDraft.clientName || fallbackRecord?.clientName || '',
+      linkedEntities: {
+        ...((fallbackRecord && fallbackRecord.linkedEntities) || {}),
+        ...((activeDraft && activeDraft.linkedEntities) || {})
+      },
+      dynamicData: {
+        ...((fallbackRecord && fallbackRecord.dynamicData) || {}),
+        ...((activeDraft && activeDraft.dynamicData) || {})
+      }
+    };
+  }
+
+  function resolveSourceRecord(practiceId, state) {
+    const normalizedPracticeId = String(practiceId || '').trim();
+    if (!normalizedPracticeId || !state) return null;
+
+    const sourcePractice = ((state && state.practices) || []).find((item) => String(item.id || '') === normalizedPracticeId) || null;
+    const activeDraft = state.draftPractice && typeof state.draftPractice === 'object'
+      ? state.draftPractice
+      : null;
+
+    if (activeDraft && String(activeDraft.editingPracticeId || '').trim() === normalizedPracticeId) {
+      return buildSourceRecordFromDraft(activeDraft, sourcePractice);
+    }
+
+    return sourcePractice;
+  }
+
   function duplicatePracticeToDraft(practiceId, options = {}) {
     const {
       state,
@@ -99,25 +138,7 @@ window.KedrixOnePracticeDuplicate = (() => {
     const sourcePracticeId = String(practiceId || activeDraft?.editingPracticeId || state.selectedPracticeId || '').trim();
     if (!sourcePracticeId) return { ok: false, reason: 'missing-practice-id' };
 
-    const sourcePractice = ((state && state.practices) || []).find((item) => item.id === sourcePracticeId) || null;
-    const sourceRecord = activeDraft && String(activeDraft.editingPracticeId || '').trim() === sourcePracticeId
-      ? {
-          ...(sourcePractice || {}),
-          ...activeDraft,
-          id: sourcePracticeId,
-          reference: String(activeDraft.generatedReference || sourcePractice?.reference || '').trim(),
-          client: activeDraft.clientName || sourcePractice?.client || '',
-          clientName: activeDraft.clientName || sourcePractice?.clientName || '',
-          linkedEntities: {
-            ...((sourcePractice && sourcePractice.linkedEntities) || {}),
-            ...((activeDraft && activeDraft.linkedEntities) || {})
-          },
-          dynamicData: {
-            ...((sourcePractice && sourcePractice.dynamicData) || {}),
-            ...((activeDraft && activeDraft.dynamicData) || {})
-          }
-        }
-      : sourcePractice;
+    const sourceRecord = resolveSourceRecord(sourcePracticeId, state);
     if (!sourceRecord) return { ok: false, reason: 'practice-not-found' };
 
     const nextDraft = buildDuplicateDraft(sourceRecord, {
@@ -162,10 +183,14 @@ window.KedrixOnePracticeDuplicate = (() => {
     if (typeof render === 'function') render();
     if (typeof focusPracticeEditor === 'function') focusPracticeEditor(source, '');
     if (typeof toast === 'function') {
+      const duplicatedReference = String(state?.draftPractice?.generatedReference || '').trim();
+      const fallbackToast = duplicatedReference
+        ? `Pratica duplicata: ${duplicatedReference}`
+        : 'Pratica duplicata: nuova bozza pronta';
       const toastLabel = typeof i18n?.t === 'function'
-        ? i18n.t('ui.practiceDuplicatedDraftReady', 'Copia pratica pronta')
-        : 'Copia pratica pronta';
-      toast(toastLabel);
+        ? i18n.t('ui.practiceDuplicatedToast', fallbackToast)
+        : fallbackToast;
+      toast(toastLabel, 'success');
     }
 
     return {
@@ -181,8 +206,10 @@ window.KedrixOnePracticeDuplicate = (() => {
 
   return {
     buildDuplicateDraft,
+    buildSourceRecordFromDraft,
     duplicatePracticeToDraft,
     listResetFields,
+    resolveSourceRecord,
     sanitizeDuplicatedDynamicData
   };
 })();
