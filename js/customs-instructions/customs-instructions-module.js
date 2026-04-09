@@ -26,10 +26,8 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       if (schemaGroup === 'road') return 'road';
       return schemaGroup;
     }
-    if (type.includes('mare')) return 'sea';
     if (type.includes('sea')) return 'sea';
     if (type.includes('air')) return 'air';
-    if (type.includes('aereo')) return 'air';
     if (type.includes('road') || type.includes('terra')) return 'road';
     return '';
   }
@@ -39,42 +37,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     if (type.includes('import')) return 'import';
     if (type.includes('export')) return 'export';
     return '';
-  }
-
-  function canonicalMode(value = '') {
-    const normalized = String(value || '').trim().toLowerCase();
-    if (!normalized) return '';
-    if (['sea', 'mare'].includes(normalized)) return 'sea';
-    if (['air', 'aereo'].includes(normalized)) return 'air';
-    if (['road', 'terra'].includes(normalized)) return 'road';
-    return '';
-  }
-
-  function canonicalDirection(value = '') {
-    const normalized = String(value || '').trim().toLowerCase();
-    if (!normalized) return '';
-    if (normalized === 'import') return 'import';
-    if (normalized === 'export') return 'export';
-    return '';
-  }
-
-  function resolveDraftModeDirection(draft = {}) {
-    const fromFields = {
-      mode: canonicalMode(draft?.mode),
-      direction: canonicalDirection(draft?.direction)
-    };
-    if (fromFields.mode && fromFields.direction) return fromFields;
-    const type = String(draft?.practiceType || '').trim().toLowerCase();
-    return {
-      mode: fromFields.mode || (type.includes('mare') || type.includes('sea') ? 'sea' : (type.includes('aereo') || type.includes('air') ? 'air' : ((type.includes('terra') || type.includes('road')) ? 'road' : ''))),
-      direction: fromFields.direction || (type.includes('import') ? 'import' : (type.includes('export') ? 'export' : ''))
-    };
-  }
-
-  function getI18n(i18n) {
-    if (i18n && typeof i18n.t === 'function') return i18n;
-    const globalI18n = window.KedrixOneI18N || null;
-    return globalI18n && typeof globalI18n.t === 'function' ? globalI18n : null;
   }
 
   function ensureState(state) {
@@ -141,17 +103,16 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   }
 
   function modeLabel(mode, i18n) {
-    const normalized = canonicalMode(mode);
     const labels = {
       sea: i18n?.t('ui.customsInstructionsModeSea', 'Mare') || 'Mare',
       air: i18n?.t('ui.customsInstructionsModeAir', 'Aereo') || 'Aereo',
       road: i18n?.t('ui.customsInstructionsModeRoad', 'Terra') || 'Terra'
     };
-    return labels[normalized] || '—';
+    return labels[String(mode || '').trim()] || '—';
   }
 
   function directionLabel(direction, i18n) {
-    const normalized = canonicalDirection(direction);
+    const normalized = String(direction || '').trim();
     if (normalized === 'export') {
       return i18n?.t('ui.customsInstructionsDirectionExport', 'Export') || 'Export';
     }
@@ -498,12 +459,11 @@ window.KedrixOneCustomsInstructionsModule = (() => {
         <div class="practice-workspace-strip">
           ${sessions.map((session) => {
             const summary = Workspace.describeSession(session, i18n);
-            const localizedType = effectiveTypeLabel(session?.draft || {}, i18n);
             return `<div class="practice-workspace-mask ${summary.id === activeId ? 'active' : ''}">
               <button class="practice-workspace-switch" type="button" data-customs-session-switch="${U.escapeHtml(summary.id)}">
                 <span class="practice-workspace-mask-main">
                   <span class="practice-workspace-mask-title">${U.escapeHtml(summary.label || '—')}</span>
-                  <span class="practice-workspace-mask-subtitle">${U.escapeHtml(localizedType || summary.subtitle || '—')}</span>
+                  <span class="practice-workspace-mask-subtitle">${U.escapeHtml(summary.subtitle || '—')}</span>
                 </span>
                 <span class="practice-workspace-badges">
                   <span class="tag-pill muted">${U.escapeHtml(summary.badge || '—')}</span>
@@ -604,7 +564,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
             ${records.map((record) => `<tr>
               <td>${U.escapeHtml(record.practiceReference || record.id || '—')}</td>
               <td>${U.escapeHtml(record.principalParty || record.practiceId || '—')}</td>
-              <td>${U.escapeHtml(effectiveTypeLabel(record, i18n) || '—')}</td>
+              <td>${U.escapeHtml([modeLabel(record.mode, i18n), directionLabel(record.direction, i18n)].filter(Boolean).join(' · ') || '—')}</td>
               <td>${U.escapeHtml(record.status || 'draft')}</td>
               <td>${U.escapeHtml(String(record.updatedAt || '').slice(0, 10) || '—')}</td>
               <td><button class="btn secondary small-btn" type="button" data-customs-open-record="${U.escapeHtml(record.id || '')}">${U.escapeHtml(i18n?.t('ui.openRecord', 'Apri record'))}</button></td>
@@ -617,7 +577,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   function renderSummaryPills(draft, i18n) {
     const items = [
       [i18n?.t('ui.customsInstructionsMotherPractice', 'Pratica madre'), draft.practiceReference || '—'],
-      [i18n?.t('ui.type', 'Tipo'), effectiveTypeLabel(draft, i18n) || '—'],
+      [i18n?.t('ui.type', 'Tipo'), draft.practiceType || '—'],
       [i18n?.t('ui.customsInstructionsLinkedAttachments', 'Allegati pratica'), String(draft.linkedAttachmentCount || 0)],
       [i18n?.t('ui.status', 'Stato'), draft.status || 'draft']
     ];
@@ -626,10 +586,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   function renderGeneralTab(draft, i18n) {
     const currencies = ['EUR', 'USD', 'GBP', 'CHF', 'CNY'];
-    const resolvedType = resolveDraftModeDirection(draft);
-    const mode = resolvedType.mode;
-    const direction = resolvedType.direction;
-    const dynamicLabels = derivePartyLabels(mode, direction, i18n);
+    const mode = String(draft.mode || '').trim();
     const isSea = mode === 'sea';
     const columns = Array.isArray(draft.lineColumns) && draft.lineColumns.length ? draft.lineColumns : buildLineColumns(mode);
     return `
@@ -639,14 +596,14 @@ window.KedrixOneCustomsInstructionsModule = (() => {
         ${renderField(i18n?.t('ui.customsInstructionsCompileLocation', 'Luogo compilazione'), 'compileLocation', draft.compileLocation)}
         ${renderField(i18n?.t('ui.operator', 'Operatore'), 'operatorName', draft.operatorName)}
         ${renderField(i18n?.t('ui.customsInstructionsTransitary', 'Transitario'), 'transitary', draft.transitary)}
-        ${renderField(dynamicLabels.principalPartyLabel || draft.principalPartyLabel || i18n?.t('ui.client', 'Cliente'), 'principalParty', draft.principalParty)}
+        ${renderField(draft.principalPartyLabel || i18n?.t('ui.client', 'Cliente'), 'principalParty', draft.principalParty)}
         ${renderField(i18n?.t('ui.customsInstructionsMainReference', 'Riferimento'), 'mainReference', draft.mainReference)}
-        ${renderField(dynamicLabels.senderPartyLabel || draft.senderPartyLabel || i18n?.t('ui.customsInstructionsSender', 'Mittente'), 'senderParty', draft.senderParty)}
+        ${renderField(draft.senderPartyLabel || i18n?.t('ui.customsInstructionsSender', 'Mittente'), 'senderParty', draft.senderParty)}
         ${renderField(i18n?.t('ui.customsInstructionsSenderReference', 'Riferimento mittente'), 'senderReference', draft.senderReference)}
-        ${renderField(dynamicLabels.receiverPartyLabel || draft.receiverPartyLabel || i18n?.t('ui.customsInstructionsReceiver', 'Destinatario'), 'receiverParty', draft.receiverParty)}
-        ${renderField(dynamicLabels.originNodeLabel || draft.originNodeLabel || i18n?.t('ui.origin', 'Origine'), 'originNode', draft.originNode)}
-        ${renderField(dynamicLabels.destinationNodeLabel || draft.destinationNodeLabel || i18n?.t('ui.destination', 'Destinazione'), 'destinationNode', draft.destinationNode)}
-        ${renderField(dynamicLabels.carrierReferenceLabel || draft.carrierReferenceLabel || i18n?.t('ui.customsInstructionsCarrierReference', 'Riferimento vettore'), 'carrierReference', draft.carrierReference)}
+        ${renderField(draft.receiverPartyLabel || i18n?.t('ui.customsInstructionsReceiver', 'Destinatario'), 'receiverParty', draft.receiverParty)}
+        ${renderField(draft.originNodeLabel || i18n?.t('ui.origin', 'Origine'), 'originNode', draft.originNode)}
+        ${renderField(draft.destinationNodeLabel || i18n?.t('ui.destination', 'Destinazione'), 'destinationNode', draft.destinationNode)}
+        ${renderField(draft.carrierReferenceLabel || i18n?.t('ui.customsInstructionsCarrierReference', 'Riferimento vettore'), 'carrierReference', draft.carrierReference)}
         ${renderField(i18n?.t('ui.company', 'Compagnia'), 'carrierCompany', draft.carrierCompany)}
         ${renderField(i18n?.t('ui.booking', 'Booking'), 'booking', draft.booking)}
         ${renderField(i18n?.t('ui.customsInstructionsPolicyReference', 'Polizza / BL / AWB'), 'policyReference', draft.policyReference)}
@@ -756,7 +713,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       return `<section class="panel"><div class="empty-text">${U.escapeHtml(i18n?.t('ui.customsInstructionsNoMask', 'Nessuna maschera aperta. Apri una nuova istruzione partendo da una pratica madre.'))}</div></section>`;
     }
     const draft = session.draft || createEmptyDraft(state);
-    const resolvedType = resolveDraftModeDirection(draft);
     const activeTab = String(session?.uiState?.tab || 'general').trim() || 'general';
     return `
       <section class="panel customs-instructions-editor" data-customs-editor-anchor>
@@ -771,8 +727,8 @@ window.KedrixOneCustomsInstructionsModule = (() => {
           </div>
         </div>
         <div class="customs-instructions-mode-bar">
-          <span class="tag-pill">${U.escapeHtml(modeLabel(resolvedType.mode, i18n))}</span>
-          <span class="tag-pill">${U.escapeHtml(directionLabel(resolvedType.direction, i18n))}</span>
+          <span class="tag-pill">${U.escapeHtml(modeLabel(draft.mode, i18n))}</span>
+          <span class="tag-pill">${U.escapeHtml(directionLabel(draft.direction, i18n))}</span>
           <span class="tag-pill muted">${U.escapeHtml(draft.practiceReference || '—')}</span>
         </div>
         ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : renderGeneralTab(draft, i18n)}
@@ -785,16 +741,9 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   }
 
   function render(state, helpers = {}) {
-    const i18n = getI18n(helpers.i18n);
+    const i18n = helpers.i18n;
     ensureState(state);
     return `${renderHeader(state, i18n)}${renderLauncher(state, i18n)}${renderSessionStrip(state, i18n)}${renderEditor(state, i18n)}${renderRecordList(state, i18n)}`;
-  }
-
-  function effectiveTypeLabel(draft, i18n) {
-    const resolvedType = resolveDraftModeDirection(draft);
-    const labels = [modeLabel(resolvedType.mode, i18n), directionLabel(resolvedType.direction, i18n)]
-      .filter((value) => value && value !== '—');
-    return labels.join(' · ') || '—';
   }
 
   function markDirty(state, sessionId) {
