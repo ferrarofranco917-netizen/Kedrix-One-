@@ -142,7 +142,16 @@ window.KedrixOnePracticeIdentity = (() => {
   function createDuplicateSafeDraft(practice, options = {}) {
     if (!practice || typeof practice !== 'object') return createEmptyDraft();
 
-    const { extractPracticeDynamicData, practiceDate } = options;
+    const {
+      extractPracticeDynamicData,
+      practiceDate,
+      state
+    } = options;
+
+    const hydratedLinkedEntities = MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
+      ? MasterDataEntities.hydratePracticeLinkedEntities(state || null, practice)
+      : null;
+
     const draft = createEmptyDraft({
       editingPracticeId: '',
       practiceType: practice.practiceType || '',
@@ -153,8 +162,8 @@ window.KedrixOnePracticeIdentity = (() => {
       status: practice.status || 'In attesa documenti',
       generatedReference: '',
       attachmentOwnerKey: createAttachmentOwnerKey(),
-      linkedEntities: MasterDataEntities && typeof MasterDataEntities.hydratePracticeLinkedEntities === 'function'
-        ? MasterDataEntities.hydratePracticeLinkedEntities(state, practice)
+      linkedEntities: hydratedLinkedEntities && typeof hydratedLinkedEntities === 'object'
+        ? hydratedLinkedEntities
         : { ...((practice && practice.linkedEntities) || {}) },
       dynamicData: typeof extractPracticeDynamicData === 'function' ? extractPracticeDynamicData(practice) : { ...((practice && practice.dynamicData) || {}) }
     });

@@ -50,7 +50,7 @@ window.KedrixOnePracticeDuplicate = (() => {
     if (!practice || typeof practice !== 'object') return null;
 
     const baseDraft = typeof createDuplicateSafeDraft === 'function'
-      ? createDuplicateSafeDraft(practice, { extractPracticeDynamicData, practiceDate })
+      ? createDuplicateSafeDraft(practice, { extractPracticeDynamicData, practiceDate, state: options.state || null })
       : null;
 
     const nextDraft = baseDraft || {
@@ -143,7 +143,8 @@ window.KedrixOnePracticeDuplicate = (() => {
 
     const nextDraft = buildDuplicateDraft(sourceRecord, {
       createDuplicateSafeDraft,
-      extractPracticeDynamicData
+      extractPracticeDynamicData,
+      state
     });
 
     if (!nextDraft) return { ok: false, reason: 'duplicate-draft-build-failed' };
