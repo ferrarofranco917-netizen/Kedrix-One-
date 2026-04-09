@@ -3886,3 +3886,61 @@ body.dialog-open {
     align-self: flex-start;
   }
 }
+
+
+.customs-instructions-launcher-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.customs-instructions-practice-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.customs-instructions-mode-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.customs-instructions-summary-pills {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.customs-instructions-form-grid {
+  margin-bottom: 18px;
+}
+
+.customs-instructions-currency-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 10px;
+}
+
+.customs-instructions-currency-row input,
+.customs-instructions-currency-row select,
+.customs-instructions-practice-picker select,
+.customs-instructions-lines-table input {
+  width: 100%;
+}
+
+.customs-instructions-lines-table td {
+  vertical-align: middle;
+}
+
+.customs-instructions-actions-row {
+  margin-top: 16px;
+}
+
+@media (max-width: 980px) {
+  .customs-instructions-launcher-grid,
+  .customs-instructions-practice-picker,
+  .customs-instructions-summary-pills {
+    grid-template-columns: 1fr;
+  }
+}
