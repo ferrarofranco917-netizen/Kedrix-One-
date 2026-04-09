@@ -115,6 +115,53 @@ window.KedrixOnePracticeDuplicate = (() => {
     return sourcePractice;
   }
 
+  function collectOccupiedReferences(state) {
+    const occupied = new Set();
+
+    (((state && state.practices) || [])).forEach((practice) => {
+      const reference = String(practice?.reference || practice?.generatedReference || '').trim();
+      if (reference) occupied.add(reference);
+    });
+
+    (((state && state.practiceWorkspace && state.practiceWorkspace.sessions) || [])).forEach((session) => {
+      const reference = String(session?.draft?.generatedReference || '').trim();
+      if (reference) occupied.add(reference);
+    });
+
+    const draftReference = String(state?.draftPractice?.generatedReference || '').trim();
+    if (draftReference) occupied.add(draftReference);
+
+    return occupied;
+  }
+
+  function incrementReference(reference) {
+    const value = String(reference || '').trim();
+    if (!value) return '';
+    const match = value.match(/^(.*?)(\d+)([^\d]*)$/);
+    if (!match) return `${value}-1`;
+    const nextNumber = String(Number(match[2]) + 1);
+    return `${match[1]}${nextNumber}${match[3] || ''}`;
+  }
+
+  function resolveNextDuplicateReference(state, sourceRecord, buildCurrentPracticeReference) {
+    const sourceReference = String(sourceRecord?.reference || sourceRecord?.generatedReference || '').trim();
+    let candidate = typeof buildCurrentPracticeReference === 'function'
+      ? String(buildCurrentPracticeReference() || '').trim()
+      : '';
+
+    if (!candidate) candidate = sourceReference;
+    if (!candidate) return '';
+
+    const occupied = collectOccupiedReferences(state);
+    let guard = 0;
+    while ((candidate === sourceReference || occupied.has(candidate)) && guard < 1000) {
+      candidate = incrementReference(candidate);
+      guard += 1;
+    }
+
+    return candidate;
+  }
+
   function duplicatePracticeToDraft(practiceId, options = {}) {
     const {
       state,
@@ -149,6 +196,9 @@ window.KedrixOnePracticeDuplicate = (() => {
 
     if (!nextDraft) return { ok: false, reason: 'duplicate-draft-build-failed' };
 
+    const resolvedReference = resolveNextDuplicateReference(state, sourceRecord, buildCurrentPracticeReference);
+    nextDraft.generatedReference = resolvedReference;
+
     const duplicateContext = {
       id: sourceRecord.id,
       reference: sourceRecord.reference || '',
@@ -176,9 +226,7 @@ window.KedrixOnePracticeDuplicate = (() => {
     state.practiceDuplicateSource = duplicateContext;
     state.selectedPracticeId = '';
 
-    if (typeof buildCurrentPracticeReference === 'function') {
-      state.draftPractice.generatedReference = buildCurrentPracticeReference() || '';
-    }
+    state.draftPractice.generatedReference = resolvedReference || state.draftPractice.generatedReference || '';
 
     if (typeof save === 'function') save();
     if (typeof render === 'function') render();

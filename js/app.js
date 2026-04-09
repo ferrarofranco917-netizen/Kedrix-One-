@@ -1630,7 +1630,7 @@
       };
 
       const matchedClient = getClientById(draft.clientId);
-      if (matchedClient && !draft.editingPracticeId) Utils.commitPracticeNumber(matchedClient.numberingRule, draft.practiceDate);
+      if (matchedClient && !draft.editingPracticeId) Utils.commitPracticeNumber(matchedClient.numberingRule, draft.practiceDate, record.reference);
 
       if (draft.editingPracticeId) {
         const index = state.practices.findIndex((item) => item.id === draft.editingPracticeId);
@@ -2366,13 +2366,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     }
 
     if (action.dataset.action === 'duplicate-practice-draft') {
-      event.preventDefault();
-      event.stopPropagation();
-      const result = duplicatePracticeDraft();
-      if (!result || result.ok === false) {
-        toast(I18N.t('ui.duplicateUnavailable', 'Apri prima una pratica esistente da duplicare.'), 'warning');
-      }
-      return;
+      duplicatePracticeDraft();
     }
 
     if (action.dataset.action === 'reset-demo') {

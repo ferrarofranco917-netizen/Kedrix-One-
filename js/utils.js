@@ -50,15 +50,18 @@ window.KedrixOneUtils = (() => {
     return parts.join(separator);
   }
 
-  function commitPracticeNumber(rule, dateValue) {
+  function commitPracticeNumber(rule, dateValue, usedReference = '') {
     const workingRule = rule || {};
     const year = new Date((dateValue || new Date().toISOString().slice(0, 10)) + 'T00:00:00').getFullYear();
     const lastYear = Number(workingRule.lastYear || year);
     const sequence = workingRule.resetEveryYear && lastYear !== year ? 1 : Number(workingRule.nextNumber || 1);
+    const referenceMatch = String(usedReference || '').trim().match(/(\d+)(?!.*\d)/);
+    const usedSequence = referenceMatch ? Number(referenceMatch[1]) : 0;
+    const committedSequence = Math.max(sequence, usedSequence || 0);
 
     workingRule.lastYear = year;
-    workingRule.nextNumber = sequence + 1;
-    return sequence;
+    workingRule.nextNumber = committedSequence + 1;
+    return committedSequence;
   }
 
 

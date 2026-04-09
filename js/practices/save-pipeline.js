@@ -241,7 +241,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
 
     const matchedClient = typeof getClientById === 'function' ? getClientById(draft.clientId) : null;
     if (matchedClient && !draft.editingPracticeId && typeof commitPracticeNumber === 'function') {
-      commitPracticeNumber(matchedClient.numberingRule, draft.practiceDate);
+      commitPracticeNumber(matchedClient.numberingRule, draft.practiceDate, record.reference);
     }
 
     const isEditing = Boolean(draft.editingPracticeId);
@@ -266,12 +266,8 @@ window.KedrixOnePracticeSavePipeline = (() => {
 
     state.selectedPracticeId = record.id;
     state.practiceDuplicateSource = null;
-    const returnTab = String(state.practiceTab || '').trim() === 'start'
-      ? 'practice'
-      : (String(state.practiceTab || '').trim() || 'practice');
-    state.practiceTab = returnTab;
     if (typeof loadPracticeIntoDraft === 'function') {
-      loadPracticeIntoDraft(record.id, { reuseActiveSession: true, source: 'save', practiceTab: returnTab });
+      loadPracticeIntoDraft(record.id, { reuseActiveSession: true, source: 'save' });
     }
     if (typeof syncSavedPracticeSessions === 'function') {
       syncSavedPracticeSessions(record);
