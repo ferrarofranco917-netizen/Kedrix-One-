@@ -35,6 +35,95 @@ window.KedrixOneUtils = (() => {
   }
 
 
+  function escapeRegExp(value) {
+    return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function listTakenPracticeReferences(state, options = {}) {
+    const {
+      excludePracticeId = '',
+      excludeSessionId = ''
+    } = options;
+
+    const taken = new Set();
+    const normalizedExcludePracticeId = String(excludePracticeId || '').trim();
+    const normalizedExcludeSessionId = String(excludeSessionId || '').trim();
+
+    (((state && state.practices) || [])).forEach((practice) => {
+      if (!practice || typeof practice !== 'object') return;
+      if (normalizedExcludePracticeId && String(practice.id || '').trim() === normalizedExcludePracticeId) return;
+      const reference = normalize(practice.reference || practice.generatedReference || '');
+      if (reference) taken.add(reference);
+    });
+
+    (((state && state.practiceWorkspace && state.practiceWorkspace.sessions) || [])).forEach((session) => {
+      if (!session || typeof session !== 'object') return;
+      if (normalizedExcludeSessionId && String(session.id || '').trim() === normalizedExcludeSessionId) return;
+      const draft = session.draft && typeof session.draft === 'object' ? session.draft : null;
+      if (!draft) return;
+      if (normalizedExcludePracticeId && String(draft.editingPracticeId || '').trim() === normalizedExcludePracticeId) return;
+      const reference = normalize(draft.generatedReference || draft.reference || '');
+      if (reference) taken.add(reference);
+    });
+
+    return taken;
+  }
+
+  function ensureUniquePracticeReference(reference, options = {}) {
+    const {
+      takenReferences,
+      fallbackPrefix = 'PR',
+      dateValue
+    } = options;
+
+    const taken = takenReferences instanceof Set ? takenReferences : new Set();
+    let candidate = String(reference || '').trim();
+    if (!candidate) {
+      const year = new Date((dateValue || new Date().toISOString().slice(0, 10)) + 'T00:00:00').getFullYear();
+      candidate = `${String(fallbackPrefix || 'PR').trim().toUpperCase()}-${year}-1`;
+    }
+
+    if (!taken.has(normalize(candidate))) return candidate;
+
+    const match = candidate.match(/^(.*?)(\d+)\s*$/);
+    const prefix = match ? match[1] : `${candidate}-`;
+    let sequence = match ? Number(match[2]) : 1;
+    const padLength = match ? String(match[2]).length : 1;
+
+    while (taken.has(normalize(candidate))) {
+      sequence += 1;
+      candidate = `${prefix}${String(sequence).padStart(padLength, '0')}`;
+    }
+
+    return candidate;
+  }
+
+  function syncNumberingRuleToReference(rule, reference, dateValue) {
+    const workingRule = rule || {};
+    const normalizedReference = String(reference || '').trim().toUpperCase();
+    if (!normalizedReference) return false;
+
+    const separator = String(workingRule.separator || '-');
+    const year = new Date((dateValue || new Date().toISOString().slice(0, 10)) + 'T00:00:00').getFullYear();
+    const prefixParts = [];
+    if (workingRule.prefix) prefixParts.push(String(workingRule.prefix).trim().toUpperCase());
+    if (workingRule.includeYear !== false) prefixParts.push(String(year));
+    const base = prefixParts.join(separator);
+    const pattern = base
+      ? new RegExp(`^${escapeRegExp(base + separator)}(\\d+)$`)
+      : new RegExp(`^(\\d+)$`);
+    const match = normalizedReference.match(pattern);
+    if (!match) return false;
+
+    const usedSequence = Number(match[1] || 0);
+    if (!Number.isFinite(usedSequence) || usedSequence <= 0) return false;
+
+    workingRule.lastYear = year;
+    workingRule.nextNumber = Math.max(Number(workingRule.nextNumber || 1), usedSequence + 1);
+    return true;
+  }
+
+
   function buildPracticeReference(rule, dateValue) {
     const workingRule = { ...(rule || {}) };
     const separator = workingRule.separator || '-';
@@ -50,18 +139,15 @@ window.KedrixOneUtils = (() => {
     return parts.join(separator);
   }
 
-  function commitPracticeNumber(rule, dateValue, usedReference = '') {
+  function commitPracticeNumber(rule, dateValue) {
     const workingRule = rule || {};
     const year = new Date((dateValue || new Date().toISOString().slice(0, 10)) + 'T00:00:00').getFullYear();
     const lastYear = Number(workingRule.lastYear || year);
     const sequence = workingRule.resetEveryYear && lastYear !== year ? 1 : Number(workingRule.nextNumber || 1);
-    const referenceMatch = String(usedReference || '').trim().match(/(\d+)(?!.*\d)/);
-    const usedSequence = referenceMatch ? Number(referenceMatch[1]) : 0;
-    const committedSequence = Math.max(sequence, usedSequence || 0);
 
     workingRule.lastYear = year;
-    workingRule.nextNumber = committedSequence + 1;
-    return committedSequence;
+    workingRule.nextNumber = sequence + 1;
+    return sequence;
   }
 
 
@@ -118,6 +204,10 @@ window.KedrixOneUtils = (() => {
     formatDate,
     normalize,
     slugify,
+    escapeRegExp,
+    listTakenPracticeReferences,
+    ensureUniquePracticeReference,
+    syncNumberingRuleToReference,
     buildPracticeReference,
     commitPracticeNumber,
     deriveClientPrefix,

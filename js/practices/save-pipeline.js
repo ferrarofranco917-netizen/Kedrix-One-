@@ -4,6 +4,7 @@ window.KedrixOnePracticeSavePipeline = (() => {
   const SeaSchemaCleanup = window.KedrixOneSeaSchemaCleanup;
   const ReferenceNormalizer = window.KedrixOnePracticeReferenceNormalizer;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const Utils = window.KedrixOneUtils || null;
 
   const preSaveHooks = [];
 
@@ -240,8 +241,10 @@ window.KedrixOnePracticeSavePipeline = (() => {
     } = options;
 
     const matchedClient = typeof getClientById === 'function' ? getClientById(draft.clientId) : null;
-    if (matchedClient && !draft.editingPracticeId && typeof commitPracticeNumber === 'function') {
-      commitPracticeNumber(matchedClient.numberingRule, draft.practiceDate, record.reference);
+    if (matchedClient && typeof Utils?.syncNumberingRuleToReference === 'function') {
+      Utils.syncNumberingRuleToReference(matchedClient.numberingRule, record.reference, draft.practiceDate);
+    } else if (matchedClient && !draft.editingPracticeId && typeof commitPracticeNumber === 'function') {
+      commitPracticeNumber(matchedClient.numberingRule, draft.practiceDate);
     }
 
     const isEditing = Boolean(draft.editingPracticeId);
@@ -324,6 +327,21 @@ window.KedrixOnePracticeSavePipeline = (() => {
 
     const preSaveResult = runPreSaveHooks({ state, draft, saveMode, validationErrors });
     if (!preSaveResult.valid) return { ok: false, errors: preSaveResult.errors };
+
+    const provisionalReference = String(draft.generatedReference || (typeof buildCurrentPracticeReference === 'function' ? buildCurrentPracticeReference() : '') || '').trim();
+    if (Utils && typeof Utils.ensureUniquePracticeReference === 'function' && typeof Utils.listTakenPracticeReferences === 'function') {
+      const takenReferences = Utils.listTakenPracticeReferences(state, {
+        excludePracticeId: draft.editingPracticeId || '',
+        excludeSessionId: state?.practiceWorkspace?.activeSessionId || ''
+      });
+      draft.generatedReference = Utils.ensureUniquePracticeReference(provisionalReference, {
+        takenReferences,
+        fallbackPrefix: Utils.deriveClientPrefix ? Utils.deriveClientPrefix(draft.clientName || 'PR') : 'PR',
+        dateValue: draft.practiceDate
+      });
+    } else {
+      draft.generatedReference = provisionalReference;
+    }
 
     const { record, existingRecord } = buildRecord({
       state,

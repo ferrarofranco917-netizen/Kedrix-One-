@@ -1,6 +1,8 @@
 window.KedrixOnePracticeDuplicate = (() => {
   'use strict';
 
+  const Utils = window.KedrixOneUtils || null;
+
   const RESET_DYNAMIC_FIELDS = [
     'booking',
     'containerCode',
@@ -50,7 +52,7 @@ window.KedrixOnePracticeDuplicate = (() => {
     if (!practice || typeof practice !== 'object') return null;
 
     const baseDraft = typeof createDuplicateSafeDraft === 'function'
-      ? createDuplicateSafeDraft(practice, { extractPracticeDynamicData, practiceDate, state: options.state || null })
+      ? createDuplicateSafeDraft(practice, { extractPracticeDynamicData, practiceDate })
       : null;
 
     const nextDraft = baseDraft || {
@@ -76,92 +78,6 @@ window.KedrixOnePracticeDuplicate = (() => {
     return nextDraft;
   }
 
-  function buildSourceRecordFromDraft(activeDraft, fallbackRecord = null) {
-    if (!activeDraft || typeof activeDraft !== 'object') return fallbackRecord;
-    const editingPracticeId = String(activeDraft.editingPracticeId || '').trim();
-    if (!editingPracticeId) return fallbackRecord;
-
-    return {
-      ...(fallbackRecord || {}),
-      ...activeDraft,
-      id: editingPracticeId,
-      reference: String(activeDraft.generatedReference || fallbackRecord?.reference || '').trim(),
-      client: activeDraft.clientName || fallbackRecord?.client || '',
-      clientName: activeDraft.clientName || fallbackRecord?.clientName || '',
-      linkedEntities: {
-        ...((fallbackRecord && fallbackRecord.linkedEntities) || {}),
-        ...((activeDraft && activeDraft.linkedEntities) || {})
-      },
-      dynamicData: {
-        ...((fallbackRecord && fallbackRecord.dynamicData) || {}),
-        ...((activeDraft && activeDraft.dynamicData) || {})
-      }
-    };
-  }
-
-  function resolveSourceRecord(practiceId, state) {
-    const normalizedPracticeId = String(practiceId || '').trim();
-    if (!normalizedPracticeId || !state) return null;
-
-    const sourcePractice = ((state && state.practices) || []).find((item) => String(item.id || '') === normalizedPracticeId) || null;
-    const activeDraft = state.draftPractice && typeof state.draftPractice === 'object'
-      ? state.draftPractice
-      : null;
-
-    if (activeDraft && String(activeDraft.editingPracticeId || '').trim() === normalizedPracticeId) {
-      return buildSourceRecordFromDraft(activeDraft, sourcePractice);
-    }
-
-    return sourcePractice;
-  }
-
-  function collectOccupiedReferences(state) {
-    const occupied = new Set();
-
-    (((state && state.practices) || [])).forEach((practice) => {
-      const reference = String(practice?.reference || practice?.generatedReference || '').trim();
-      if (reference) occupied.add(reference);
-    });
-
-    (((state && state.practiceWorkspace && state.practiceWorkspace.sessions) || [])).forEach((session) => {
-      const reference = String(session?.draft?.generatedReference || '').trim();
-      if (reference) occupied.add(reference);
-    });
-
-    const draftReference = String(state?.draftPractice?.generatedReference || '').trim();
-    if (draftReference) occupied.add(draftReference);
-
-    return occupied;
-  }
-
-  function incrementReference(reference) {
-    const value = String(reference || '').trim();
-    if (!value) return '';
-    const match = value.match(/^(.*?)(\d+)([^\d]*)$/);
-    if (!match) return `${value}-1`;
-    const nextNumber = String(Number(match[2]) + 1);
-    return `${match[1]}${nextNumber}${match[3] || ''}`;
-  }
-
-  function resolveNextDuplicateReference(state, sourceRecord, buildCurrentPracticeReference) {
-    const sourceReference = String(sourceRecord?.reference || sourceRecord?.generatedReference || '').trim();
-    let candidate = typeof buildCurrentPracticeReference === 'function'
-      ? String(buildCurrentPracticeReference() || '').trim()
-      : '';
-
-    if (!candidate) candidate = sourceReference;
-    if (!candidate) return '';
-
-    const occupied = collectOccupiedReferences(state);
-    let guard = 0;
-    while ((candidate === sourceReference || occupied.has(candidate)) && guard < 1000) {
-      candidate = incrementReference(candidate);
-      guard += 1;
-    }
-
-    return candidate;
-  }
-
   function duplicatePracticeToDraft(practiceId, options = {}) {
     const {
       state,
@@ -177,34 +93,24 @@ window.KedrixOnePracticeDuplicate = (() => {
       source = 'duplicate'
     } = options;
 
-    if (!state) return { ok: false, reason: 'missing-state' };
+    if (!state || !practiceId) return { ok: false, reason: 'missing-practice-id' };
 
-    const activeDraft = state.draftPractice && typeof state.draftPractice === 'object'
-      ? state.draftPractice
-      : null;
-    const sourcePracticeId = String(practiceId || activeDraft?.editingPracticeId || state.selectedPracticeId || '').trim();
-    if (!sourcePracticeId) return { ok: false, reason: 'missing-practice-id' };
+    const sourcePractice = ((state && state.practices) || []).find((item) => item.id === practiceId) || null;
+    if (!sourcePractice) return { ok: false, reason: 'practice-not-found' };
 
-    const sourceRecord = resolveSourceRecord(sourcePracticeId, state);
-    if (!sourceRecord) return { ok: false, reason: 'practice-not-found' };
-
-    const nextDraft = buildDuplicateDraft(sourceRecord, {
+    const nextDraft = buildDuplicateDraft(sourcePractice, {
       createDuplicateSafeDraft,
-      extractPracticeDynamicData,
-      state
+      extractPracticeDynamicData
     });
 
     if (!nextDraft) return { ok: false, reason: 'duplicate-draft-build-failed' };
 
-    const resolvedReference = resolveNextDuplicateReference(state, sourceRecord, buildCurrentPracticeReference);
-    nextDraft.generatedReference = resolvedReference;
-
     const duplicateContext = {
-      id: sourceRecord.id,
-      reference: sourceRecord.reference || '',
-      clientName: sourceRecord.clientName || sourceRecord.client || '',
-      practiceType: sourceRecord.practiceType || '',
-      practiceTypeLabel: sourceRecord.practiceTypeLabel || sourceRecord.practiceType || ''
+      id: sourcePractice.id,
+      reference: sourcePractice.reference || '',
+      clientName: sourcePractice.clientName || sourcePractice.client || '',
+      practiceType: sourcePractice.practiceType || '',
+      practiceTypeLabel: sourcePractice.practiceTypeLabel || sourcePractice.practiceType || ''
     };
 
     if (typeof openDraftSession === 'function') {
@@ -226,26 +132,37 @@ window.KedrixOnePracticeDuplicate = (() => {
     state.practiceDuplicateSource = duplicateContext;
     state.selectedPracticeId = '';
 
-    state.draftPractice.generatedReference = resolvedReference || state.draftPractice.generatedReference || '';
+    if (typeof buildCurrentPracticeReference === 'function') {
+      const baseReference = buildCurrentPracticeReference() || '';
+      if (Utils && typeof Utils.ensureUniquePracticeReference === 'function' && typeof Utils.listTakenPracticeReferences === 'function') {
+        const takenReferences = Utils.listTakenPracticeReferences(state, {
+          excludePracticeId: '',
+          excludeSessionId: ''
+        });
+        state.draftPractice.generatedReference = Utils.ensureUniquePracticeReference(baseReference, {
+          takenReferences,
+          fallbackPrefix: Utils.deriveClientPrefix ? Utils.deriveClientPrefix(state.draftPractice.clientName || sourcePractice.clientName || sourcePractice.client || 'PR') : 'PR',
+          dateValue: state.draftPractice.practiceDate
+        });
+      } else {
+        state.draftPractice.generatedReference = baseReference;
+      }
+    }
 
     if (typeof save === 'function') save();
     if (typeof render === 'function') render();
     if (typeof focusPracticeEditor === 'function') focusPracticeEditor(source, '');
     if (typeof toast === 'function') {
-      const duplicatedReference = String(state?.draftPractice?.generatedReference || '').trim();
-      const fallbackToast = duplicatedReference
-        ? `Pratica duplicata: ${duplicatedReference}`
-        : 'Pratica duplicata: nuova bozza pronta';
       const toastLabel = typeof i18n?.t === 'function'
-        ? i18n.t('ui.practiceDuplicatedToast', fallbackToast)
-        : fallbackToast;
-      toast(toastLabel, 'success');
+        ? i18n.t('ui.practiceDuplicatedDraftReady', 'Copia pratica pronta')
+        : 'Copia pratica pronta';
+      toast(toastLabel);
     }
 
     return {
       ok: true,
       draft: state.draftPractice,
-      sourcePractice: sourceRecord
+      sourcePractice
     };
   }
 
@@ -255,10 +172,8 @@ window.KedrixOnePracticeDuplicate = (() => {
 
   return {
     buildDuplicateDraft,
-    buildSourceRecordFromDraft,
     duplicatePracticeToDraft,
     listResetFields,
-    resolveSourceRecord,
     sanitizeDuplicatedDynamicData
   };
 })();
