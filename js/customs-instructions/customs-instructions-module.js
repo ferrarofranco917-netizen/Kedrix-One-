@@ -700,7 +700,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     const draft = session.draft || createEmptyDraft(state);
     const activeTab = String(session?.uiState?.tab || 'general').trim() || 'general';
     return `
-      <section class="panel customs-instructions-editor">
+      <section class="panel customs-instructions-editor" data-customs-editor-anchor>
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.customsInstructionsEditorTitle', 'Maschera istruzione'))}</h3>
@@ -774,6 +774,20 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     return Promise.resolve(true);
   }
 
+  function focusEditorStart(helpers = {}) {
+    const run = () => {
+      const scope = helpers.root || document;
+      const editor = scope?.querySelector?.('[data-customs-editor-anchor]');
+      if (!editor || typeof editor.scrollIntoView !== 'function') return;
+      editor.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(run);
+      return;
+    }
+    setTimeout(run, 0);
+  }
+
   function openFromPractice(state, practice, helpers = {}) {
     if (!practice) {
       helpers.toast?.(helpers.i18n?.t('ui.customsInstructionsPracticeMissing', 'Seleziona prima una pratica madre valida.') || 'Seleziona prima una pratica madre valida.', 'warning');
@@ -790,6 +804,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     });
     helpers.save?.();
     helpers.render?.();
+    focusEditorStart(helpers);
     helpers.toast?.(helpers.i18n?.t('ui.workspaceMaskOpened', 'Nuova maschera aperta') || 'Nuova maschera aperta', 'info');
   }
 
@@ -863,6 +878,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
         Workspace.openRecordSession(state, record, { createEmptyDraft: () => createEmptyDraft(state), tab: 'general' });
         helpers.save?.();
         helpers.render?.();
+        focusEditorStart(helpers);
       });
     });
 
@@ -871,6 +887,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
         Workspace.switchSession(state, String(button.dataset.customsSessionSwitch || '').trim(), { createEmptyDraft: () => createEmptyDraft(state) });
         helpers.save?.();
         helpers.render?.();
+        focusEditorStart(helpers);
       });
     });
 
