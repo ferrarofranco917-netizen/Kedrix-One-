@@ -2859,6 +2859,29 @@ Object.assign(dictionary.en.ui, {
   practiceListDistinctNodes: 'Distinct nodes'
 });
 
+
+Object.assign(dictionary.it.ui, {
+  customsInstructionsRecentPracticesLabel: 'Ultime pratiche recenti',
+  customsInstructionsRecentPracticesHint: 'Il menu mostra solo le ultime 30 pratiche per restare veloce anche con archivi molto grandi.',
+  customsInstructionsSearchLabel: 'Cerca numero pratica',
+  customsInstructionsSearchPlaceholder: 'Es. AP-2026-8',
+  customsInstructionsSearchHint: 'Inserisci numero pratica o riferimento e apri direttamente la pratica madre senza scorrere tutto l’elenco.',
+  customsInstructionsOpenFromSearch: 'Apri da ricerca',
+  customsInstructionsSearchNoMatch: 'Nessuna pratica trovata con questo numero.',
+  customsInstructionsSearchMultiple: 'Trovate più pratiche: aperta automaticamente la più recente.'
+});
+
+Object.assign(dictionary.en.ui, {
+  customsInstructionsRecentPracticesLabel: 'Recent practices',
+  customsInstructionsRecentPracticesHint: 'The picker shows only the latest 30 practices so it stays fast even with very large archives.',
+  customsInstructionsSearchLabel: 'Search practice number',
+  customsInstructionsSearchPlaceholder: 'Example: AP-2026-8',
+  customsInstructionsSearchHint: 'Type a practice number or reference and open the parent practice directly without scrolling the whole list.',
+  customsInstructionsOpenFromSearch: 'Open from search',
+  customsInstructionsSearchNoMatch: 'No practice found with this number.',
+  customsInstructionsSearchMultiple: 'Multiple practices found: the most recent one was opened automatically.'
+});
+
   return {
     dictionary,
     setLanguage,
@@ -2870,3 +2893,4 @@ Object.assign(dictionary.en.ui, {
     submoduleDescription
   };
 })();
+

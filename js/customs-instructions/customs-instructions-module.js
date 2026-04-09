@@ -7,6 +7,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   const SEA_COLUMNS = ['containerCode', 'transportUnitType', 'seals', 'loadingDate', 'taric', 'description', 'packageCount', 'netWeight', 'grossWeight', 'volume'];
   const AIR_ROAD_COLUMNS = ['marksNumbers', 'description', 'packageCount', 'netWeight', 'grossWeight'];
+  const PRACTICE_PICKER_LIMIT = 30;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -298,11 +299,93 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     return Workspace?.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) }) || null;
   }
 
-  function practiceOptions(state) {
-    return (state?.practices || []).map((practice) => ({
-      id: String(practice?.id || '').trim(),
-      label: [String(practice?.reference || '').trim(), String(practice?.practiceTypeLabel || practice?.practiceType || '').trim(), String(practice?.clientName || practice?.client || '').trim()].filter(Boolean).join(' · ')
-    })).filter((entry) => entry.id);
+  function practiceTimestamp(practice) {
+    const candidates = [
+      practice?.updatedAt,
+      practice?.savedAt,
+      practice?.modifiedAt,
+      practice?.lastOpenedAt,
+      practice?.practiceDate,
+      practice?.createdAt,
+      practice?.eta,
+      practice?.dynamicData?.customsDate
+    ];
+    for (const candidate of candidates) {
+      const value = String(candidate || '').trim();
+      if (!value) continue;
+      const parsed = Date.parse(value);
+      if (!Number.isNaN(parsed)) return parsed;
+      const normalized = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (normalized) {
+        const [, dd, mm, yyyy] = normalized;
+        const fallback = Date.parse(`${yyyy}-${mm}-${dd}`);
+        if (!Number.isNaN(fallback)) return fallback;
+      }
+    }
+    return 0;
+  }
+
+  function practiceSequenceScore(practice) {
+    const reference = String(practice?.reference || '').trim();
+    const id = String(practice?.id || '').trim();
+    const refDigits = reference.match(/(\d+)/g);
+    if (refDigits && refDigits.length) return Number(refDigits.join('')) || 0;
+    const idDigits = id.match(/(\d+)/g);
+    return idDigits && idDigits.length ? Number(idDigits.join('')) || 0 : 0;
+  }
+
+  function practiceOptions(state, limit = PRACTICE_PICKER_LIMIT) {
+    return (state?.practices || [])
+      .slice()
+      .sort((left, right) => {
+        const dateDelta = practiceTimestamp(right) - practiceTimestamp(left);
+        if (dateDelta !== 0) return dateDelta;
+        return practiceSequenceScore(right) - practiceSequenceScore(left);
+      })
+      .slice(0, limit)
+      .map((practice) => ({
+        id: String(practice?.id || '').trim(),
+        label: [
+          String(practice?.reference || '').trim(),
+          String(practice?.practiceTypeLabel || practice?.practiceType || '').trim(),
+          String(practice?.clientName || practice?.client || '').trim()
+        ].filter(Boolean).join(' · ')
+      }))
+      .filter((entry) => entry.id);
+  }
+
+  function normalizePracticeSearchTerm(value) {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+  }
+
+  function findPracticeBySearch(state, rawTerm) {
+    const term = normalizePracticeSearchTerm(rawTerm);
+    if (!term) return { practice: null, totalMatches: 0, mode: '' };
+    const practices = Array.isArray(state?.practices) ? state.practices.slice() : [];
+    const ranked = practices
+      .map((practice) => {
+        const reference = normalizePracticeSearchTerm(practice?.reference);
+        const practiceId = normalizePracticeSearchTerm(practice?.id);
+        let score = 0;
+        if (reference === term || practiceId === term) score = 400;
+        else if (reference.startsWith(term)) score = 300;
+        else if (reference.includes(term)) score = 200;
+        else if (practiceId.includes(term)) score = 100;
+        return score ? { practice, score } : null;
+      })
+      .filter(Boolean)
+      .sort((left, right) => {
+        const scoreDelta = right.score - left.score;
+        if (scoreDelta !== 0) return scoreDelta;
+        const dateDelta = practiceTimestamp(right.practice) - practiceTimestamp(left.practice);
+        if (dateDelta !== 0) return dateDelta;
+        return practiceSequenceScore(right.practice) - practiceSequenceScore(left.practice);
+      });
+    return {
+      practice: ranked[0]?.practice || null,
+      totalMatches: ranked.length,
+      mode: ranked[0]?.score >= 400 ? 'exact' : (ranked[0]?.score ? 'fuzzy' : '')
+    };
   }
 
   function getPracticeById(state, practiceId) {
@@ -396,23 +479,37 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   function renderLauncher(state, i18n) {
     const activePracticeId = String(state?.selectedPracticeId || '').trim();
-    const options = practiceOptions(state);
+    const options = practiceOptions(state, PRACTICE_PICKER_LIMIT);
     return `
       <section class="panel customs-instructions-launcher">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenTitle', 'Apri o crea istruzione'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenHint', 'Apri una nuova istruzione partendo dalla pratica attiva oppure seleziona una pratica madre dall’elenco per mantenere il collegamento corretto.'))}</p>
+            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenHint', 'Apri una nuova istruzione partendo dalla pratica attiva, usa le ultime pratiche recenti oppure cerca direttamente il numero pratica per mantenere il collegamento corretto.'))}</p>
           </div>
         </div>
         <div class="customs-instructions-launcher-grid">
           <button class="btn" type="button" data-customs-open-active-practice ${activePracticeId ? '' : 'disabled'}>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromActive', 'Nuova da pratica attiva'))}</button>
-          <div class="customs-instructions-practice-picker">
-            <select id="customsPracticePicker" data-customs-practice-picker>
-              <option value="">${U.escapeHtml(i18n?.t('ui.customsInstructionsSelectPractice', 'Seleziona pratica madre'))}</option>
-              ${options.map((option) => `<option value="${U.escapeHtml(option.id)}">${U.escapeHtml(option.label)}</option>`).join('')}
-            </select>
-            <button class="btn secondary" type="button" data-customs-open-picked-practice>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenSelected', 'Apri da pratica selezionata'))}</button>
+          <div class="customs-instructions-launcher-stack">
+            <div class="customs-instructions-practice-picker">
+              <div class="field customs-inline-field">
+                <label for="customsPracticePicker">${U.escapeHtml(i18n?.t('ui.customsInstructionsRecentPracticesLabel', 'Ultime pratiche recenti'))}</label>
+                <select id="customsPracticePicker" data-customs-practice-picker>
+                  <option value="">${U.escapeHtml(i18n?.t('ui.customsInstructionsSelectPractice', 'Seleziona pratica madre'))}</option>
+                  ${options.map((option) => `<option value="${U.escapeHtml(option.id)}">${U.escapeHtml(option.label)}</option>`).join('')}
+                </select>
+                <div class="field-hint">${U.escapeHtml(i18n?.t('ui.customsInstructionsRecentPracticesHint', 'Il menu mostra solo le ultime 30 pratiche per restare veloce anche con archivi molto grandi.'))}</div>
+              </div>
+              <button class="btn secondary" type="button" data-customs-open-picked-practice>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenSelected', 'Apri da pratica selezionata'))}</button>
+            </div>
+            <div class="customs-instructions-practice-search">
+              <div class="field customs-inline-field">
+                <label for="customsPracticeSearch">${U.escapeHtml(i18n?.t('ui.customsInstructionsSearchLabel', 'Cerca numero pratica'))}</label>
+                <input id="customsPracticeSearch" type="search" value="" placeholder="${U.escapeHtml(i18n?.t('ui.customsInstructionsSearchPlaceholder', 'Es. AP-2026-8'))}" data-customs-practice-search autocomplete="off">
+                <div class="field-hint">${U.escapeHtml(i18n?.t('ui.customsInstructionsSearchHint', 'Inserisci numero pratica o riferimento e apri direttamente la pratica madre senza scorrere tutto l’elenco.'))}</div>
+              </div>
+              <button class="btn secondary" type="button" data-customs-open-search-practice>${U.escapeHtml(i18n?.t('ui.customsInstructionsOpenFromSearch', 'Apri da ricerca'))}</button>
+            </div>
           </div>
         </div>
       </section>`;
@@ -723,6 +820,26 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       const picker = root.querySelector('[data-customs-practice-picker]');
       const practice = getPracticeById(state, picker?.value || '');
       openFromPractice(state, practice, helpers);
+    });
+
+    const openFromSearch = () => {
+      const input = root.querySelector('[data-customs-practice-search]');
+      const result = findPracticeBySearch(state, input?.value || '');
+      if (!result.practice) {
+        helpers.toast?.(helpers.i18n?.t('ui.customsInstructionsSearchNoMatch', 'Nessuna pratica trovata con questo numero.') || 'Nessuna pratica trovata con questo numero.', 'warning');
+        return;
+      }
+      openFromPractice(state, result.practice, helpers);
+      if (result.totalMatches > 1 && result.mode === 'fuzzy') {
+        helpers.toast?.(helpers.i18n?.t('ui.customsInstructionsSearchMultiple', 'Trovate più pratiche: aperta automaticamente la più recente.') || 'Trovate più pratiche: aperta automaticamente la più recente.', 'info');
+      }
+    };
+
+    root.querySelector('[data-customs-open-search-practice]')?.addEventListener('click', openFromSearch);
+    root.querySelector('[data-customs-practice-search]')?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      openFromSearch();
     });
 
     root.querySelectorAll('[data-customs-open-record]').forEach((button) => {

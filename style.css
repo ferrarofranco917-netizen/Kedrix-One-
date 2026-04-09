@@ -3900,6 +3900,27 @@ body.dialog-open {
   gap: 12px;
 }
 
+.customs-instructions-launcher-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.customs-instructions-practice-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.customs-inline-field {
+  margin: 0;
+}
+
+.field-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
 .customs-instructions-mode-bar {
   display: flex;
   gap: 8px;
@@ -3925,6 +3946,7 @@ body.dialog-open {
 .customs-instructions-currency-row input,
 .customs-instructions-currency-row select,
 .customs-instructions-practice-picker select,
+.customs-instructions-practice-search input,
 .customs-instructions-lines-table input {
   width: 100%;
 }
@@ -3940,6 +3962,7 @@ body.dialog-open {
 @media (max-width: 980px) {
   .customs-instructions-launcher-grid,
   .customs-instructions-practice-picker,
+  .customs-instructions-practice-search,
   .customs-instructions-summary-pills {
     grid-template-columns: 1fr;
   }
@@ -4025,7 +4048,8 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 
-  .customs-instructions-practice-picker {
+  .customs-instructions-practice-picker,
+  .customs-instructions-practice-search {
     grid-template-columns: 1fr;
   }
 }
