@@ -1957,6 +1957,50 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
+    if (route === 'practices/istruzioni-di-sdoganamento') {
+      const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
+      if (!CustomsInstructionsModule || typeof CustomsInstructionsModule.render !== 'function') {
+        main.innerHTML = `
+          <section class="hero">
+            <div class="hero-meta">AQ21B · customs instructions module missing</div>
+            <h2>${Utils.escapeHtml(I18N.t('submodules.practices/istruzioni-di-sdoganamento', 'Istruzioni di sdoganamento'))}</h2>
+            <p>${Utils.escapeHtml(I18N.t('ui.customsInstructionsMissingModuleHint', 'Il renderer reale del sottomodulo non è stato caricato. Verifica che esistano index.html aggiornato e i file js/customs-instructions/*.'))}</p>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h3 class="panel-title">AQ21B</h3></div></div>
+            <div class="empty-text">Missing window.KedrixOneCustomsInstructionsModule</div>
+          </section>`;
+        return;
+      }
+      CustomsInstructionsModule.ensureState?.(state);
+      main.innerHTML = CustomsInstructionsModule.render(state, {
+        i18n: I18N,
+        utils: Utils
+      });
+      CustomsInstructionsModule.bind?.({
+        root: main,
+        state,
+        i18n: I18N,
+        utils: Utils,
+        save,
+        render,
+        navigate,
+        toast,
+        getSelectedPractice: () => selectedPractice(),
+        confirmClose: async () => {
+          if (!AppFeedback || typeof AppFeedback.confirm !== 'function') return false;
+          return AppFeedback.confirm({
+            title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
+            message: I18N.t('ui.workspaceDirtyCloseMessage', 'Questa maschera contiene modifiche non salvate. Se la chiudi adesso, le modifiche andranno perse.'),
+            confirmLabel: I18N.t('ui.workspaceDiscardMask', 'Chiudi senza salvare'),
+            cancelLabel: I18N.t('ui.workspaceKeepMask', 'Torna alla maschera'),
+            tone: 'warning'
+          });
+        }
+      });
+      return;
+    }
+
     if (route === 'documents') {
       ensureDocumentPreviewSelection();
       main.innerHTML = Templates.documents(state, module, documentSearchResults());
