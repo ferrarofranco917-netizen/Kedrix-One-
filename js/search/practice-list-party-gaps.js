@@ -116,7 +116,7 @@ window.KedrixOnePracticeListPartyGaps = (() => {
         <div class="module-card-title">${escapeHtml(I18N.t(`ui.practiceList${def.key}Title`, def.title))}</div>
         <div class="module-card-meta">${escapeHtml(I18N.t(`ui.practiceList${def.key}Hint`, def.subtitle))}</div>
       </div>
-      <div class="kpi-grid" style="margin-bottom:12px;">
+      <div class="kpi-grid practice-list-gap-kpis" style="margin-bottom:12px;">
         <div class="kpi-card compact">
           <div class="kpi-label">${escapeHtml(I18N.t('ui.practiceListActiveCount', 'Attivo'))}</div>
           <div class="kpi-value">${escapeHtml(String(data.activeCount || 0))}</div>
