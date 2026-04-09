@@ -122,6 +122,7 @@ window.KedrixOneLicensing = (() => {
     const meta = modulesApi.getRouteMeta(modulesApi.normalizeRoute(route));
     if (!meta) return false;
     if (meta.type === 'module') return moduleAllowed(meta.moduleKey, state);
+    if (meta.route === 'practices/workspace') return moduleAllowed(meta.moduleKey, state);
     const module = modulesApi.getModule(meta.moduleKey);
     if (!module) return false;
     return getUserSubmoduleEntitlements(module, state).has(meta.route);
