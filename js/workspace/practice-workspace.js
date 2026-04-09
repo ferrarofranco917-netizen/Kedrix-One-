@@ -23,6 +23,10 @@ window.KedrixOnePracticeWorkspace = (() => {
   function normalizeSession(session = {}, createEmptyDraft) {
     const fallbackDraft = typeof createEmptyDraft === 'function' ? createEmptyDraft() : { dynamicData: {} };
     const uiState = session.uiState && typeof session.uiState === 'object' ? session.uiState : {};
+    const draft = cloneDraft(session.draft && typeof session.draft === 'object' ? session.draft : fallbackDraft);
+    const editingPracticeId = String(draft?.editingPracticeId || '').trim();
+    const requestedTab = String(uiState.tab || session.tab || 'practice').trim() || 'practice';
+    const normalizedTab = editingPracticeId && requestedTab === 'start' ? 'practice' : requestedTab;
     return {
       id: String(session.id || '').trim() || nextSessionId(),
       source: String(session.source || '').trim() || 'manual',
@@ -31,9 +35,9 @@ window.KedrixOnePracticeWorkspace = (() => {
       isDirty: Boolean(session.isDirty),
       uiState: {
         ...uiState,
-        tab: String(uiState.tab || session.tab || 'practice').trim() || 'practice'
+        tab: normalizedTab
       },
-      draft: cloneDraft(session.draft && typeof session.draft === 'object' ? session.draft : fallbackDraft)
+      draft
     };
   }
 
@@ -66,15 +70,8 @@ window.KedrixOnePracticeWorkspace = (() => {
       ? workspace.sessions.map((session) => normalizeSession(session, createEmptyDraft))
       : [];
 
-    if (!workspace.sessions.length) {
-      const seedDraft = state.draftPractice && typeof state.draftPractice === 'object'
-        ? cloneDraft(state.draftPractice)
-        : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : { dynamicData: {} });
-      workspace.sessions = [createSession({ draft: seedDraft, source: 'bootstrap', createEmptyDraft, uiState: { tab: String(state.practiceTab || 'practice').trim() || 'practice' } })];
-    }
-
     const activeExists = workspace.sessions.some((session) => session.id === workspace.activeSessionId);
-    if (!activeExists) workspace.activeSessionId = workspace.sessions[0].id;
+    workspace.activeSessionId = activeExists ? workspace.activeSessionId : (workspace.sessions[0]?.id || '');
     return workspace;
   }
 
@@ -137,11 +134,15 @@ window.KedrixOnePracticeWorkspace = (() => {
     const { createEmptyDraft } = options;
     const workspace = ensureState(state, { createEmptyDraft });
     if (!workspace) return null;
-    let active = getActiveSession(state, { createEmptyDraft });
+    const active = getActiveSession(state, { createEmptyDraft });
     if (!active) {
-      active = createSession({ createEmptyDraft, source: 'bootstrap', uiState: { tab: String(state.practiceTab || 'practice').trim() || 'practice' } });
-      workspace.sessions = [active];
-      workspace.activeSessionId = active.id;
+      const fallbackDraft = state.draftPractice && typeof state.draftPractice === 'object'
+        ? cloneDraft(state.draftPractice)
+        : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : { dynamicData: {} });
+      state.draftPractice = fallbackDraft;
+      state.selectedPracticeId = String(fallbackDraft?.editingPracticeId || '').trim();
+      state.practiceTab = String(state.practiceTab || 'practice').trim() || 'practice';
+      return fallbackDraft;
     }
     touchSession(active);
     state.draftPractice = active.draft;
@@ -192,12 +193,14 @@ window.KedrixOnePracticeWorkspace = (() => {
     const activeSession = getActiveSession(state, { createEmptyDraft });
     const existingSession = workspace.sessions.find((session) => String(session.draft?.editingPracticeId || '') === String(practiceId)) || null;
 
+    const defaultExistingTab = String(practiceTab || (String(builtDraft?.editingPracticeId || '').trim() ? 'practice' : (state.practiceTab || 'practice'))).trim() || 'practice';
+
     if (reuseActiveSession && activeSession) {
       targetSession = activeSession;
       targetSession.draft = cloneDraft(builtDraft);
       targetSession.isDirty = false;
       if (!targetSession.uiState || typeof targetSession.uiState !== 'object') targetSession.uiState = { tab: 'practice' };
-      targetSession.uiState.tab = String(practiceTab || targetSession.uiState.tab || state.practiceTab || 'practice').trim() || 'practice';
+      targetSession.uiState.tab = defaultExistingTab;
     } else if (existingSession) {
       targetSession = existingSession;
       if (refreshExisting) {
@@ -205,9 +208,9 @@ window.KedrixOnePracticeWorkspace = (() => {
         targetSession.isDirty = false;
       }
       if (!targetSession.uiState || typeof targetSession.uiState !== 'object') targetSession.uiState = { tab: 'practice' };
-      if (practiceTab) targetSession.uiState.tab = String(practiceTab).trim() || 'practice';
+      targetSession.uiState.tab = defaultExistingTab;
     } else {
-      targetSession = createSession({ draft: builtDraft, source, createEmptyDraft, isDirty: false, uiState: { tab: practiceTab || state.practiceTab || 'practice' } });
+      targetSession = createSession({ draft: builtDraft, source, createEmptyDraft, isDirty: false, uiState: { tab: defaultExistingTab } });
       workspace.sessions = [targetSession, ...workspace.sessions];
     }
 
@@ -238,9 +241,10 @@ window.KedrixOnePracticeWorkspace = (() => {
       const existingUiState = session.uiState && typeof session.uiState === 'object'
         ? { ...session.uiState }
         : { tab: 'practice' };
+      const currentTab = String(existingUiState.tab || 'practice').trim() || 'practice';
       session.draft = cloneDraft(rebuiltDraft);
       session.uiState = {
-        tab: String(existingUiState.tab || 'practice').trim() || 'practice'
+        tab: String(String(rebuiltDraft?.editingPracticeId || '').trim() && currentTab === 'start' ? 'practice' : currentTab).trim() || 'practice'
       };
       if (!keepDirty) session.isDirty = false;
       touchSession(session);
@@ -262,13 +266,10 @@ window.KedrixOnePracticeWorkspace = (() => {
     if (index === -1) return getActiveSession(state, { createEmptyDraft });
 
     const [removed] = workspace.sessions.splice(index, 1);
-    if (!workspace.sessions.length) {
-      workspace.sessions = [createSession({ createEmptyDraft, source: 'new' })];
-    }
 
     if (workspace.activeSessionId === sessionId) {
-      const fallback = workspace.sessions[Math.max(0, index - 1)] || workspace.sessions[0];
-      workspace.activeSessionId = fallback.id;
+      const fallback = workspace.sessions[Math.max(0, index - 1)] || workspace.sessions[0] || null;
+      workspace.activeSessionId = fallback ? fallback.id : '';
     }
 
     syncActiveDraft(state, { createEmptyDraft });

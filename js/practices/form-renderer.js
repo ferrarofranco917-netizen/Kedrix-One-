@@ -189,11 +189,7 @@ window.KedrixOnePracticeFormRenderer = (() => {
       return `<section class="dynamic-field-section" data-section-key="${Utils.escapeHtml(section.key)}">${headerHtml}<div class="dynamic-section-grid">${section.fields.map((field) => renderFieldHTML(type, tab, draft, companyConfig, state, field)).join('')}</div></section>`;
     }).join('');
 
-    const overviewHtml = tab === 'practice' && PracticeOverview && typeof PracticeOverview.render === 'function'
-      ? PracticeOverview.render({ state, draft, type, companyConfig, i18n: I18N, utils: Utils })
-      : '';
-
-    return `${overviewHtml}${sectionsHtml}`;
+    return sectionsHtml;
   }
 
   return {

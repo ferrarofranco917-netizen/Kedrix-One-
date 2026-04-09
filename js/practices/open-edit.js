@@ -19,9 +19,11 @@ window.KedrixOnePracticeOpenEdit = (() => {
       const editorSection = document.getElementById('practiceEditorSection') || document.getElementById('practiceForm');
       const editBanner = document.getElementById('practiceEditBanner');
       const verificationBanner = document.getElementById('practiceVerificationBanner');
-      const primaryField = document.getElementById('clientName')
-        || document.querySelector('#practiceDynamicFields input, #practiceDynamicFields select, #practiceDynamicFields textarea')
-        || document.getElementById('practiceType');
+      const dynamicPrimaryField = document.querySelector('#practiceDynamicFields input, #practiceDynamicFields select, #practiceDynamicFields textarea');
+      const identityPrimaryField = document.getElementById('clientName') || document.getElementById('practiceType');
+      const primaryField = source === 'save'
+        ? (dynamicPrimaryField || identityPrimaryField)
+        : (identityPrimaryField || dynamicPrimaryField);
 
       flashNodes([editorSection, editBanner, verificationBanner]);
 

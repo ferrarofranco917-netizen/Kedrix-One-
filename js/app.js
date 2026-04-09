@@ -27,6 +27,7 @@
   const PracticeContainerIntegrity = window.KedrixOnePracticeContainerIntegrity;
   const PracticeWeightIntegrity = window.KedrixOnePracticeWeightIntegrity;
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
+  const PracticeOverview = window.KedrixOnePracticeOverview || null;
   const PracticeAttachments = window.KedrixOnePracticeAttachments;
   const DocumentEngine = window.KedrixOneDocumentEngine;
   const DocumentCategories = window.KedrixOneDocumentCategories;
@@ -125,7 +126,12 @@
     return practiceWorkspaceSessions().length > 0;
   }
 
-  function renderPracticeStarterPanel() {
+  function renderPracticeStarterPanel(draft = ensureDraftPractice()) {
+    const activeDraft = draft && typeof draft === 'object' ? draft : ensureDraftPractice();
+    const isEditing = Boolean(String(activeDraft?.editingPracticeId || '').trim());
+    if (isEditing && PracticeOverview && typeof PracticeOverview.render === 'function') {
+      return PracticeOverview.render({ state, draft: activeDraft, type: activeDraft.practiceType || '', companyConfig: state.companyConfig, i18n: I18N, utils: Utils });
+    }
     return `
       <section class="kpi-grid compact-kpi-grid">
         <article class="kpi-card">
@@ -776,7 +782,7 @@
 
   function renderDynamicFieldsHTML(type, tab, draft = ensureDraftPractice()) {
     if (tab === 'start') {
-      return renderPracticeStarterPanel();
+      return renderPracticeStarterPanel(draft);
     }
     if (tab === 'attachments' && PracticeAttachments && typeof PracticeAttachments.renderPanelHTML === 'function') {
       return PracticeAttachments.renderPanelHTML({ state, draft, i18n: I18N, utils: Utils });

@@ -178,7 +178,7 @@ window.KedrixOnePracticeOperationalHub = (() => {
         <div class="practice-operational-hub-action-main">
           <div class="practice-operational-hub-action-source">${escape(utils, item.sourceLabel)}</div>
           <div class="practice-operational-hub-action-title">${escape(utils, item.title)}</div>
-          <div class="practice-operational-hub-action-detail">${escape(utils, item.detail)}</div>
+          ${item.detail && item.detail !== item.title ? `<div class="practice-operational-hub-action-detail">${escape(utils, item.detail)}</div>` : ''}
         </div>
         <div class="practice-operational-hub-action-side">${buttonHtml}</div>
       </article>`;
