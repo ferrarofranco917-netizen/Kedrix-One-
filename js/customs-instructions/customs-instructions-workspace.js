@@ -57,6 +57,8 @@ window.KedrixOneCustomsInstructionsWorkspace = (() => {
       customsSection: '',
       incoterm: '',
       relations: {},
+      linkedEntities: {},
+      inheritedRelations: {},
       goodsValue: '',
       goodsValueCurrency: 'EUR',
       customsValue: '',
