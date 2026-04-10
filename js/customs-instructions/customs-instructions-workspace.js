@@ -56,6 +56,7 @@ window.KedrixOneCustomsInstructionsWorkspace = (() => {
       customsOffice: '',
       customsSection: '',
       incoterm: '',
+      relations: {},
       goodsValue: '',
       goodsValueCurrency: 'EUR',
       customsValue: '',

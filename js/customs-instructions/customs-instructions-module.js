@@ -4,6 +4,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneCustomsInstructionsWorkspace || null;
+  const Relations = window.KedrixOneCustomsInstructionsRelations || null;
 
   const SEA_COLUMNS = ['containerCode', 'transportUnitType', 'seals', 'loadingDate', 'taric', 'description', 'packageCount', 'netWeight', 'grossWeight', 'volume'];
   const AIR_ROAD_COLUMNS = ['marksNumbers', 'description', 'packageCount', 'netWeight', 'grossWeight'];
@@ -47,7 +48,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   }
 
   function createEmptyDraft(state, overrides = {}) {
-    return {
+    const draft = {
       editingRecordId: '',
       practiceId: '',
       practiceReference: '',
@@ -80,6 +81,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       customsOffice: '',
       customsSection: '',
       incoterm: '',
+      relations: {},
       goodsValue: '',
       goodsValueCurrency: 'EUR',
       customsValue: '',
@@ -97,9 +99,13 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       linkedAttachmentCount: 0,
       lineColumns: [],
       lineItems: [],
-      sourcePracticeSnapshot: {},
-      ...overrides
+      sourcePracticeSnapshot: {}
     };
+    const nextDraft = { ...draft, ...overrides };
+    if (Relations && typeof Relations.ensureDraftRelations === 'function') {
+      Relations.ensureDraftRelations(nextDraft, state?.companyConfig || null);
+    }
+    return nextDraft;
   }
 
   function modeLabel(mode, i18n) {
@@ -270,9 +276,13 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   }
 
   function cloneRecord(record) {
-    return Workspace && typeof Workspace.cloneDraft === 'function'
+    const next = Workspace && typeof Workspace.cloneDraft === 'function'
       ? Workspace.cloneDraft(record)
       : JSON.parse(JSON.stringify(record || {}));
+    if (Relations && typeof Relations.ensureDraftRelations === 'function') {
+      Relations.ensureDraftRelations(next);
+    }
+    return next;
   }
 
   function nextRecordId(state) {
@@ -584,7 +594,25 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     return `<div class="tag-grid customs-instructions-summary-pills">${items.map(([label, value]) => `<div class="stack-item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value)}</span></div>`).join('')}</div>`;
   }
 
-  function renderGeneralTab(draft, i18n) {
+  function renderRelationalField(draft, i18n, fieldKey, label, fieldName, state) {
+    const options = Relations && typeof Relations.listOptions === 'function'
+      ? Relations.listOptions(fieldKey, draft, state?.companyConfig || null)
+      : [];
+    const inputId = `customs-rel-${fieldName}`;
+    const listId = `${inputId}-list`;
+    const meta = Relations && typeof Relations.relationMeta === 'function'
+      ? Relations.relationMeta(draft, fieldKey)
+      : null;
+    const metaBadge = meta?.kind === 'manual'
+      ? (i18n?.t('ui.fieldRelationManual', 'Valore manuale') || 'Valore manuale')
+      : (i18n?.t('ui.customsInstructionsControlledValue', 'Valore controllato') || 'Valore controllato');
+    const metaDetail = meta?.kind === 'manual'
+      ? (i18n?.t('ui.customsInstructionsManualOverrideHint', 'Override manuale attivo') || 'Override manuale attivo')
+      : (i18n?.t('ui.customsInstructionsControlledValueHint', 'Selezione da directory/profilo') || 'Selezione da directory/profilo');
+    return `<div class="field"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(label)}</label><input id="${U.escapeHtml(inputId)}" type="text" value="${U.escapeHtml(draft?.[fieldName] || '')}" data-customs-rel-field="${U.escapeHtml(fieldKey)}" list="${U.escapeHtml(listId)}" autocomplete="off"><datalist id="${U.escapeHtml(listId)}">${options.map((entry) => `<option value="${U.escapeHtml(entry.value)}">${U.escapeHtml(entry.displayValue || entry.label || entry.value)}</option>`).join('')}</datalist>${meta ? `<div class="field-relation-meta"><div class="field-relation-row"><span class="field-relation-pill ${U.escapeHtml(meta.tone)}">${U.escapeHtml(metaBadge)}</span><span class="field-relation-text">${U.escapeHtml(metaDetail)}</span></div></div>` : ''}</div>`;
+  }
+
+  function renderGeneralTab(draft, i18n, state) {
     const currencies = ['EUR', 'USD', 'GBP', 'CHF', 'CNY'];
     const mode = String(draft.mode || '').trim();
     const isSea = mode === 'sea';
@@ -604,13 +632,13 @@ window.KedrixOneCustomsInstructionsModule = (() => {
         ${renderField(draft.originNodeLabel || i18n?.t('ui.origin', 'Origine'), 'originNode', draft.originNode)}
         ${renderField(draft.destinationNodeLabel || i18n?.t('ui.destination', 'Destinazione'), 'destinationNode', draft.destinationNode)}
         ${renderField(draft.carrierReferenceLabel || i18n?.t('ui.customsInstructionsCarrierReference', 'Riferimento vettore'), 'carrierReference', draft.carrierReference)}
-        ${renderField(i18n?.t('ui.company', 'Compagnia'), 'carrierCompany', draft.carrierCompany)}
+        ${renderRelationalField(draft, i18n, 'carrierCompany', i18n?.t('ui.company', 'Compagnia'), 'carrierCompany', state)}
         ${renderField(i18n?.t('ui.booking', 'Booking'), 'booking', draft.booking)}
         ${renderField(i18n?.t('ui.customsInstructionsPolicyReference', 'Polizza / BL / AWB'), 'policyReference', draft.policyReference)}
         ${renderField(i18n?.t('ui.customsInstructionsDtd', 'DTD'), 'dtd', draft.dtd, { type: 'date' })}
-        ${renderField(i18n?.t('ui.customsInstructionsCustomsOffice', 'Dogana / Sezione'), 'customsOffice', draft.customsOffice)}
+        ${renderRelationalField(draft, i18n, 'customsOffice', i18n?.t('ui.customsInstructionsCustomsOffice', 'Dogana / Sezione'), 'customsOffice', state)}
         ${renderField(i18n?.t('ui.customsInstructionsCustomsSection', 'Sezione doganale'), 'customsSection', draft.customsSection)}
-        ${renderField(i18n?.t('ui.incoterm', 'Incoterm'), 'incoterm', draft.incoterm)}
+        ${renderRelationalField(draft, i18n, 'incoterm', i18n?.t('ui.incoterm', 'Incoterm'), 'incoterm', state)}
         <div class="field"><label>${U.escapeHtml(i18n?.t('ui.customsInstructionsGoodsValue', 'Valore merce'))}</label><div class="customs-instructions-currency-row"><input type="text" value="${U.escapeHtml(draft.goodsValue || '')}" data-customs-field="goodsValue"><select data-customs-field="goodsValueCurrency">${currencies.map((currency) => `<option value="${U.escapeHtml(currency)}"${currency === String(draft.goodsValueCurrency || 'EUR') ? ' selected' : ''}>${U.escapeHtml(currency)}</option>`).join('')}</select></div></div>
         <div class="field"><label>${U.escapeHtml(i18n?.t('ui.customsInstructionsCustomsValue', 'Valore fiscale'))}</label><div class="customs-instructions-currency-row"><input type="text" value="${U.escapeHtml(draft.customsValue || '')}" data-customs-field="customsValue"><select data-customs-field="customsValueCurrency">${currencies.map((currency) => `<option value="${U.escapeHtml(currency)}"${currency === String(draft.customsValueCurrency || 'EUR') ? ' selected' : ''}>${U.escapeHtml(currency)}</option>`).join('')}</select></div></div>
         <div class="field"><label>${U.escapeHtml(i18n?.t('ui.customsInstructionsFreightAmount', 'Nolo bolla'))}</label><div class="customs-instructions-currency-row"><input type="text" value="${U.escapeHtml(draft.freightAmount || '')}" data-customs-field="freightAmount"><select data-customs-field="freightCurrency">${currencies.map((currency) => `<option value="${U.escapeHtml(currency)}"${currency === String(draft.freightCurrency || 'EUR') ? ' selected' : ''}>${U.escapeHtml(currency)}</option>`).join('')}</select></div></div>
@@ -713,6 +741,9 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       return `<section class="panel"><div class="empty-text">${U.escapeHtml(i18n?.t('ui.customsInstructionsNoMask', 'Nessuna maschera aperta. Apri una nuova istruzione partendo da una pratica madre.'))}</div></section>`;
     }
     const draft = session.draft || createEmptyDraft(state);
+    if (Relations && typeof Relations.ensureDraftRelations === 'function') {
+      Relations.ensureDraftRelations(draft, state?.companyConfig || null);
+    }
     const activeTab = String(session?.uiState?.tab || 'general').trim() || 'general';
     return `
       <section class="panel customs-instructions-editor" data-customs-editor-anchor>
@@ -731,7 +762,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
           <span class="tag-pill">${U.escapeHtml(directionLabel(draft.direction, i18n))}</span>
           <span class="tag-pill muted">${U.escapeHtml(draft.practiceReference || '—')}</span>
         </div>
-        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : renderGeneralTab(draft, i18n)}
+        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : renderGeneralTab(draft, i18n, state)}
         <div class="action-row customs-instructions-actions-row">
           <button class="btn" type="button" data-customs-save>${U.escapeHtml(i18n?.t('ui.save', 'Salva'))}</button>
           <button class="btn secondary" type="button" data-customs-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
@@ -752,6 +783,9 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   function normalizeDraftForSave(draft) {
     const nextDraft = cloneRecord(draft || {});
+    if (Relations && typeof Relations.ensureDraftRelations === 'function') {
+      Relations.ensureDraftRelations(nextDraft);
+    }
     nextDraft.status = 'saved';
     return nextDraft;
   }
@@ -762,6 +796,20 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     const fieldName = String(target?.dataset?.customsField || '').trim();
     if (!fieldName) return;
     session.draft[fieldName] = target?.value ?? '';
+    if (Relations && typeof Relations.ensureDraftRelations === 'function') {
+      Relations.ensureDraftRelations(session.draft, state?.companyConfig || null);
+    }
+    markDirty(state, session.id);
+  }
+
+  function syncRelationalField(state, target) {
+    const session = activeSession(state);
+    if (!session) return;
+    const fieldKey = String(target?.dataset?.customsRelField || '').trim();
+    if (!fieldKey) return;
+    if (Relations && typeof Relations.applyFieldValue === 'function') {
+      Relations.applyFieldValue(session.draft, fieldKey, target?.value ?? '', state?.companyConfig || null);
+    }
     markDirty(state, session.id);
   }
 
@@ -949,6 +997,15 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       field.addEventListener(eventName, () => {
         syncActiveField(root, state, field);
         helpers.save?.();
+      });
+    });
+
+    root.querySelectorAll('[data-customs-rel-field]').forEach((field) => {
+      ['input', 'change', 'blur'].forEach((eventName) => {
+        field.addEventListener(eventName, () => {
+          syncRelationalField(state, field);
+          helpers.save?.();
+        });
       });
     });
 
