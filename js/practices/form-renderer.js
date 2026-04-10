@@ -90,7 +90,8 @@ window.KedrixOnePracticeFormRenderer = (() => {
     const labelHtml = fieldActionsHtml
       ? `<div class="field-label-row"><label for="dyn_${field.name}">${label}</label><div class="field-label-actions">${fieldActionsHtml}</div></div>`
       : `<label for="dyn_${field.name}">${label}</label>`;
-    const wrapClass = `field${field.full ? ' full' : ''}`;
+    const incotermCompactClass = field.name === 'incoterm' ? ' practice-incoterm-compact' : '';
+    const wrapClass = `field${field.full ? ' full' : ''}${incotermCompactClass}`;
     const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const fieldOptions = PracticeSchemas.getFieldOptions(type, field, companyConfig);
     const fieldOptionEntries = (typeof PracticeSchemas.getFieldOptionEntries === 'function'
@@ -168,6 +169,48 @@ window.KedrixOnePracticeFormRenderer = (() => {
     return `<div ${wrapAttrs}>${labelHtml}<input id="dyn_${field.name}" name="${field.name}" value="${Utils.escapeHtml(currentValue || '')}" type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" ${field.type === 'number' ? 'step="0.01" min="0"' : ''} ${datalistId ? `list="${datalistId}"` : ''} autocomplete="off" />${datalistHtml}${hintHtml}${relationMetaHtml}</div>`;
   }
 
+  function renderCurrencyPairFieldHTML(type, tab, draft, companyConfig, state, amountField, currencyField) {
+    const amountLabel = `${Utils.escapeHtml(I18N.t(amountField.labelKey, amountField.name))}${amountField.required ? ' <span class="required-mark">*</span>' : ''}`;
+    const currencyOptions = PracticeSchemas.getFieldOptions(type, currencyField, companyConfig);
+    const currencyValue = String(draft.dynamicData?.[currencyField.name] || '');
+    const amountValue = String(draft.dynamicData?.[amountField.name] || '');
+    const amountWrapAttrs = `class="field practice-economic-pair" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const currencyWrapAttrs = `class="field practice-economic-pair-currency-wrap" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const currencyLabel = Utils.escapeHtml(I18N.t(currencyField.labelKey, currencyField.name));
+    const amountRelationMetaHtml = PracticeFieldRelations && typeof PracticeFieldRelations.renderFieldRelationMeta === 'function'
+      ? PracticeFieldRelations.renderFieldRelationMeta({ state, type, field: amountField, draft, companyConfig, i18n: I18N, utils: Utils })
+      : '';
+    const currencyRelationMetaHtml = PracticeFieldRelations && typeof PracticeFieldRelations.renderFieldRelationMeta === 'function'
+      ? PracticeFieldRelations.renderFieldRelationMeta({ state, type, field: currencyField, draft, companyConfig, i18n: I18N, utils: Utils })
+      : '';
+    return `<div ${amountWrapAttrs}><label for="dyn_${amountField.name}">${amountLabel}</label><div class="customs-instructions-currency-row practice-economic-pair-row"><input id="dyn_${amountField.name}" name="${amountField.name}" value="${Utils.escapeHtml(amountValue)}" type="number" step="0.01" min="0" autocomplete="off" /><div ${currencyWrapAttrs}><select id="dyn_${currencyField.name}" name="${currencyField.name}" aria-label="${currencyLabel}"><option value="">—</option>${currencyOptions.map((option) => {
+      const value = String(option || '');
+      return `<option value="${Utils.escapeHtml(value)}" ${currencyValue === value ? 'selected' : ''}>${Utils.escapeHtml(value)}</option>`;
+    }).join('')}</select>${currencyRelationMetaHtml}</div></div>${amountRelationMetaHtml}</div>`;
+  }
+
+  function renderSectionFieldsHTML(type, tab, draft, companyConfig, state, fields = []) {
+    const pairByAmountField = {
+      invoiceAmount: 'invoiceCurrency',
+      freightAmount: 'freightCurrency',
+      vesselExchangeRate: 'vesselExchangeCurrency'
+    };
+    const consumedFields = new Set();
+    return fields.map((field) => {
+      if (consumedFields.has(field.name)) return '';
+      const currencyFieldName = pairByAmountField[field.name];
+      if (!currencyFieldName) {
+        return renderFieldHTML(type, tab, draft, companyConfig, state, field);
+      }
+      const currencyField = fields.find((entry) => entry && entry.name === currencyFieldName);
+      if (!currencyField) {
+        return renderFieldHTML(type, tab, draft, companyConfig, state, field);
+      }
+      consumedFields.add(currencyFieldName);
+      return renderCurrencyPairFieldHTML(type, tab, draft, companyConfig, state, field, currencyField);
+    }).join('');
+  }
+
   function renderDynamicFieldsHTML(type, tab, draft, companyConfig, state) {
     const schema = PracticeSchemas.getSchema(type);
     if (!schema) {
@@ -186,7 +229,7 @@ window.KedrixOnePracticeFormRenderer = (() => {
       const headerHtml = meta && (meta.title || meta.description)
         ? `<div class="dynamic-field-section-head">${meta.title ? `<h4 class="dynamic-field-section-title">${Utils.escapeHtml(meta.title)}</h4>` : ''}${meta.description ? `<p class="dynamic-field-section-subtitle">${Utils.escapeHtml(meta.description)}</p>` : ''}</div>`
         : '';
-      return `<section class="dynamic-field-section" data-section-key="${Utils.escapeHtml(section.key)}">${headerHtml}<div class="dynamic-section-grid">${section.fields.map((field) => renderFieldHTML(type, tab, draft, companyConfig, state, field)).join('')}</div></section>`;
+      return `<section class="dynamic-field-section" data-section-key="${Utils.escapeHtml(section.key)}">${headerHtml}<div class="dynamic-section-grid">${renderSectionFieldsHTML(type, tab, draft, companyConfig, state, section.fields)}</div></section>`;
     }).join('');
 
     return sectionsHtml;
