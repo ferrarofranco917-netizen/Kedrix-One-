@@ -1226,6 +1226,21 @@ select option[value=""] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
+.practice-economic-pair {
+  align-content: start;
+}
+.practice-economic-pair-row {
+  align-items: end;
+}
+.practice-economic-pair-currency-wrap {
+  gap: 6px;
+}
+.practice-economic-pair-currency-wrap select {
+  min-width: 0;
+}
+.practice-incoterm-compact {
+  max-width: 220px;
+}
 .derived-chip {
   min-height: 44px;
   display: inline-flex;
@@ -1292,6 +1307,10 @@ select option[value=""] {
   .dynamic-section-grid,
   .practice-overview-grid {
     grid-template-columns: 1fr;
+  }
+
+  .practice-incoterm-compact {
+    max-width: none;
   }
 
   .practice-overview-head,
