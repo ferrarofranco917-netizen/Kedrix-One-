@@ -1174,7 +1174,7 @@ function practiceList(state, filtered = [], insights = {}) {
                 </td>
                 <td>
                   <div class="practice-list-status-stack">
-                    <span class="badge ${practice.status === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(practice.status || '—')}</span>
+                    <span class="badge ${canonicalPracticeStatus(practice.status) === 'In attesa documenti' ? 'warning' : 'info'}">${U.escapeHtml(localizedPracticeStatusLabel(practice.status))}</span>
                     <span class="badge ${draftTone}">${U.escapeHtml(draftLabel)}</span>
                   </div>
                 </td>

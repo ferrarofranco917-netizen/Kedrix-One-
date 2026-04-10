@@ -12,6 +12,7 @@ window.KedrixOnePracticeListPartyGaps = (() => {
       .replace(/'/g, '&#39;')
   };
   const I18N = window.KedrixOneI18N || { t: (_path, fallback = '') => fallback };
+  const PracticeStatusI18n = window.KedrixOnePracticeStatusI18n || null;
 
   function escapeHtml(value) {
     return Utils.escapeHtml ? Utils.escapeHtml(value) : String(value || '');
@@ -30,6 +31,44 @@ window.KedrixOnePracticeListPartyGaps = (() => {
       practiceType: String(values.practiceType || practice?.practiceType || '').trim(),
       status: String(values.status || practice?.status || '').trim()
     };
+  }
+
+  function normalizeStatusKey(value) {
+    return Utils.normalize ? Utils.normalize(value) : String(value || '').trim().toUpperCase();
+  }
+
+  function canonicalPracticeStatus(value) {
+    const raw = String(value || '').trim();
+    if (!raw || raw === 'all') return raw;
+    if (PracticeStatusI18n && typeof PracticeStatusI18n.toCanonicalStatus === 'function') {
+      return PracticeStatusI18n.toCanonicalStatus(raw);
+    }
+    const normalized = normalizeStatusKey(raw);
+    if (normalized === 'WAITING FOR DOCUMENTS' || normalized === 'IN ATTESA DOCUMENTI') return 'In attesa documenti';
+    if (normalized === 'OPERATIONAL' || normalized === 'OPERATIVA') return 'Operativa';
+    if (normalized === 'CUSTOMS CLEARANCE' || normalized === 'SDOGANAMENTO') return 'Sdoganamento';
+    if (normalized === 'CLOSED' || normalized === 'CHIUSA') return 'Chiusa';
+    return raw;
+  }
+
+  function localizedPracticeStatusLabel(value) {
+    if (PracticeStatusI18n && typeof PracticeStatusI18n.localizedStatusLabel === 'function') {
+      return PracticeStatusI18n.localizedStatusLabel(value, I18N);
+    }
+    const canonical = canonicalPracticeStatus(value);
+    const english = I18N && typeof I18N.getLanguage === 'function' && I18N.getLanguage() === 'en';
+    switch (canonical) {
+      case 'In attesa documenti':
+        return I18N.t('ui.practiceListGapWaitingDocs', english ? 'Waiting for documents' : 'In attesa documenti');
+      case 'Operativa':
+        return english ? 'Operational' : 'Operativa';
+      case 'Sdoganamento':
+        return english ? 'Customs clearance' : 'Sdoganamento';
+      case 'Chiusa':
+        return english ? 'Closed' : 'Chiusa';
+      default:
+        return String(value || '').trim() || '—';
+    }
   }
 
   const MODES = {
@@ -94,7 +133,7 @@ window.KedrixOnePracticeListPartyGaps = (() => {
       <div class="stack-item stack-item--analytics">
         <div class="stack-item-head">
           <strong>${escapeHtml(item.reference)}</strong>
-          <span class="badge info">${escapeHtml(item.status)}</span>
+          <span class="badge info">${escapeHtml(localizedPracticeStatusLabel(item.status))}</span>
         </div>
         <div class="stack-item-meta">${escapeHtml(item.client)} · ${escapeHtml(item.practiceType)}</div>
       </div>
