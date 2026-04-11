@@ -123,9 +123,156 @@
   let runtimePracticeSearchIndex = PracticeSearchUI && typeof PracticeSearchUI.buildIndex === 'function'
     ? PracticeSearchUI.buildIndex(state.practices)
     : (SearchIndex && typeof SearchIndex.buildIndex === 'function' ? SearchIndex.buildIndex(state.practices) : []);
+  let practiceQuickAddOverlay = null;
+  let practiceQuickAddOverlayKeydownHandler = null;
 
   function save() {
     Storage.save(state);
+  }
+
+  function removePracticeQuickAddOverlayRoot() {
+    const existing = document.getElementById('practiceQuickAddOverlayRoot');
+    if (existing) existing.remove();
+    if (practiceQuickAddOverlayKeydownHandler) {
+      window.removeEventListener('keydown', practiceQuickAddOverlayKeydownHandler);
+      practiceQuickAddOverlayKeydownHandler = null;
+    }
+    if (!document.querySelector('.app-dialog-root:not([hidden])')) {
+      document.body.classList.remove('dialog-open');
+    }
+  }
+
+  function closePracticeQuickAddOverlay(options = {}) {
+    const restoreScroll = options.restoreScroll !== false;
+    const scrollY = practiceQuickAddOverlay && Number.isFinite(practiceQuickAddOverlay.scrollY)
+      ? practiceQuickAddOverlay.scrollY
+      : (window.scrollY || window.pageYOffset || 0);
+    practiceQuickAddOverlay = null;
+    removePracticeQuickAddOverlayRoot();
+    if (restoreScroll) {
+      window.requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+      });
+    }
+  }
+
+  function closePracticeQuickAddOverlayAndReset() {
+    const MasterDataQuickAdd = getMasterDataQuickAdd();
+    if (MasterDataQuickAdd && typeof MasterDataQuickAdd.clearQuickAdd === 'function') {
+      MasterDataQuickAdd.clearQuickAdd(state);
+    }
+    save();
+    closePracticeQuickAddOverlay();
+    render();
+  }
+
+  function openPracticeQuickAddOverlay(context = {}) {
+    practiceQuickAddOverlay = {
+      openedAt: Date.now(),
+      sourceRoute: String(context.sourceRoute || currentRoute()).trim() || currentRoute(),
+      scrollY: window.scrollY || window.pageYOffset || 0
+    };
+    save();
+    render();
+    window.requestAnimationFrame(() => {
+      const autofocusTarget = document.querySelector('#practiceQuickAddOverlayRoot #masterDataValue, #practiceQuickAddOverlayRoot #masterDataSearchInput');
+      if (autofocusTarget && typeof autofocusTarget.focus === 'function') {
+        autofocusTarget.focus({ preventScroll: true });
+      }
+      window.scrollTo(0, practiceQuickAddOverlay ? practiceQuickAddOverlay.scrollY : 0);
+    });
+  }
+
+  function renderPracticeQuickAddOverlay() {
+    const MasterDataQuickAdd = getMasterDataQuickAdd();
+    const quickAddContext = state.masterDataModule && state.masterDataModule.quickAddContext ? state.masterDataModule.quickAddContext : null;
+    const canRender = Boolean(practiceQuickAddOverlay && quickAddContext && currentRoute() === 'practices/workspace' && MasterDataQuickAdd && typeof MasterDataQuickAdd.renderPanel === 'function');
+    removePracticeQuickAddOverlayRoot();
+    if (!canRender) return;
+
+    const overlayRoot = document.createElement('section');
+    overlayRoot.id = 'practiceQuickAddOverlayRoot';
+    overlayRoot.className = 'practice-quick-add-root';
+    overlayRoot.innerHTML = `
+      <div class="practice-quick-add-backdrop" data-practice-quick-add-close="backdrop"></div>
+      <div class="practice-quick-add-dialog" role="dialog" aria-modal="true" aria-label="Quick add anagrafica">
+        <div class="practice-quick-add-toolbar">
+          <div class="practice-quick-add-kicker">Kedrix One · Quick add</div>
+          <button type="button" class="btn secondary small-btn" data-practice-quick-add-close="toolbar">Chiudi</button>
+        </div>
+        <div class="practice-quick-add-content"></div>
+      </div>`;
+    document.body.appendChild(overlayRoot);
+    document.body.classList.add('dialog-open');
+
+    const content = overlayRoot.querySelector('.practice-quick-add-content');
+    const module = Modules.getModule('master-data');
+    content.innerHTML = MasterDataQuickAdd.renderPanel({ state, module, t: I18N });
+
+    const overlayNavigate = (route, options = {}) => {
+      const targetRoute = safeRoute(route || (practiceQuickAddOverlay && practiceQuickAddOverlay.sourceRoute) || currentRoute());
+      const sourceRoute = practiceQuickAddOverlay && practiceQuickAddOverlay.sourceRoute ? practiceQuickAddOverlay.sourceRoute : currentRoute();
+      const scrollY = practiceQuickAddOverlay && Number.isFinite(practiceQuickAddOverlay.scrollY)
+        ? practiceQuickAddOverlay.scrollY
+        : (window.scrollY || window.pageYOffset || 0);
+      practiceQuickAddOverlay = null;
+      removePracticeQuickAddOverlayRoot();
+      if (targetRoute !== sourceRoute) {
+        navigate(targetRoute, options);
+        return;
+      }
+      save();
+      render();
+      window.requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+      });
+    };
+
+    MasterDataQuickAdd.bind({
+      state,
+      root: content,
+      save,
+      render,
+      navigate: overlayNavigate,
+      toast,
+      buildCurrentPracticeReference,
+      restorePracticeContext: (context = {}) => {
+        const resolved = typeof context === 'object' && context !== null
+          ? context
+          : { returnTab: String(context || 'practice') };
+        const returnSessionId = String(resolved.returnSessionId || '').trim();
+        if (returnSessionId) {
+          switchPracticeDraftSession(returnSessionId);
+        }
+        state.practiceTab = String(resolved.returnTab || 'practice').trim() || 'practice';
+        setActivePracticeSessionTab(state.practiceTab);
+        const returnFocusField = String(resolved.returnFocusField || '').trim();
+        if (returnFocusField) {
+          state.pendingPracticeFieldFocus = {
+            fieldName: returnFocusField,
+            tab: String(resolved.returnFocusTab || state.practiceTab || 'practice').trim() || 'practice',
+            sessionId: returnSessionId || String(state.practiceWorkspace?.activeSessionId || '').trim()
+          };
+        } else {
+          state.pendingPracticeFieldFocus = null;
+        }
+      },
+      markPracticeDirty: (isDirty = true) => markActivePracticeSessionDirty(isDirty),
+      i18n: I18N
+    });
+
+    overlayRoot.querySelectorAll('[data-practice-quick-add-close]').forEach((node) => {
+      node.addEventListener('click', () => {
+        closePracticeQuickAddOverlayAndReset();
+      });
+    });
+
+    practiceQuickAddOverlayKeydownHandler = (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closePracticeQuickAddOverlayAndReset();
+    };
+    window.addEventListener('keydown', practiceQuickAddOverlayKeydownHandler);
   }
 
   function resolveDefaultPracticeTab(draft = null, fallback = '') {
@@ -1019,6 +1166,10 @@
   function navigate(route, options = {}) {
     const normalized = safeRoute(route);
     const changed = normalized !== state.currentRoute;
+    if (practiceQuickAddOverlay && normalized !== 'practices/workspace') {
+      practiceQuickAddOverlay = null;
+      removePracticeQuickAddOverlayRoot();
+    }
 
     if (normalized !== 'practices' && normalized !== 'practices/workspace') {
       state.pendingPracticeFieldFocus = null;
@@ -1038,7 +1189,7 @@
     if (options.syncHash !== false) syncHash(Boolean(options.replaceHash));
     if (changed) {
       main.focus({ preventScroll: true });
-      if (!options.skipScrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
@@ -2005,6 +2156,7 @@ function renderDocumentPreviewPanel() {
     updateStaticLabels();
     renderSidebar();
     renderMain();
+    renderPracticeQuickAddOverlay();
   }
 
   function rerenderPreservingInput(inputId, selectionStart = null, selectionEnd = null) {
@@ -2310,8 +2462,12 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
         toast(I18N.t('ui.masterDataQuickAddUnavailable', 'Quick add non disponibile per questo campo.'), 'warning');
         return;
       }
+      if (currentRoute() === 'practices/workspace') {
+        openPracticeQuickAddOverlay({ sourceRoute: currentRoute() });
+        return;
+      }
       save();
-      navigate('master-data', { preserveQuickAddContext: true, skipScrollTop: true });
+      navigate('master-data', { preserveQuickAddContext: true });
       return;
     }
 
@@ -2380,14 +2536,14 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     const linkedSummaryToggle = event.target.closest('[data-linked-summary-action="toggle"]');
     if (linkedSummaryToggle) {
       const summaryCard = linkedSummaryToggle.closest('.linked-entity-summary-card');
-      const summaryBody = summaryCard ? summaryCard.querySelector('.linked-entity-summary-body') : null;
-      if (!summaryCard || !summaryBody) return;
-      const isHidden = summaryBody.hasAttribute('hidden');
+      const details = summaryCard ? summaryCard.querySelector('.linked-entity-summary-details') : null;
+      if (!summaryCard || !details) return;
+      const isHidden = details.hasAttribute('hidden');
       if (isHidden) {
-        summaryBody.removeAttribute('hidden');
+        details.removeAttribute('hidden');
         summaryCard.dataset.expanded = 'true';
       } else {
-        summaryBody.setAttribute('hidden', 'hidden');
+        details.setAttribute('hidden', 'hidden');
         delete summaryCard.dataset.expanded;
       }
       const expandLabel = String(linkedSummaryToggle.dataset.expandLabel || I18N.t('ui.linkedEntitySummaryDetailAction', 'Dettaglio')).trim();
@@ -2454,8 +2610,12 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
         toast(I18N.t('ui.openLinkedRecordUnavailable', 'Nessuna anagrafica collegata da aprire per questo campo.'), 'warning');
         return;
       }
+      if (currentRoute() === 'practices/workspace') {
+        openPracticeQuickAddOverlay({ sourceRoute: currentRoute() });
+        return;
+      }
       save();
-      navigate('master-data', { preserveQuickAddContext: true, skipScrollTop: true });
+      navigate('master-data', { preserveQuickAddContext: true });
       return;
     }
 

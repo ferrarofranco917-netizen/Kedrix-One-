@@ -1,11 +1,10 @@
-// AQ2R33 cache neutralization for audit phase
-const STATIC_CACHE = 'kedrix-one-aq34-layout-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-aq34-layout-runtime-v1';
+// AQ35 practice quick add overlay
+const STATIC_CACHE = 'kedrix-one-stepaq35-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq35-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',
   './style.css',
-  './style-density.css',
   './manifest.json',
   './favicon.ico',
   './brand/kedrix-one-mark.svg'
