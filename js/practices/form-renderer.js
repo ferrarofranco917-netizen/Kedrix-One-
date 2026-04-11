@@ -7,10 +7,6 @@ window.KedrixOnePracticeFormRenderer = (() => {
   const PracticeFormLayout = window.KedrixOnePracticeFormLayout;
   const PracticeOverview = window.KedrixOnePracticeOverview;
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
-  const Density = window.KedrixOneDensitySystem || {
-    resolve: (value, options = {}) => options.full ? 'full' : String(value || options.fallback || 'medium').trim().toLowerCase(),
-    append: (base, value, options = {}) => [String(base || '').trim(), `density-${options.full ? 'full' : (String(value || options.fallback || 'medium').trim().toLowerCase() || 'medium')}`].filter(Boolean).join(' ')
-  };
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -66,67 +62,6 @@ window.KedrixOnePracticeFormRenderer = (() => {
     return { value, label, description, displayValue, aliases };
   }
 
-  function resolveFieldFullWidth(field = {}) {
-    const name = String(field?.name || '').trim();
-    if (!name) return Boolean(field?.full || field?.type === 'textarea');
-    if (name === 'goodsDescription') return false;
-    return Boolean(field?.full || field?.type === 'textarea');
-  }
-
-  function resolveFieldDensity(field = {}) {
-    if (!field || typeof field !== 'object') return 'medium';
-    const isFullWidth = resolveFieldFullWidth(field);
-    if (field.density) return Density.resolve(field.density, { full: isFullWidth, fallback: 'medium' });
-    const sectionKey = String(field.sectionKey || '').trim();
-    const name = String(field.name || '').toLowerCase();
-    if (isFullWidth) return name === 'goodsdescription' ? 'wide' : 'full';
-    if (field.type === 'date' || field.type === 'number' || field.type === 'select') return 'compact';
-    if (field.type === 'checkbox-group') return 'full';
-    if (sectionKey === 'goods') {
-      if (name === 'goodsdescription') return 'wide';
-      if (name === 'articlecode' || name === 'taric' || name === 'packagetype' || name === 'packagecount') return 'compact';
-    }
-    if (sectionKey === 'transportUnits') {
-      if (name === 'containercode') return 'wide';
-      if (name === 'transportunittype' || name === 'booking') return 'compact';
-    }
-    if (sectionKey === 'measures') {
-      if (name === 'grossweight' || name === 'netweight' || name === 'cbm' || name === 'linearmeters' || name === 'teu' || name === 'vgm') return 'compact';
-    }
-    if (
-      name.includes('address') || name.includes('description') || name.includes('declaration') || name.includes('instruction') || name.includes('note') || name.includes('text')
-    ) return 'wide';
-    if (
-      name.includes('client')
-      || name.includes('importer')
-      || name.includes('exporter')
-      || name.includes('shipper')
-      || name.includes('consignee')
-      || name.includes('sender')
-      || name.includes('receiver')
-      || name.includes('carrier')
-      || name.includes('company')
-      || name.includes('vessel')
-      || name.includes('origin')
-      || name.includes('destination')
-      || name.includes('airport')
-      || name.includes('port')
-      || name.includes('customs')
-      || name.includes('depot')
-      || name.includes('warehouse')
-      || name.includes('operator')
-      || name.includes('transport')
-      || name.includes('section')
-      || name.includes('reference')
-      || name.includes('booking')
-      || name.includes('policy')
-      || name.includes('container')
-      || name.includes('taric')
-      || name.includes('incoterm')
-    ) return 'compact';
-    return 'medium';
-  }
-
   function groupFieldsBySection(tab, fields = []) {
     const sections = [];
     const sectionMap = new Map();
@@ -156,9 +91,7 @@ window.KedrixOnePracticeFormRenderer = (() => {
       ? `<div class="field-label-row"><label for="dyn_${field.name}">${label}</label><div class="field-label-actions">${fieldActionsHtml}</div></div>`
       : `<label for="dyn_${field.name}">${label}</label>`;
     const incotermCompactClass = field.name === 'incoterm' ? ' practice-incoterm-compact' : '';
-    const density = resolveFieldDensity(field);
-    const isFullWidth = resolveFieldFullWidth(field);
-    const wrapClass = Density.append(`field${isFullWidth ? ' full' : ''}${incotermCompactClass}`, density, { full: isFullWidth, fallback: 'medium' });
+    const wrapClass = `field${field.full ? ' full' : ''}${incotermCompactClass}`;
     const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const fieldOptions = PracticeSchemas.getFieldOptions(type, field, companyConfig);
     const fieldOptionEntries = (typeof PracticeSchemas.getFieldOptionEntries === 'function'
@@ -241,10 +174,8 @@ window.KedrixOnePracticeFormRenderer = (() => {
     const currencyOptions = PracticeSchemas.getFieldOptions(type, currencyField, companyConfig);
     const currencyValue = String(draft.dynamicData?.[currencyField.name] || '');
     const amountValue = String(draft.dynamicData?.[amountField.name] || '');
-    const amountDensity = Density.resolve(amountField.density || 'compact', { fallback: 'compact' });
-    const currencyDensity = Density.resolve(currencyField.density || 'compact', { fallback: 'compact' });
-    const amountWrapAttrs = `class="${Density.append('field practice-economic-pair', amountDensity)}" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
-    const currencyWrapAttrs = `class="${Density.append('field practice-economic-pair-currency-wrap', currencyDensity)}" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const amountWrapAttrs = `class="field practice-economic-pair" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const currencyWrapAttrs = `class="field practice-economic-pair-currency-wrap" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const currencyLabel = Utils.escapeHtml(I18N.t(currencyField.labelKey, currencyField.name));
     const amountRelationMetaHtml = PracticeFieldRelations && typeof PracticeFieldRelations.renderFieldRelationMeta === 'function'
       ? PracticeFieldRelations.renderFieldRelationMeta({ state, type, field: amountField, draft, companyConfig, i18n: I18N, utils: Utils })
@@ -298,8 +229,7 @@ window.KedrixOnePracticeFormRenderer = (() => {
       const headerHtml = meta && (meta.title || meta.description)
         ? `<div class="dynamic-field-section-head">${meta.title ? `<h4 class="dynamic-field-section-title">${Utils.escapeHtml(meta.title)}</h4>` : ''}${meta.description ? `<p class="dynamic-field-section-subtitle">${Utils.escapeHtml(meta.description)}</p>` : ''}</div>`
         : '';
-      const sectionClass = `dynamic-field-section section-${Utils.escapeHtml(section.key)}`;
-      return `<section class="${sectionClass}" data-section-key="${Utils.escapeHtml(section.key)}">${headerHtml}<div class="dynamic-section-grid">${renderSectionFieldsHTML(type, tab, draft, companyConfig, state, section.fields)}</div></section>`;
+      return `<section class="dynamic-field-section" data-practice-tab="${Utils.escapeHtml(tab)}" data-section-key="${Utils.escapeHtml(section.key)}">${headerHtml}<div class="dynamic-section-grid">${renderSectionFieldsHTML(type, tab, draft, companyConfig, state, section.fields)}</div></section>`;
     }).join('');
 
     return `<div class="practice-sections-layout practice-sections-layout--${Utils.escapeHtml(tab)}">${sectionsHtml}</div>`;

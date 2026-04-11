@@ -1,405 +1,209 @@
-:root {
-  --density-column-gap-compact: 8px;
-  --density-column-gap-medium: 10px;
-  --density-column-gap-wide: 12px;
-  --density-row-gap: 14px;
+/* Kedrix One AQ30 — workspace PC width optimization */
+
+#practiceForm > .practice-form-stack > .form-grid.three {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
-.practice-form-stack,
-.dynamic-field-section,
-.customs-line-card,
-.customs-lines-stack {
-  gap: 12px;
-}
-
-.dynamic-field-section {
-  padding: 12px;
-}
-
-.dynamic-field-section-head {
-  gap: 4px;
-}
-
-
-.form-grid.practice-identity-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: 10px;
-  row-gap: 14px;
-}
-
-.form-grid.practice-identity-grid > .field,
-.form-grid.practice-identity-grid > .field.density-compact,
-.form-grid.practice-identity-grid > .field.density-medium,
-.form-grid.practice-identity-grid > .field.density-wide,
-.form-grid.practice-identity-grid > .field.density-full,
-.form-grid.practice-identity-grid > .field.full {
-  grid-column: auto;
+#practiceForm > .practice-form-stack > .form-grid.three > .field {
+  min-width: 0;
+  grid-column: span 2;
 }
 
 .practice-sections-layout {
   display: grid;
-  grid-template-columns: repeat(24, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
   align-items: start;
 }
 
-.practice-sections-layout > .dynamic-field-section {
-  grid-column: 1 / -1;
+.practice-sections-layout--practice {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"],
-.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"],
-.practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"],
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalFlow"] {
-  grid-column: span 12;
-}
-
-.practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"],
-.practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"],
-.practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] {
-  grid-column: span 8;
-}
-
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid > .field {
-  grid-column: span 8;
-}
-
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field {
-  grid-column: span 6;
-}
-
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field.density-wide,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field.density-wide,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field.density-wide,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field.density-wide,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field.density-full,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field.density-full,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field.density-full,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field.density-full,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field.full,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field.full,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field.full,
-.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field.full {
   grid-column: 1 / -1;
 }
 
-.practice-sections-layout--detail .dynamic-field-section[data-section-key="goods"] .dynamic-section-grid > .field {
-  grid-column: span 4;
+.practice-sections-layout--detail {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.practice-sections-layout--detail .dynamic-field-section[data-section-key="goods"] .dynamic-section-grid > .field[data-field-wrap="goodsDescription"] {
-  grid-column: span 8;
-}
-
-.practice-sections-layout--detail .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid > .field[data-field-wrap="containerCode"] {
-  grid-column: span 12;
-}
-
-.practice-sections-layout--detail .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid > .field[data-field-wrap="transportUnitType"],
-.practice-sections-layout--detail .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid > .field[data-field-wrap="booking"] {
-  grid-column: span 6;
-}
-
-.practice-sections-layout--detail .dynamic-field-section[data-section-key="measures"] .dynamic-section-grid > .field {
-  grid-column: span 4;
-}
-
-.practice-sections-layout--detail .dynamic-field-section[data-section-key="checks"] .dynamic-section-grid > .field {
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"],
+.practice-sections-layout--notes > .dynamic-field-section {
   grid-column: 1 / -1;
 }
 
-.practice-identity-grid,
-.dynamic-section-grid,
-.customs-instructions-form-grid,
-.practice-list-filter-grid,
-.customs-line-grid {
-  display: grid;
-  grid-template-columns: repeat(24, minmax(0, 1fr));
+.practice-sections-layout .dynamic-field-section {
+  min-width: 0;
+}
+
+.practice-sections-layout .dynamic-section-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   align-items: start;
-  row-gap: var(--density-row-gap);
-  column-gap: var(--density-column-gap, var(--density-column-gap-medium));
 }
 
-.practice-identity-grid,
-.dynamic-section-grid,
-.customs-instructions-form-grid,
-.practice-list-filter-grid,
-.practice-list-filter-grid.compact-date-grid,
-.customs-line-grid {
-  --density-column-gap: var(--density-column-gap-compact);
-}
-
-.practice-identity-grid > .field,
-.dynamic-section-grid > .field,
-.customs-instructions-form-grid > .field,
-.practice-list-filter-grid > .field,
-.customs-line-grid > .field,
-.practice-list-toolbar-right > .field {
+.practice-sections-layout .field {
   min-width: 0;
 }
 
-.practice-identity-grid > .field,
-.dynamic-section-grid > .field,
-.customs-instructions-form-grid > .field,
-.practice-list-filter-grid > .field,
-.customs-line-grid > .field {
-  grid-column: span 4;
-}
-
-.practice-identity-grid > .field.density-compact,
-.dynamic-section-grid > .field.density-compact,
-.customs-instructions-form-grid > .field.density-compact,
-.practice-list-filter-grid > .field.density-compact,
-.customs-line-grid > .field.density-compact {
-  grid-column: span 3;
-}
-
-.practice-identity-grid > .field.density-medium,
-.dynamic-section-grid > .field.density-medium,
-.customs-instructions-form-grid > .field.density-medium,
-.practice-list-filter-grid > .field.density-medium,
-.customs-line-grid > .field.density-medium {
-  grid-column: span 4;
-}
-
-.practice-identity-grid > .field.density-wide,
-.dynamic-section-grid > .field.density-wide,
-.customs-instructions-form-grid > .field.density-wide,
-.practice-list-filter-grid > .field.density-wide,
-.customs-line-grid > .field.density-wide {
-  grid-column: span 6;
-}
-
-.practice-identity-grid > .field.density-full,
-.dynamic-section-grid > .field.density-full,
-.customs-instructions-form-grid > .field.density-full,
-.practice-list-filter-grid > .field.density-full,
-.customs-line-grid > .field.density-full,
-.practice-identity-grid > .field.full,
-.dynamic-section-grid > .field.full,
-.customs-instructions-form-grid > .field.full,
-.practice-list-filter-grid > .field.full,
-.customs-line-grid > .field.full {
-  grid-column: 1 / -1;
-}
-
-.compact-grid {
-  column-gap: var(--density-column-gap-compact);
-}
-
-.compact-kpi-grid,
-.compact-tag-grid,
-.compact-head {
-  column-gap: var(--density-column-gap-medium);
-}
-
-.compact-head {
-  margin-bottom: 10px;
-}
-
-.field.practice-incoterm-compact,
-.field.practice-incoterm-compact.density-compact {
-  max-width: 180px;
-}
-
-.practice-list-filter-grid.compact-date-grid > .field {
-  grid-column: span 3;
-}
-
-.practice-list-toolbar-right {
-  display: flex;
+.practice-sections-layout .field-label-row {
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: end;
+  row-gap: 6px;
 }
 
-.practice-list-toolbar-right > .field {
-  flex: 0 1 176px;
-  max-width: 188px;
+.practice-sections-layout .field-label-actions {
+  margin-left: auto;
 }
 
-.practice-list-toolbar-right > .field select {
+.practice-sections-layout .field-relation-meta,
+.practice-sections-layout .linked-entity-summary-card,
+.practice-sections-layout .derived-chip {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.practice-sections-layout .linked-entity-summary-card {
+  align-self: start;
+}
+
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"] .field {
+  grid-column: span 1;
+}
+
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid,
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid,
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalIdentity"] .dynamic-section-grid,
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="carrier"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="company"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="transporter"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="airline"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="vehicleType"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="plateDriver"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="vesselVoyage"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="terminal"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="terminalPickup"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="terminalDelivery"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="deliveryCity"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="arrivalDate"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="departureDate"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="originDest"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="pickupDate"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="deliveryDate"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="pickupPlace"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="deliveryPlace"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="portLoading"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="portDischarge"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="airportDeparture"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="airportDestination"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="originRef"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="destinationRef"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="unloadingDate"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="deposit"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="linkedTo"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalIdentity"] [data-field-wrap],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"] [data-field-wrap] {
+  grid-column: span 2;
+}
+
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] .dynamic-section-grid,
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid,
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"] .dynamic-section-grid,
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] .dynamic-section-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="articleCode"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="taric"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageType"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageCount"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="originDest"] {
+  grid-column: span 1;
+}
+
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="goodsDescription"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] .field.full[data-field-wrap="goodsDescription"] {
+  grid-column: span 2;
+}
+
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="containerCode"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="transportUnitType"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="booking"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="policyNumber"] {
+  grid-column: span 2;
+}
+
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"] [data-field-wrap] {
+  grid-column: span 1;
+}
+
+.practice-list-analytics-panel .module-card-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.practice-list-analytics-panel .module-card--analytics {
   min-width: 0;
 }
 
-.practice-economic-pair-row,
-.customs-instructions-currency-row {
-  column-gap: 8px;
-}
-
-.customs-instructions-currency-row {
-  grid-template-columns: minmax(0, 1fr) 92px;
-}
-
-.customs-instructions-summary-pills {
-  margin-bottom: 12px;
-}
-
-.customs-line-card {
-  padding: 12px;
-}
-
-
-@media (max-width: 1760px) {
-  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"],
-  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"],
-  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"],
-  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalFlow"] {
-    grid-column: 1 / -1;
-  }
-
-  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"],
-  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"],
-  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] {
-    grid-column: span 12;
-  }
-}
-
-@media (max-width: 1760px) {
-  .practice-identity-grid > .field,
-  .dynamic-section-grid > .field,
-  .customs-instructions-form-grid > .field,
-  .practice-list-filter-grid > .field,
-  .customs-line-grid > .field {
-    grid-column: span 6;
-  }
-
-  .practice-identity-grid > .field.density-compact,
-  .dynamic-section-grid > .field.density-compact,
-  .customs-instructions-form-grid > .field.density-compact,
-  .practice-list-filter-grid > .field.density-compact,
-  .customs-line-grid > .field.density-compact {
-    grid-column: span 4;
-  }
-
-  .practice-identity-grid > .field.density-wide,
-  .dynamic-section-grid > .field.density-wide,
-  .customs-instructions-form-grid > .field.density-wide,
-  .practice-list-filter-grid > .field.density-wide,
-  .customs-line-grid > .field.density-wide {
-    grid-column: span 8;
-  }
+.practice-list-analytics-panel .stack-item-head {
+  align-items: center;
 }
 
 @media (max-width: 1400px) {
-  .practice-identity-grid > .field,
-  .dynamic-section-grid > .field,
-  .customs-instructions-form-grid > .field,
-  .practice-list-filter-grid > .field,
-  .customs-line-grid > .field {
-    grid-column: span 8;
-  }
-
-  .practice-identity-grid > .field.density-compact,
-  .dynamic-section-grid > .field.density-compact,
-  .customs-instructions-form-grid > .field.density-compact,
-  .practice-list-filter-grid > .field.density-compact,
-  .customs-line-grid > .field.density-compact,
-  .practice-list-filter-grid.compact-date-grid > .field {
-    grid-column: span 6;
-  }
-
-  .practice-identity-grid > .field.density-wide,
-  .dynamic-section-grid > .field.density-wide,
-  .customs-instructions-form-grid > .field.density-wide,
-  .practice-list-filter-grid > .field.density-wide,
-  .customs-line-grid > .field.density-wide {
-    grid-column: span 12;
-  }
-}
-
-
-@media (max-width: 1180px) {
-  .form-grid.practice-identity-grid {
+  .practice-sections-layout--detail {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .practice-sections-layout {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-
-  .practice-sections-layout > .dynamic-field-section,
-  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"],
-  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"],
-  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] {
-    grid-column: 1 / -1;
+  .practice-list-analytics-panel .module-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 1180px) {
-  .practice-identity-grid > .field,
-  .dynamic-section-grid > .field,
-  .customs-instructions-form-grid > .field,
-  .practice-list-filter-grid > .field,
-  .customs-line-grid > .field,
-  .practice-list-filter-grid.compact-date-grid > .field {
-    grid-column: span 12;
+  #practiceForm > .practice-form-stack > .form-grid.three,
+  .practice-sections-layout--practice,
+  .practice-sections-layout--detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .practice-identity-grid > .field.density-compact,
-  .dynamic-section-grid > .field.density-compact,
-  .customs-instructions-form-grid > .field.density-compact,
-  .practice-list-filter-grid > .field.density-compact,
-  .customs-line-grid > .field.density-compact {
-    grid-column: span 8;
+  #practiceForm > .practice-form-stack > .form-grid.three > .field {
+    grid-column: span 1;
   }
 
-  .practice-identity-grid > .field.density-wide,
-  .dynamic-section-grid > .field.density-wide,
-  .customs-instructions-form-grid > .field.density-wide,
-  .practice-list-filter-grid > .field.density-wide,
-  .customs-line-grid > .field.density-wide,
-  .practice-identity-grid > .field.density-full,
-  .dynamic-section-grid > .field.density-full,
-  .customs-instructions-form-grid > .field.density-full,
-  .practice-list-filter-grid > .field.density-full,
-  .customs-line-grid > .field.density-full,
-  .practice-identity-grid > .field.full,
-  .dynamic-section-grid > .field.full,
-  .customs-instructions-form-grid > .field.full,
-  .practice-list-filter-grid > .field.full,
-  .customs-line-grid > .field.full {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 820px) {
-  .practice-list-toolbar-right > .field {
-    flex: 1 1 170px;
-    max-width: none;
-  }
-}
-
-
-@media (max-width: 760px) {
-  .form-grid.practice-identity-grid {
-    grid-template-columns: 1fr;
+  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"],
+  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalFlow"],
+  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] {
+    grid-column: auto;
   }
 
-  .practice-sections-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .practice-sections-layout > .dynamic-field-section {
-    grid-column: 1 / -1;
+  .practice-list-analytics-panel .module-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 760px) {
-  .practice-identity-grid > .field,
-  .dynamic-section-grid > .field,
-  .customs-instructions-form-grid > .field,
-  .practice-list-filter-grid > .field,
-  .customs-line-grid > .field,
-  .practice-list-filter-grid.compact-date-grid > .field {
-    grid-column: 1 / -1;
+  #practiceForm > .practice-form-stack > .form-grid.three,
+  .practice-sections-layout--practice,
+  .practice-sections-layout--detail,
+  .practice-list-analytics-panel .module-card-grid,
+  .practice-sections-layout .dynamic-section-grid,
+  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid {
+    grid-template-columns: 1fr;
   }
 
-  .field.practice-incoterm-compact,
-  .field.practice-incoterm-compact.density-compact {
-    max-width: none;
+  .practice-sections-layout .field,
+  .practice-sections-layout .field.full,
+  #practiceForm > .practice-form-stack > .form-grid.three > .field {
+    grid-column: 1 / -1;
   }
 }
