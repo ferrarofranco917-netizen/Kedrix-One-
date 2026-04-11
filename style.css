@@ -4168,3 +4168,73 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 }
+
+.arrival-notice-launcher-panel,
+.arrival-notice-editor-panel,
+.arrival-notice-workspace-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.arrival-notice-practice-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.arrival-notice-practice-chip,
+.arrival-notice-record-card {
+  text-align: left;
+}
+
+.arrival-notice-summary-pills {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.arrival-notice-form-grid {
+  align-items: start;
+}
+
+.arrival-notice-records-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.arrival-notice-tabs {
+  margin-top: -4px;
+}
+
+.arrival-notice-lines-panel .table-wrap {
+  overflow-x: auto;
+}
+
+.arrival-notice-lines-table {
+  min-width: 1320px;
+}
+
+.arrival-notice-lines-table th,
+.arrival-notice-lines-table td {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.arrival-notice-lines-table input {
+  min-width: 110px;
+}
+
+.arrival-notice-lines-table td:nth-child(3) input {
+  min-width: 220px;
+}
+
+@media (max-width: 1180px) {
+  .arrival-notice-practice-grid,
+  .arrival-notice-summary-pills,
+  .arrival-notice-records-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .arrival-notice-practice-grid,
+  .arrival-notice-summary-pills,
+  .arrival-notice-records-grid {
+    grid-template-columns: 1fr;
+  }
+}
