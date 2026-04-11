@@ -402,7 +402,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       }
       clearQuickAdd(state);
       save();
-      navigate(context?.returnRoute || 'practices');
+      navigate(context?.returnRoute || 'practices', { skipScrollTop: true });
     });
 
     if (VatAutofill && typeof VatAutofill.bindConfigPanel === 'function') {
@@ -479,7 +479,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           ? MasterDataEntities.createFormDraft(targetEntity, result.record || null)
           : { id: '', value: '', description: '', city: '' };
         save();
-        navigate(context.returnRoute || 'practices');
+        navigate(context.returnRoute || 'practices', { skipScrollTop: true });
         toast(
           result.updated
             ? i18n.t('ui.masterDataQuickAddUpdated', 'Anagrafica aggiornata e riportata nella pratica.')

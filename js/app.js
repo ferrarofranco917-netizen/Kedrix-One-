@@ -1038,7 +1038,7 @@
     if (options.syncHash !== false) syncHash(Boolean(options.replaceHash));
     if (changed) {
       main.focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (!options.skipScrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
@@ -2311,7 +2311,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
         return;
       }
       save();
-      navigate('master-data', { preserveQuickAddContext: true });
+      navigate('master-data', { preserveQuickAddContext: true, skipScrollTop: true });
       return;
     }
 
@@ -2455,7 +2455,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
         return;
       }
       save();
-      navigate('master-data', { preserveQuickAddContext: true });
+      navigate('master-data', { preserveQuickAddContext: true, skipScrollTop: true });
       return;
     }
 

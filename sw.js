@@ -1,10 +1,11 @@
 // AQ2R33 cache neutralization for audit phase
-const STATIC_CACHE = 'kedrix-one-hotfix-aq2r33-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-hotfix-aq2r33-runtime-v1';
+const STATIC_CACHE = 'kedrix-one-aq33-layout-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-aq33-layout-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',
   './style.css',
+  './style-density.css',
   './manifest.json',
   './favicon.ico',
   './brand/kedrix-one-mark.svg'

@@ -229,10 +229,13 @@ window.KedrixOnePracticeFormRenderer = (() => {
       const headerHtml = meta && (meta.title || meta.description)
         ? `<div class="dynamic-field-section-head">${meta.title ? `<h4 class="dynamic-field-section-title">${Utils.escapeHtml(meta.title)}</h4>` : ''}${meta.description ? `<p class="dynamic-field-section-subtitle">${Utils.escapeHtml(meta.description)}</p>` : ''}</div>`
         : '';
-      return `<section class="dynamic-field-section" data-practice-tab="${Utils.escapeHtml(tab)}" data-section-key="${Utils.escapeHtml(section.key)}">${headerHtml}<div class="dynamic-section-grid">${renderSectionFieldsHTML(type, tab, draft, companyConfig, state, section.fields)}</div></section>`;
+      const sectionKey = Utils.escapeHtml(section.key);
+      const sectionClass = `dynamic-field-section dynamic-field-section--${Utils.escapeHtml(tab)} dynamic-field-section--${sectionKey}`;
+      const gridClass = `dynamic-section-grid dynamic-section-grid--${Utils.escapeHtml(tab)} dynamic-section-grid--${sectionKey}`;
+      return `<section class="${sectionClass}" data-section-key="${sectionKey}" data-practice-tab="${Utils.escapeHtml(tab)}">${headerHtml}<div class="${gridClass}">${renderSectionFieldsHTML(type, tab, draft, companyConfig, state, section.fields)}</div></section>`;
     }).join('');
 
-    return `<div class="practice-sections-layout practice-sections-layout--${Utils.escapeHtml(tab)}">${sectionsHtml}</div>`;
+    return `<div class="practice-dynamic-layout practice-dynamic-layout--${Utils.escapeHtml(tab)}" data-practice-tab="${Utils.escapeHtml(tab)}">${sectionsHtml}</div>`;
   }
 
   return {
