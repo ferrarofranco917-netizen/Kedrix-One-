@@ -38,7 +38,7 @@
 
   .practice-economic-pair-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(96px, 132px);
+    grid-template-columns: minmax(0, 1fr) minmax(88px, 120px);
     gap: 8px;
     align-items: end;
   }
@@ -47,83 +47,128 @@
     width: 100%;
   }
 
-  [data-section-key="operationalIdentity"] [data-field-wrap="cmr"],
+  .dynamic-field-section[data-section-key="operationalIdentity"] .dynamic-section-grid,
+  .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid,
+  .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid {
+    grid-template-columns: repeat(24, minmax(0, 1fr));
+  }
+
+  /* Identità operativa */
+  [data-section-key="operationalIdentity"] [data-field-wrap="cmr"] {
+    grid-column: span 6;
+  }
+
   [data-section-key="operationalIdentity"] [data-field-wrap="clientContact"],
   [data-section-key="operationalIdentity"] [data-field-wrap="clientAgency"],
   [data-section-key="operationalIdentity"] [data-field-wrap="booking"],
-  [data-section-key="operationalIdentity"] [data-field-wrap="policyNumber"],
-  [data-section-key="operationalIdentity"] [data-field-wrap="hbl"],
-  [data-section-key="operationalIdentity"] [data-field-wrap="baseQuotation"],
-  [data-section-key="operationalIdentity"] [data-field-wrap="packingList"] {
-    grid-column: span 3;
+  [data-section-key="operationalIdentity"] [data-field-wrap="policyNumber"] {
+    grid-column: span 5;
   }
 
   [data-section-key="operationalIdentity"] [data-field-wrap="policyOriginals"],
   [data-section-key="operationalIdentity"] [data-field-wrap="policyCopies"] {
-    grid-column: span 1;
+    grid-column: span 2;
   }
 
+  [data-section-key="operationalIdentity"] [data-field-wrap="hbl"] {
+    grid-column: span 4;
+  }
+
+  [data-section-key="operationalIdentity"] [data-field-wrap="baseQuotation"] {
+    grid-column: span 6;
+  }
+
+  [data-section-key="operationalIdentity"] [data-field-wrap="packingList"] {
+    grid-column: span 4;
+  }
+
+  /* Soggetti collegati */
   [data-section-key="linkedParties"] .dynamic-section-grid > .field {
     grid-column: span 4;
   }
 
+  /* Trasporto / unità */
   [data-section-key="transportUnit"] [data-field-wrap="carrier"],
   [data-section-key="transportUnit"] [data-field-wrap="company"],
   [data-section-key="transportUnit"] [data-field-wrap="terminal"],
   [data-section-key="transportUnit"] [data-field-wrap="vehicleType"],
   [data-section-key="transportUnit"] [data-field-wrap="plateDriver"],
   [data-section-key="transportUnit"] [data-field-wrap="vesselVoyage"],
-  [data-section-key="transportUnit"] [data-field-wrap="arrivalDate"],
-  [data-section-key="transportUnit"] [data-field-wrap="departureDate"],
   [data-section-key="transportUnit"] [data-field-wrap="transporter"],
   [data-section-key="transportUnit"] [data-field-wrap="deliveryCity"] {
     grid-column: span 4;
   }
 
+  [data-section-key="transportUnit"] [data-field-wrap="arrivalDate"],
+  [data-section-key="transportUnit"] [data-field-wrap="departureDate"] {
+    grid-column: span 3;
+  }
+
+  [data-section-key="transportUnit"] [data-field-wrap="terminalPickup"],
+  [data-section-key="transportUnit"] [data-field-wrap="terminalDelivery"] {
+    grid-column: span 4;
+  }
+
+  /* Nodi logistici */
   [data-section-key="logisticsNodes"] [data-field-wrap="originDest"],
   [data-section-key="logisticsNodes"] [data-field-wrap="portLoading"],
   [data-section-key="logisticsNodes"] [data-field-wrap="portDischarge"],
   [data-section-key="logisticsNodes"] [data-field-wrap="originRef"],
   [data-section-key="logisticsNodes"] [data-field-wrap="destinationRef"],
   [data-section-key="logisticsNodes"] [data-field-wrap="pickupPlace"],
-  [data-section-key="logisticsNodes"] [data-field-wrap="deliveryPlace"],
-  [data-section-key="logisticsNodes"] [data-field-wrap="pickupDate"],
-  [data-section-key="logisticsNodes"] [data-field-wrap="deliveryDate"] {
+  [data-section-key="logisticsNodes"] [data-field-wrap="deliveryPlace"] {
     grid-column: span 4;
   }
 
-  [data-section-key="customsEconomics"] [data-field-wrap="customsOffice"],
-  [data-section-key="customsEconomics"] [data-field-wrap="foreignInvoice"],
-  [data-section-key="customsEconomics"] [data-field-wrap="insurance"],
-  [data-section-key="customsEconomics"] [data-field-wrap="fumigation"] {
+  [data-section-key="logisticsNodes"] [data-field-wrap="pickupDate"],
+  [data-section-key="logisticsNodes"] [data-field-wrap="deliveryDate"],
+  [data-section-key="logisticsNodes"] [data-field-wrap="unloadingDate"] {
     grid-column: span 3;
+  }
+
+  [data-section-key="logisticsNodes"] [data-field-wrap="deposit"],
+  [data-section-key="logisticsNodes"] [data-field-wrap="linkedTo"] {
+    grid-column: span 4;
+  }
+
+  /* Dogana + economico essenziale */
+  [data-section-key="customsEconomics"] [data-field-wrap="customsOffice"] {
+    grid-column: span 12;
   }
 
   [data-section-key="customsEconomics"] [data-field-wrap="customsDate"],
   [data-section-key="customsEconomics"] [data-field-wrap="performedDate"] {
-    grid-column: span 2;
+    grid-column: span 5;
   }
 
-  [data-section-key="customsEconomics"] [data-field-wrap="incoterm"] {
-    grid-column: span 2;
-    max-width: none;
+  [data-section-key="customsEconomics"] [data-field-wrap="insurance"],
+  [data-section-key="customsEconomics"] [data-field-wrap="foreignInvoice"],
+  [data-section-key="customsEconomics"] [data-field-wrap="fumigation"] {
+    grid-column: span 7;
   }
 
   [data-section-key="customsEconomics"] [data-field-wrap="invoiceAmount"],
   [data-section-key="customsEconomics"] [data-field-wrap="freightAmount"],
   [data-section-key="customsEconomics"] [data-field-wrap="vesselExchangeRate"] {
-    grid-column: span 3;
+    grid-column: span 7;
   }
 
+  [data-section-key="customsEconomics"] [data-field-wrap="incoterm"] {
+    grid-column: span 4;
+    max-width: none;
+  }
+
+  /* Nota rapida operativa */
   [data-section-key="operationalFlow"] [data-field-wrap="salesOwner"],
   [data-section-key="operationalFlow"] [data-field-wrap="additionalFigures"],
   [data-section-key="operationalFlow"] [data-field-wrap="bolla"],
   [data-section-key="operationalFlow"] [data-field-wrap="appraisalCession"],
   [data-section-key="operationalFlow"] [data-field-wrap="additionalReference"],
   [data-section-key="operationalFlow"] [data-field-wrap="tags"] {
-    grid-column: span 4;
+    grid-column: span 8;
   }
 
+  /* Dettaglio specialistico */
   [data-section-key="goods"] [data-field-wrap="articleCode"],
   [data-section-key="goods"] [data-field-wrap="taric"] {
     grid-column: span 2;
@@ -146,7 +191,8 @@
     grid-column: span 4;
   }
 
-  [data-section-key="transportUnits"] [data-field-wrap="booking"] {
+  [data-section-key="transportUnits"] [data-field-wrap="booking"],
+  [data-section-key="transportUnits"] [data-field-wrap="policyNumber"] {
     grid-column: span 3;
   }
 
