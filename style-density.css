@@ -20,6 +20,97 @@
   gap: 4px;
 }
 
+
+.form-grid.practice-identity-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 10px;
+  row-gap: 14px;
+}
+
+.form-grid.practice-identity-grid > .field,
+.form-grid.practice-identity-grid > .field.density-compact,
+.form-grid.practice-identity-grid > .field.density-medium,
+.form-grid.practice-identity-grid > .field.density-wide,
+.form-grid.practice-identity-grid > .field.density-full,
+.form-grid.practice-identity-grid > .field.full {
+  grid-column: auto;
+}
+
+.practice-sections-layout {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.practice-sections-layout > .dynamic-field-section {
+  grid-column: 1 / -1;
+}
+
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalFlow"] {
+  grid-column: span 12;
+}
+
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] {
+  grid-column: span 8;
+}
+
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid > .field {
+  grid-column: span 8;
+}
+
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field {
+  grid-column: span 6;
+}
+
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field.density-wide,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field.density-wide,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field.density-wide,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field.density-wide,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field.density-full,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field.density-full,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field.density-full,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field.density-full,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid > .field.full,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid > .field.full,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid > .field.full,
+.practice-sections-layout--practice .dynamic-field-section[data-section-key="operationalFlow"] .dynamic-section-grid > .field.full {
+  grid-column: 1 / -1;
+}
+
+.practice-sections-layout--detail .dynamic-field-section[data-section-key="goods"] .dynamic-section-grid > .field {
+  grid-column: span 4;
+}
+
+.practice-sections-layout--detail .dynamic-field-section[data-section-key="goods"] .dynamic-section-grid > .field[data-field-wrap="goodsDescription"] {
+  grid-column: span 8;
+}
+
+.practice-sections-layout--detail .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid > .field[data-field-wrap="containerCode"] {
+  grid-column: span 12;
+}
+
+.practice-sections-layout--detail .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid > .field[data-field-wrap="transportUnitType"],
+.practice-sections-layout--detail .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid > .field[data-field-wrap="booking"] {
+  grid-column: span 6;
+}
+
+.practice-sections-layout--detail .dynamic-field-section[data-section-key="measures"] .dynamic-section-grid > .field {
+  grid-column: span 4;
+}
+
+.practice-sections-layout--detail .dynamic-field-section[data-section-key="checks"] .dynamic-section-grid > .field {
+  grid-column: 1 / -1;
+}
+
 .practice-identity-grid,
 .dynamic-section-grid,
 .customs-instructions-form-grid,
@@ -151,6 +242,22 @@
   padding: 12px;
 }
 
+
+@media (max-width: 1760px) {
+  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"],
+  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"],
+  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"],
+  .practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalFlow"] {
+    grid-column: 1 / -1;
+  }
+
+  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"],
+  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"],
+  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] {
+    grid-column: span 12;
+  }
+}
+
 @media (max-width: 1760px) {
   .practice-identity-grid > .field,
   .dynamic-section-grid > .field,
@@ -204,6 +311,24 @@
   }
 }
 
+
+@media (max-width: 1180px) {
+  .form-grid.practice-identity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .practice-sections-layout {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .practice-sections-layout > .dynamic-field-section,
+  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"],
+  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"],
+  .practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 1180px) {
   .practice-identity-grid > .field,
   .dynamic-section-grid > .field,
@@ -245,6 +370,21 @@
   .practice-list-toolbar-right > .field {
     flex: 1 1 170px;
     max-width: none;
+  }
+}
+
+
+@media (max-width: 760px) {
+  .form-grid.practice-identity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-sections-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-sections-layout > .dynamic-field-section {
+    grid-column: 1 / -1;
   }
 }
 
