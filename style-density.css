@@ -1,12 +1,14 @@
-/* Kedrix One AQ30 — workspace PC width optimization */
+/* Kedrix One AQ31 — desktop width grid refinement */
 
 #practiceForm > .practice-form-stack > .form-grid.three {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 16px;
+  row-gap: 12px;
 }
 
 #practiceForm > .practice-form-stack > .form-grid.three > .field {
   min-width: 0;
-  grid-column: span 2;
+  grid-column: span 4;
 }
 
 .practice-sections-layout {
@@ -33,27 +35,40 @@
   grid-column: 1 / -1;
 }
 
-.practice-sections-layout .dynamic-field-section {
+.practice-sections-layout .dynamic-field-section,
+.practice-sections-layout .field,
+.practice-sections-layout .field input,
+.practice-sections-layout .field select,
+.practice-sections-layout .field textarea {
   min-width: 0;
 }
 
 .practice-sections-layout .dynamic-section-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 16px;
+  row-gap: 12px;
   align-items: start;
 }
 
-.practice-sections-layout .field {
-  min-width: 0;
-}
-
 .practice-sections-layout .field-label-row {
-  align-items: flex-start;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 8px;
   row-gap: 6px;
 }
 
+.practice-sections-layout .field-label-row > label {
+  min-width: 0;
+}
+
 .practice-sections-layout .field-label-actions {
-  margin-left: auto;
+  margin-left: 0;
+  justify-self: end;
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .practice-sections-layout .field-relation-meta,
@@ -68,20 +83,27 @@
   align-self: start;
 }
 
+.practice-sections-layout .linked-entity-summary-card,
+.practice-sections-layout .linked-entity-summary-detail-value,
+.practice-sections-layout .field-relation-text {
+  overflow-wrap: anywhere;
+}
+
+/* Pratica tab */
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap],
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"] .field {
-  grid-column: span 1;
+  grid-column: span 4;
 }
 
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid,
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid,
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalIdentity"] .dynamic-section-grid,
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"] .dynamic-section-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="transportUnit"] [data-field-wrap="carrier"],
@@ -110,43 +132,51 @@
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="destinationRef"],
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="unloadingDate"],
 .practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="deposit"],
-.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="linkedTo"],
-.practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalIdentity"] [data-field-wrap],
-.practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"] [data-field-wrap] {
-  grid-column: span 2;
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="logisticsNodes"] [data-field-wrap="linkedTo"] {
+  grid-column: span 4;
 }
 
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="operationalIdentity"] [data-field-wrap],
+.practice-sections-layout--practice > .dynamic-field-section[data-section-key="customsEconomics"] [data-field-wrap] {
+  grid-column: 1 / -1;
+}
+
+/* Dettaglio tab */
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] .dynamic-section-grid,
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] .dynamic-section-grid,
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"] .dynamic-section-grid,
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="checks"] .dynamic-section-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="articleCode"],
-.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="taric"],
+.practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="taric"] {
+  grid-column: span 2;
+}
+
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageType"],
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageCount"],
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="originDest"] {
-  grid-column: span 1;
+  grid-column: span 3;
 }
 
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] [data-field-wrap="goodsDescription"],
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="goods"] .field.full[data-field-wrap="goodsDescription"] {
-  grid-column: span 2;
+  grid-column: span 5;
 }
 
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="containerCode"],
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="transportUnitType"],
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="booking"],
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="policyNumber"] {
-  grid-column: span 2;
+  grid-column: span 3;
 }
 
 .practice-sections-layout--detail > .dynamic-field-section[data-section-key="measures"] [data-field-wrap] {
-  grid-column: span 1;
+  grid-column: span 3;
 }
 
+/* Practice list party gaps */
 .practice-list-analytics-panel .module-card-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -159,17 +189,13 @@
   align-items: center;
 }
 
-@media (max-width: 1400px) {
+@media (max-width: 1480px) {
   .practice-sections-layout--detail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .practice-list-analytics-panel .module-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
   #practiceForm > .practice-form-stack > .form-grid.three,
   .practice-sections-layout--practice,
   .practice-sections-layout--detail {
@@ -177,7 +203,7 @@
   }
 
   #practiceForm > .practice-form-stack > .form-grid.three > .field {
-    grid-column: span 1;
+    grid-column: span 6;
   }
 
   .practice-sections-layout--practice > .dynamic-field-section[data-section-key="linkedParties"],
@@ -191,7 +217,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   #practiceForm > .practice-form-stack > .form-grid.three,
   .practice-sections-layout--practice,
   .practice-sections-layout--detail,
