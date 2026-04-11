@@ -1,6 +1,6 @@
-// AQ35 practice quick add overlay
-const STATIC_CACHE = 'kedrix-one-stepaq36-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq36-runtime-v1';
+// AQ2R33 cache neutralization for audit phase
+const STATIC_CACHE = 'kedrix-one-stepaq38-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq38-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',

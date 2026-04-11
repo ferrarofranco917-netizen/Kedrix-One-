@@ -150,12 +150,12 @@ window.KedrixOnePracticeFormLayout = (() => {
     },
     road_import: {
       practice: {
-        operationalIdentity: ['cmr'],
+        operationalIdentity: ['cmr', 'clientContact', 'clientAgency', 'booking', 'policyNumber', 'policyOriginals', 'policyCopies', 'hbl', 'baseQuotation', 'packingList'],
         linkedParties: ['shipper', 'client', 'consignee'],
         transportUnit: ['carrier', 'vehicleType', 'plateDriver'],
         logisticsNodes: ['originDest', 'pickupPlace', 'deliveryPlace', 'pickupDate', 'deliveryDate'],
-        customsEconomics: ['incoterm'],
-        operationalFlow: []
+        customsEconomics: ['customsOffice', 'customsDate', 'insurance', 'foreignInvoice', 'invoiceAmount', 'invoiceCurrency', 'vesselExchangeRate', 'vesselExchangeCurrency', 'freightAmount', 'freightCurrency', 'incoterm', 'performedDate', 'fumigation'],
+        operationalFlow: ['salesOwner', 'additionalFigures', 'bolla', 'appraisalCession', 'additionalReference', 'tags']
       },
       detail: {
         goods: ['articleCode', 'taric', 'goodsDescription', 'packageCount'],
@@ -167,12 +167,12 @@ window.KedrixOnePracticeFormLayout = (() => {
     },
     road_export: {
       practice: {
-        operationalIdentity: ['cmr'],
+        operationalIdentity: ['cmr', 'clientContact', 'clientAgency', 'booking', 'policyNumber', 'policyOriginals', 'policyCopies', 'hbl', 'baseQuotation', 'packingList'],
         linkedParties: ['shipper', 'client', 'consignee'],
         transportUnit: ['carrier', 'vehicleType', 'plateDriver'],
         logisticsNodes: ['originDest', 'pickupPlace', 'deliveryPlace', 'pickupDate', 'deliveryDate'],
-        customsEconomics: ['incoterm'],
-        operationalFlow: []
+        customsEconomics: ['customsOffice', 'customsDate', 'insurance', 'foreignInvoice', 'invoiceAmount', 'invoiceCurrency', 'vesselExchangeRate', 'vesselExchangeCurrency', 'freightAmount', 'freightCurrency', 'incoterm', 'performedDate', 'fumigation'],
+        operationalFlow: ['salesOwner', 'additionalFigures', 'bolla', 'appraisalCession', 'additionalReference', 'tags']
       },
       detail: {
         goods: ['articleCode', 'taric', 'goodsDescription', 'packageCount'],

@@ -428,6 +428,98 @@ window.KedrixOnePracticeSchemas = (() => {
     moveFieldAfter(schemaKey, 'detail', 'transportUnitType', 'containerCode');
   });
 
+
+  const roadSharedPracticeHardeningFields = [
+    { name: 'clientContact', type: 'text', labelKey: 'ui.clientContact' },
+    { name: 'clientAgency', type: 'text', labelKey: 'ui.agency' },
+    { name: 'booking', type: 'text', labelKey: 'ui.booking' },
+    { name: 'policyNumber', type: 'text', labelKey: 'ui.policyNumber' },
+    { name: 'policyOriginals', type: 'number', labelKey: 'ui.policyOriginals' },
+    { name: 'policyCopies', type: 'number', labelKey: 'ui.policyCopies' },
+    { name: 'hbl', type: 'text', labelKey: 'ui.hbl' },
+    { name: 'baseQuotation', type: 'text', labelKey: 'ui.baseQuotation' },
+    { name: 'packingList', type: 'text', labelKey: 'ui.packingList' },
+    { name: 'customsOffice', type: 'text', labelKey: 'ui.customsOffice', suggestionKey: 'customsOffices', hintKey: 'ui.customsCodeHint', hintFallback: 'Scrivi la dogana o il codice ADM. Esempio: Alessandria → IT313000.' },
+    { name: 'customsDate', type: 'date', labelKey: 'ui.customsDate' },
+    { name: 'insurance', type: 'text', labelKey: 'ui.insurance' },
+    { name: 'foreignInvoice', type: 'text', labelKey: 'ui.foreignInvoice' },
+    { name: 'invoiceAmount', type: 'number', labelKey: 'ui.invoiceAmount' },
+    { name: 'invoiceCurrency', type: 'select', labelKey: 'ui.invoiceCurrency', suggestionKey: 'currencies' },
+    { name: 'vesselExchangeRate', type: 'number', labelKey: 'ui.vesselExchangeRate' },
+    { name: 'vesselExchangeCurrency', type: 'select', labelKey: 'ui.vesselExchangeCurrency', suggestionKey: 'currencies' },
+    { name: 'freightAmount', type: 'number', labelKey: 'ui.freightAmount' },
+    { name: 'freightCurrency', type: 'select', labelKey: 'ui.freightCurrency', suggestionKey: 'currencies' },
+    { name: 'performedDate', type: 'date', labelKey: 'ui.performedDate' },
+    { name: 'fumigation', type: 'text', labelKey: 'ui.fumigation' },
+    { name: 'salesOwner', type: 'text', labelKey: 'ui.salesOwner' },
+    { name: 'additionalFigures', type: 'text', labelKey: 'ui.additionalFigures' },
+    { name: 'bolla', type: 'text', labelKey: 'ui.bolla' },
+    { name: 'appraisalCession', type: 'text', labelKey: 'ui.appraisalCession' },
+    { name: 'additionalReference', type: 'text', labelKey: 'ui.additionalReference' },
+    { name: 'tags', type: 'text', labelKey: 'ui.tags' }
+  ];
+
+  appendUniqueFields('road_import', 'practice', roadSharedPracticeHardeningFields);
+  appendUniqueFields('road_export', 'practice', roadSharedPracticeHardeningFields);
+
+  moveFieldAfter('road_import', 'practice', 'clientContact', 'cmr');
+  moveFieldAfter('road_import', 'practice', 'clientAgency', 'clientContact');
+  moveFieldAfter('road_import', 'practice', 'booking', 'clientAgency');
+  moveFieldAfter('road_import', 'practice', 'policyNumber', 'booking');
+  moveFieldAfter('road_import', 'practice', 'policyOriginals', 'policyNumber');
+  moveFieldAfter('road_import', 'practice', 'policyCopies', 'policyOriginals');
+  moveFieldAfter('road_import', 'practice', 'hbl', 'policyCopies');
+  moveFieldAfter('road_import', 'practice', 'baseQuotation', 'hbl');
+  moveFieldAfter('road_import', 'practice', 'packingList', 'baseQuotation');
+  moveFieldAfter('road_import', 'practice', 'customsOffice', 'packingList');
+  moveFieldAfter('road_import', 'practice', 'customsDate', 'customsOffice');
+  moveFieldAfter('road_import', 'practice', 'insurance', 'customsDate');
+  moveFieldAfter('road_import', 'practice', 'foreignInvoice', 'insurance');
+  moveFieldAfter('road_import', 'practice', 'invoiceAmount', 'foreignInvoice');
+  moveFieldAfter('road_import', 'practice', 'invoiceCurrency', 'invoiceAmount');
+  moveFieldAfter('road_import', 'practice', 'vesselExchangeRate', 'invoiceCurrency');
+  moveFieldAfter('road_import', 'practice', 'vesselExchangeCurrency', 'vesselExchangeRate');
+  moveFieldAfter('road_import', 'practice', 'freightAmount', 'vesselExchangeCurrency');
+  moveFieldAfter('road_import', 'practice', 'freightCurrency', 'freightAmount');
+  moveFieldAfter('road_import', 'practice', 'incoterm', 'freightCurrency');
+  moveFieldAfter('road_import', 'practice', 'performedDate', 'incoterm');
+  moveFieldAfter('road_import', 'practice', 'fumigation', 'performedDate');
+  moveFieldAfter('road_import', 'practice', 'salesOwner', 'fumigation');
+  moveFieldAfter('road_import', 'practice', 'additionalFigures', 'salesOwner');
+  moveFieldAfter('road_import', 'practice', 'bolla', 'additionalFigures');
+  moveFieldAfter('road_import', 'practice', 'appraisalCession', 'bolla');
+  moveFieldAfter('road_import', 'practice', 'additionalReference', 'appraisalCession');
+  moveFieldAfter('road_import', 'practice', 'tags', 'additionalReference');
+
+  moveFieldAfter('road_export', 'practice', 'clientContact', 'cmr');
+  moveFieldAfter('road_export', 'practice', 'clientAgency', 'clientContact');
+  moveFieldAfter('road_export', 'practice', 'booking', 'clientAgency');
+  moveFieldAfter('road_export', 'practice', 'policyNumber', 'booking');
+  moveFieldAfter('road_export', 'practice', 'policyOriginals', 'policyNumber');
+  moveFieldAfter('road_export', 'practice', 'policyCopies', 'policyOriginals');
+  moveFieldAfter('road_export', 'practice', 'hbl', 'policyCopies');
+  moveFieldAfter('road_export', 'practice', 'baseQuotation', 'hbl');
+  moveFieldAfter('road_export', 'practice', 'packingList', 'baseQuotation');
+  moveFieldAfter('road_export', 'practice', 'customsOffice', 'packingList');
+  moveFieldAfter('road_export', 'practice', 'customsDate', 'customsOffice');
+  moveFieldAfter('road_export', 'practice', 'insurance', 'customsDate');
+  moveFieldAfter('road_export', 'practice', 'foreignInvoice', 'insurance');
+  moveFieldAfter('road_export', 'practice', 'invoiceAmount', 'foreignInvoice');
+  moveFieldAfter('road_export', 'practice', 'invoiceCurrency', 'invoiceAmount');
+  moveFieldAfter('road_export', 'practice', 'vesselExchangeRate', 'invoiceCurrency');
+  moveFieldAfter('road_export', 'practice', 'vesselExchangeCurrency', 'vesselExchangeRate');
+  moveFieldAfter('road_export', 'practice', 'freightAmount', 'vesselExchangeCurrency');
+  moveFieldAfter('road_export', 'practice', 'freightCurrency', 'freightAmount');
+  moveFieldAfter('road_export', 'practice', 'incoterm', 'freightCurrency');
+  moveFieldAfter('road_export', 'practice', 'performedDate', 'incoterm');
+  moveFieldAfter('road_export', 'practice', 'fumigation', 'performedDate');
+  moveFieldAfter('road_export', 'practice', 'salesOwner', 'fumigation');
+  moveFieldAfter('road_export', 'practice', 'additionalFigures', 'salesOwner');
+  moveFieldAfter('road_export', 'practice', 'bolla', 'additionalFigures');
+  moveFieldAfter('road_export', 'practice', 'appraisalCession', 'bolla');
+  moveFieldAfter('road_export', 'practice', 'additionalReference', 'appraisalCession');
+  moveFieldAfter('road_export', 'practice', 'tags', 'additionalReference');
+
   appendUniqueFields('air_import', 'practice', [
     { name: 'foreignInvoice', type: 'text', labelKey: 'ui.foreignInvoice' },
     { name: 'invoiceAmount', type: 'number', labelKey: 'ui.invoiceAmount' },
