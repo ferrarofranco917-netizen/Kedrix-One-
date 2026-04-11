@@ -217,9 +217,10 @@ window.KedrixOneLinkedEntitySummary = (() => {
     const actionOpenLabel = t(options.i18n, 'ui.linkedEntitySummaryOpenAction', 'Apri scheda');
     const actionCopyLabel = t(options.i18n, 'ui.linkedEntitySummaryCopyAction', 'Copia dati');
     const collapseLabel = t(options.i18n, 'ui.linkedEntitySummaryCollapseAction', 'Nascondi');
+    const toggleButtonHtml = `<button type="button" class="linked-entity-summary-action linked-entity-summary-toggle" data-linked-summary-action="toggle" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}" data-expand-label="${escape(options.utils, actionDetailLabel)}" data-collapse-label="${escape(options.utils, collapseLabel)}">${escape(options.utils, actionDetailLabel)}</button>`;
 
     const detailsHtml = summary.detailRows.length
-      ? `<div class="linked-entity-summary-details" hidden>${summary.detailRows.map((row) => `
+      ? `<div class="linked-entity-summary-details">${summary.detailRows.map((row) => `
           <div class="linked-entity-summary-detail-row"><span class="linked-entity-summary-detail-label">${escape(options.utils, row.label)}</span><span class="linked-entity-summary-detail-value">${escape(options.utils, row.value)}</span></div>`).join('')}</div>`
       : '';
 
@@ -230,16 +231,20 @@ window.KedrixOneLinkedEntitySummary = (() => {
             ${microHeader ? `<div class="linked-entity-summary-microhead">${microHeader}</div>` : ''}
             <div class="linked-entity-summary-title">${escape(options.utils, summary.title)}</div>
           </div>
-          ${htmlInactive}
+          <div class="linked-entity-summary-head-side">
+            ${htmlInactive}
+            ${toggleButtonHtml}
+          </div>
         </div>
-        ${htmlQualityMeta}
-        ${htmlFacts}
-        <div class="linked-entity-summary-actions">
-          <button type="button" class="linked-entity-summary-action" data-linked-summary-action="toggle" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}" data-expand-label="${escape(options.utils, actionDetailLabel)}" data-collapse-label="${escape(options.utils, collapseLabel)}">${escape(options.utils, actionDetailLabel)}</button>
-          <button type="button" class="linked-entity-summary-action" data-open-linked-field="${escape(options.utils, resolvedFieldName)}">${escape(options.utils, actionOpenLabel)}</button>
-          <button type="button" class="linked-entity-summary-action" data-linked-summary-action="copy" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}">${escape(options.utils, actionCopyLabel)}</button>
+        <div class="linked-entity-summary-body" hidden>
+          ${htmlQualityMeta}
+          ${htmlFacts}
+          <div class="linked-entity-summary-actions">
+            <button type="button" class="linked-entity-summary-action" data-open-linked-field="${escape(options.utils, resolvedFieldName)}">${escape(options.utils, actionOpenLabel)}</button>
+            <button type="button" class="linked-entity-summary-action" data-linked-summary-action="copy" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}">${escape(options.utils, actionCopyLabel)}</button>
+          </div>
+          ${detailsHtml}
         </div>
-        ${detailsHtml}
       </div>`;
   }
 

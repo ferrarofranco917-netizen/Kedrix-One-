@@ -2380,14 +2380,14 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     const linkedSummaryToggle = event.target.closest('[data-linked-summary-action="toggle"]');
     if (linkedSummaryToggle) {
       const summaryCard = linkedSummaryToggle.closest('.linked-entity-summary-card');
-      const details = summaryCard ? summaryCard.querySelector('.linked-entity-summary-details') : null;
-      if (!summaryCard || !details) return;
-      const isHidden = details.hasAttribute('hidden');
+      const summaryBody = summaryCard ? summaryCard.querySelector('.linked-entity-summary-body') : null;
+      if (!summaryCard || !summaryBody) return;
+      const isHidden = summaryBody.hasAttribute('hidden');
       if (isHidden) {
-        details.removeAttribute('hidden');
+        summaryBody.removeAttribute('hidden');
         summaryCard.dataset.expanded = 'true';
       } else {
-        details.setAttribute('hidden', 'hidden');
+        summaryBody.setAttribute('hidden', 'hidden');
         delete summaryCard.dataset.expanded;
       }
       const expandLabel = String(linkedSummaryToggle.dataset.expandLabel || I18N.t('ui.linkedEntitySummaryDetailAction', 'Dettaglio')).trim();
