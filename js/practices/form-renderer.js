@@ -7,6 +7,7 @@ window.KedrixOnePracticeFormRenderer = (() => {
   const PracticeFormLayout = window.KedrixOnePracticeFormLayout;
   const PracticeOverview = window.KedrixOnePracticeOverview;
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
+  const Density = window.KedrixOneDensitySystem || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -90,8 +91,9 @@ window.KedrixOnePracticeFormRenderer = (() => {
     const labelHtml = fieldActionsHtml
       ? `<div class="field-label-row"><label for="dyn_${field.name}">${label}</label><div class="field-label-actions">${fieldActionsHtml}</div></div>`
       : `<label for="dyn_${field.name}">${label}</label>`;
-    const incotermCompactClass = field.name === 'incoterm' ? ' practice-incoterm-compact' : '';
-    const wrapClass = `field${field.full ? ' full' : ''}${incotermCompactClass}`;
+    const wrapClass = Density && typeof Density.field === 'function'
+      ? Density.field({ full: field.full, incoterm: field.name === 'incoterm' })
+      : `field${field.full ? ' full' : ''}${field.name === 'incoterm' ? ' practice-incoterm-compact' : ''}`;
     const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const fieldOptions = PracticeSchemas.getFieldOptions(type, field, companyConfig);
     const fieldOptionEntries = (typeof PracticeSchemas.getFieldOptionEntries === 'function'
@@ -174,8 +176,14 @@ window.KedrixOnePracticeFormRenderer = (() => {
     const currencyOptions = PracticeSchemas.getFieldOptions(type, currencyField, companyConfig);
     const currencyValue = String(draft.dynamicData?.[currencyField.name] || '');
     const amountValue = String(draft.dynamicData?.[amountField.name] || '');
-    const amountWrapAttrs = `class="field practice-economic-pair" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
-    const currencyWrapAttrs = `class="field practice-economic-pair-currency-wrap" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const amountWrapClass = Density && typeof Density.field === 'function'
+      ? Density.field({ extra: ['practice-economic-pair'] })
+      : 'field practice-economic-pair';
+    const currencyWrapClass = Density && typeof Density.field === 'function'
+      ? Density.field({ extra: ['practice-economic-pair-currency-wrap'] })
+      : 'field practice-economic-pair-currency-wrap';
+    const amountWrapAttrs = `class="${amountWrapClass}" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const currencyWrapAttrs = `class="${currencyWrapClass}" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const currencyLabel = Utils.escapeHtml(I18N.t(currencyField.labelKey, currencyField.name));
     const amountRelationMetaHtml = PracticeFieldRelations && typeof PracticeFieldRelations.renderFieldRelationMeta === 'function'
       ? PracticeFieldRelations.renderFieldRelationMeta({ state, type, field: amountField, draft, companyConfig, i18n: I18N, utils: Utils })
@@ -229,13 +237,13 @@ window.KedrixOnePracticeFormRenderer = (() => {
       const headerHtml = meta && (meta.title || meta.description)
         ? `<div class="dynamic-field-section-head">${meta.title ? `<h4 class="dynamic-field-section-title">${Utils.escapeHtml(meta.title)}</h4>` : ''}${meta.description ? `<p class="dynamic-field-section-subtitle">${Utils.escapeHtml(meta.description)}</p>` : ''}</div>`
         : '';
-      const sectionKey = Utils.escapeHtml(section.key);
-      const sectionClass = `dynamic-field-section dynamic-field-section--${Utils.escapeHtml(tab)} dynamic-field-section--${sectionKey}`;
-      const gridClass = `dynamic-section-grid dynamic-section-grid--${Utils.escapeHtml(tab)} dynamic-section-grid--${sectionKey}`;
-      return `<section class="${sectionClass}" data-section-key="${sectionKey}" data-practice-tab="${Utils.escapeHtml(tab)}">${headerHtml}<div class="${gridClass}">${renderSectionFieldsHTML(type, tab, draft, companyConfig, state, section.fields)}</div></section>`;
+      const sectionGridClass = Density && typeof Density.sectionGrid === 'function'
+        ? Density.sectionGrid('dynamic-section-grid')
+        : 'dynamic-section-grid';
+      return `<section class="dynamic-field-section" data-section-key="${Utils.escapeHtml(section.key)}">${headerHtml}<div class="${sectionGridClass}">${renderSectionFieldsHTML(type, tab, draft, companyConfig, state, section.fields)}</div></section>`;
     }).join('');
 
-    return `<div class="practice-dynamic-layout practice-dynamic-layout--${Utils.escapeHtml(tab)}" data-practice-tab="${Utils.escapeHtml(tab)}">${sectionsHtml}</div>`;
+    return sectionsHtml;
   }
 
   return {

@@ -18,6 +18,7 @@ window.KedrixOneTemplates = (() => {
   const W = window.KedrixOneWiseMind;
   const L = window.KedrixOneLicensing;
   const T = window.KedrixOneI18N;
+  const Density = window.KedrixOneDensitySystem || null;
   const PracticeVerification = window.KedrixOnePracticeVerification;
   const DocumentEngine = window.KedrixOneDocumentEngine;
   const DocumentCompleteness = window.KedrixOneDocumentCompleteness || null;
@@ -38,11 +39,46 @@ window.KedrixOneTemplates = (() => {
   const PracticeListPartyPairs = window.KedrixOnePracticeListPartyPairs || null;
   const PracticeListPartyGaps = window.KedrixOnePracticeListPartyGaps || null;
   const PracticeStatusI18n = window.KedrixOnePracticeStatusI18n || null;
-  const Density = window.KedrixOneDensitySystem || {
-    append: (base, value) => [String(base || '').trim(), `density-${String(value || 'medium').trim().toLowerCase() || 'medium'}`].filter(Boolean).join(' ')
-  };
 
-  function getMasterDataQuickAdd() {
+function densityCompactGrid(baseClass) {
+  return Density && typeof Density.compactGrid === 'function'
+    ? Density.compactGrid(baseClass)
+    : `${baseClass} compact-grid`;
+}
+
+function densityCompactKpiGrid(baseClass = 'kpi-grid', extraClasses = '') {
+  const resolvedBase = [baseClass, extraClasses].filter(Boolean).join(' ');
+  return Density && typeof Density.compactKpiGrid === 'function'
+    ? Density.compactKpiGrid(resolvedBase)
+    : [resolvedBase, 'compact-kpi-grid'].filter(Boolean).join(' ');
+}
+
+function densityCompactTagGrid(baseClass = 'tag-grid') {
+  return Density && typeof Density.compactTagGrid === 'function'
+    ? Density.compactTagGrid(baseClass)
+    : `${baseClass} compact-tag-grid`;
+}
+
+function densityCompactHead(extraClasses = '') {
+  const resolvedBase = ['panel-head', extraClasses].filter(Boolean).join(' ');
+  return Density && typeof Density.head === 'function'
+    ? Density.head({ compact: true, baseClass: resolvedBase })
+    : [resolvedBase, 'compact-head'].filter(Boolean).join(' ');
+}
+
+function densityCompactDateGrid(baseClass = 'form-grid four practice-list-filter-grid') {
+  return Density && typeof Density.compactDateGrid === 'function'
+    ? Density.compactDateGrid(baseClass)
+    : `${baseClass} compact-date-grid`;
+}
+
+function densityCompactField(extraClasses = '') {
+  return Density && typeof Density.field === 'function'
+    ? Density.field({ compact: true, extra: extraClasses ? extraClasses.split(/\s+/) : [] })
+    : ['field', extraClasses, 'compact'].filter(Boolean).join(' ');
+}
+
+function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
   }
 
@@ -146,7 +182,7 @@ window.KedrixOneTemplates = (() => {
         </article>
       </section>
 
-      <section class="three-col compact-grid">
+      <section class="${densityCompactGrid('three-col')}">
         <article class="panel">
           <div class="summary-kicker">${U.escapeHtml(T.t('ui.language', 'Lingua'))}</div>
           <div class="summary-value">${U.escapeHtml(T.getLanguage().toUpperCase())}</div>
@@ -304,7 +340,7 @@ window.KedrixOneTemplates = (() => {
         <p>${U.escapeHtml(T.t('ui.step5cIntro', ''))}</p>
       </section>
 
-      <section class="kpi-grid compact-kpi-grid">
+      <section class="${densityCompactKpiGrid()}">
         <article class="kpi-card">
           <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))}</div>
           <div class="kpi-value">${U.escapeHtml(selectedType ? selectedType.label : '—')}</div>
@@ -382,8 +418,8 @@ window.KedrixOneTemplates = (() => {
                   <span class="badge info">${U.escapeHtml(T.t('ui.duplicateSourceReferenceBadge', 'Copiata da'))} ${U.escapeHtml(duplicateSource.reference || '—')}</span>
                 </div>
               </div>` : ''}
-            <div class="form-grid three practice-identity-grid density-compact">
-              <div class="field density-compact" data-field-wrap="practiceType">
+            <div class="form-grid three">
+              <div class="field" data-field-wrap="practiceType">
                 <label for="practiceType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))} <span class="required-mark">*</span></label>
                 <select id="practiceType" name="practiceType" required>
                   <option value="">—</option>
@@ -391,7 +427,7 @@ window.KedrixOneTemplates = (() => {
                 </select>
               </div>
 
-              <div class="field density-compact" data-field-wrap="clientName">
+              <div class="field" data-field-wrap="clientName">
                 <div class="field-label-row">
                   <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} <span class="required-mark">*</span></label>
                   ${(() => {
@@ -415,18 +451,18 @@ window.KedrixOneTemplates = (() => {
                 <input id="clientId" name="clientId" type="hidden" value="${U.escapeHtml(draft.clientId || '')}" />
               </div>
 
-              <div class="field density-compact" data-field-wrap="practiceDate">
+              <div class="field" data-field-wrap="practiceDate">
                 <label for="practiceDate">${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))} <span class="required-mark">*</span></label>
                 <input id="practiceDate" name="practiceDate" type="date" value="${U.escapeHtml(draft.practiceDate || new Date().toISOString().slice(0, 10))}" ${draft.practiceType ? '' : 'disabled'} required />
               </div>
 
-              <div class="field density-compact" data-practice-dependent data-field-wrap="generatedReference">
+              <div class="field" data-practice-dependent data-field-wrap="generatedReference">
                 <label for="generatedReference">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</label>
                 <input id="generatedReference" name="generatedReference" readonly value="${U.escapeHtml(draft.generatedReference || '')}" ${draft.practiceType ? '' : 'disabled'} />
                 <div class="field-hint">${U.escapeHtml(T.t('ui.profileByClient', 'Numero progressivo generato in base al cliente selezionato.'))}</div>
               </div>
 
-              <div class="field density-compact" data-practice-dependent data-field-wrap="category">
+              <div class="field" data-practice-dependent data-field-wrap="category">
                 <label for="category">${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))} <span class="required-mark">*</span></label>
                 <select id="category" name="category" ${draft.practiceType ? '' : 'disabled'}>
                   <option value="">—</option>
@@ -435,7 +471,7 @@ window.KedrixOneTemplates = (() => {
                 <div class="field-hint">${U.escapeHtml(T.t('ui.categoryHint', 'La categoria viene filtrata in base al tipo pratica selezionato.'))}</div>
               </div>
 
-              <div class="field density-compact" data-field-wrap="status">
+              <div class="field" data-field-wrap="status">
                 <label for="status">${U.escapeHtml(T.t('ui.status', 'Stato'))}</label>
                 <select id="status" name="status" ${draft.practiceType ? '' : 'disabled'}>
                   ${['In attesa documenti', 'Operativa', 'Sdoganamento', 'Chiusa'].map((option) => `<option value="${U.escapeHtml(option)}" ${draft.status === option ? 'selected' : ''}>${U.escapeHtml(option)}</option>`).join('')}
@@ -535,7 +571,7 @@ function documents(state, module, searchResults = []) {
       <p>${U.escapeHtml(T.t('ui.documentEngineIntro', 'Hub documentale operativo collegato alle pratiche: ricerca relazionale, bundle per pratica e accesso diretto agli allegati.'))}</p>
     </section>
 
-    <section class="kpi-grid compact-kpi-grid">
+    <section class="${densityCompactKpiGrid()}">
       <article class="kpi-card">
         <div class="kpi-label">${U.escapeHtml(T.t('ui.totalDocumentsCount', 'Documenti collegati'))}</div>
         <div class="kpi-value">${summary.totalDocuments}</div>
@@ -567,7 +603,7 @@ function documents(state, module, searchResults = []) {
           <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentRelationsFoundationHint', 'Ogni bundle legge soggetti collegati, riferimenti operativi e mix documentale per preparare la ricerca relazionale completa.'))}</p>
         </div>
       </div>
-      <div class="kpi-grid compact-kpi-grid">
+      <div class="${densityCompactKpiGrid()}">
         <article class="kpi-card">
           <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesWithSubjects', 'Bundle con soggetti collegati'))}</div>
           <div class="kpi-value">${relationFoundation.bundlesWithSubjects || 0}</div>
@@ -594,7 +630,7 @@ function documents(state, module, searchResults = []) {
           <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentCompletenessFoundationHint', 'Leggi per tipo pratica quali documenti essenziali sono allegati, quali sono solo referenziati e quali mancano ancora nel fascicolo.'))}</p>
         </div>
       </div>
-      <div class="kpi-grid compact-kpi-grid">
+      <div class="${densityCompactKpiGrid()}">
         <article class="kpi-card">
           <div class="kpi-label">${U.escapeHtml(T.t('ui.documentBundlesReady', 'Bundle pronti'))}</div>
           <div class="kpi-value">${completenessFoundation.bundlesReady || 0}</div>
@@ -637,7 +673,7 @@ function documents(state, module, searchResults = []) {
           <div class="summary-kicker">${U.escapeHtml(T.t('ui.documentCategoriesConfigured', 'Categorie documentali attive'))}</div>
           <div class="document-config-count">${configuredTypes.length}</div>
         </div>
-        <div class="tag-grid compact-tag-grid">
+        <div class="${densityCompactTagGrid()}">
           ${configuredTypes.slice(0, 8).map((item) => `<span class="tag-pill">${U.escapeHtml(item.label)}</span>`).join('')}
         </div>
       </div>
@@ -692,13 +728,13 @@ function documents(state, module, searchResults = []) {
             <button class="btn" type="button" data-document-open-practice="${U.escapeHtml(activeBundle.practiceId || '')}">${U.escapeHtml(T.t('ui.openPractice', 'Apri pratica'))}</button>
           </div>
           ${activeBundle.relationSummary ? `<section class="document-bundle-relations">
-            <div class="panel-head compact-head">
+            <div class="${densityCompactHead()}">
               <div>
                 <h4 class="panel-title">${U.escapeHtml(T.t('ui.documentBundleRelationsTitle', 'Relazioni del bundle'))}</h4>
                 <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentBundleRelationsHint', 'Lettura rapida di soggetti collegati, riferimenti operativi e mix documentale del fascicolo.'))}</p>
               </div>
             </div>
-            <div class="kpi-grid compact-kpi-grid document-bundle-relation-kpis">
+            <div class="${densityCompactKpiGrid('kpi-grid', 'document-bundle-relation-kpis')}">
               <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentLinkedSubjects', 'Soggetti collegati'))}</div><div class="kpi-value">${activeBundle.relationSummary.subjectCount || 0}</div></article>
               <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentOperationalReferences', 'Riferimenti operativi'))}</div><div class="kpi-value">${activeBundle.relationSummary.referenceCount || 0}</div></article>
               <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentDocumentMix', 'Mix documentale'))}</div><div class="kpi-value">${U.escapeHtml(`${activeBundle.relationSummary.binaryCount || 0}/${activeBundle.relationSummary.referenceOnlyCount || 0}`)}</div><div class="kpi-hint">${U.escapeHtml(T.t('ui.documentDocumentMixHint', 'File binari / solo riferimenti'))}</div></article>
@@ -714,18 +750,18 @@ function documents(state, module, searchResults = []) {
               </div>
               <div class="document-relation-block">
                 <div class="summary-kicker">${U.escapeHtml(T.t('ui.topDocumentType', 'Tipo documento prevalente'))}</div>
-                ${activeBundle.relationSummary.typeLabels?.length ? `<div class="tag-grid compact-tag-grid">${activeBundle.relationSummary.typeLabels.map((entry) => `<span class="tag-pill">${U.escapeHtml(entry)}</span>`).join('')}</div>` : `<div class="empty-state-inline">${U.escapeHtml(T.t('ui.noDocumentsAvailable', 'Nessun documento disponibile'))}</div>`}
+                ${activeBundle.relationSummary.typeLabels?.length ? `<div class="${densityCompactTagGrid()}">${activeBundle.relationSummary.typeLabels.map((entry) => `<span class="tag-pill">${U.escapeHtml(entry)}</span>`).join('')}</div>` : `<div class="empty-state-inline">${U.escapeHtml(T.t('ui.noDocumentsAvailable', 'Nessun documento disponibile'))}</div>`}
               </div>
             </div>
           </section>` : ''}
           ${activeBundleCompleteness ? `<section class="document-bundle-completeness">
-            <div class="panel-head compact-head">
+            <div class="${densityCompactHead()}">
               <div>
                 <h4 class="panel-title">${U.escapeHtml(T.t('ui.documentBundleCompletenessTitle', 'Completezza documentale'))}</h4>
                 <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentBundleCompletenessHint', 'Controlla subito quali documenti essenziali risultano allegati, solo referenziati o ancora mancanti per questo tipo pratica.'))}</p>
               </div>
             </div>
-            <div class="kpi-grid compact-kpi-grid document-bundle-relation-kpis">
+            <div class="${densityCompactKpiGrid('kpi-grid', 'document-bundle-relation-kpis')}">
               <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentCompletenessProfile', 'Profilo'))}</div><div class="kpi-value text-sm">${U.escapeHtml(activeBundleCompleteness.profileLabel || '—')}</div></article>
               <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentCompletenessCoverage', 'Essenziali'))}</div><div class="kpi-value">${U.escapeHtml(`${activeBundleCompleteness.counts.essentialReady}/${activeBundleCompleteness.counts.essentialTotal}`)}</div></article>
               <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.documentCompletenessStatusAttention', 'Solo riferimenti'))}</div><div class="kpi-value">${activeBundleCompleteness.counts.essentialReferenceOnly || 0}</div></article>
@@ -766,7 +802,7 @@ function documents(state, module, searchResults = []) {
               </article>`).join('') : `<div class="empty-text">${U.escapeHtml(T.t('ui.noDocumentsInBundle', 'Nessun documento collegato nel bundle selezionato.'))}</div>`}
           </div>
           <section class="document-preview-panel panel nested-panel">
-            <div class="panel-head compact-head">
+            <div class="${densityCompactHead()}">
               <div>
                 <h4 class="panel-title">${U.escapeHtml(T.t('ui.documentPreviewTitle', 'Anteprima documento'))}</h4>
                 <p class="panel-subtitle">${U.escapeHtml(T.t('ui.documentPreviewIntro', 'PDF, immagini e testi vengono mostrati direttamente nell’app quando possibile.'))}</p>
@@ -802,7 +838,7 @@ function practicesHub(state, module) {
       <p>${U.escapeHtml(T.t('ui.practiceHubIntro', 'Il tab padre Pratiche resta il cockpit del dominio: qui orienti l’accesso a elenco, workspace dedicato e prossimi monitor operativi senza sporcare la lista.'))}</p>
     </section>
 
-    <section class="kpi-grid compact-kpi-grid">
+    <section class="${densityCompactKpiGrid()}">
       <article class="kpi-card">
         <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceHubTotal', 'Pratiche archiviate'))}</div>
         <div class="kpi-value">${U.escapeHtml(String(practiceCount))}</div>
@@ -990,7 +1026,7 @@ function practiceList(state, filtered = [], insights = {}) {
       <p>${U.escapeHtml(T.t('ui.practiceListIntro', 'Questa vista resta dedicata solo a ricerca, filtri per campo, confronto periodale e apertura della pratica nel workspace interno.'))}</p>
     </section>
 
-    <section class="kpi-grid compact-kpi-grid">
+    <section class="${densityCompactKpiGrid()}">
       <article class="kpi-card">
         <div class="kpi-label">${U.escapeHtml(T.t('ui.practiceListCurrentRange', 'Range attivo'))}</div>
         <div class="kpi-value">${U.escapeHtml(String(insights.primaryCount || 0))}</div>
@@ -1046,28 +1082,28 @@ function practiceList(state, filtered = [], insights = {}) {
           <button class="btn secondary" type="button" data-action="reset-practice-list-filters">${U.escapeHtml(T.t('ui.resetPracticeListFilters', 'Reset filtri'))}</button>
         </div>
       </div>
-      <div class="form-grid three practice-list-filter-grid density-compact">
-        <div class="${Density.append('field', 'wide')}"><label for="practiceListQuick">${U.escapeHtml(T.t('ui.quickFilter', 'Filtro rapido elenco'))}</label><input id="practiceListQuick" type="search" data-practice-list-filter="quick" value="${U.escapeHtml(filters.quick || '')}" placeholder="${U.escapeHtml(T.t('ui.practiceListQuickPlaceholder', 'Cliente, numero pratica, booking, container...'))}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListStatus">${U.escapeHtml(T.t('ui.statusFilter', 'Filtro stato'))}</label><select id="practiceListStatus" data-practice-list-filter="status">${statusOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.status === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListDirection">${U.escapeHtml(T.t('ui.direction', 'Direzione'))}</label><select id="practiceListDirection" data-practice-list-filter="direction">${directionOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.direction === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))}</label><select id="practiceListType" data-practice-list-filter="practiceType">${practiceTypes.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.practiceType === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListReference">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</label><input id="practiceListReference" type="search" data-practice-list-filter="reference" value="${U.escapeHtml(filters.reference || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListClient">${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</label><input id="practiceListClient" type="search" data-practice-list-filter="client" value="${U.escapeHtml(filters.client || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListImporter">${U.escapeHtml(T.t('ui.importer', 'Importatore'))}</label><input id="practiceListImporter" type="search" data-practice-list-filter="importer" value="${U.escapeHtml(filters.importer || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListExporter">${U.escapeHtml(T.t('ui.shipper', 'Mittente / esportatore'))}</label><input id="practiceListExporter" type="search" data-practice-list-filter="exporter" value="${U.escapeHtml(filters.exporter || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListConsignee">${U.escapeHtml(T.t('ui.consignee', 'Destinatario'))}</label><input id="practiceListConsignee" type="search" data-practice-list-filter="consignee" value="${U.escapeHtml(filters.consignee || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListContainer">${U.escapeHtml(T.t('ui.containerCode', 'Container / telaio'))}</label><input id="practiceListContainer" type="search" data-practice-list-filter="container" value="${U.escapeHtml(filters.container || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListBooking">${U.escapeHtml(T.t('ui.bookingWord', 'Booking'))}</label><input id="practiceListBooking" type="search" data-practice-list-filter="booking" value="${U.escapeHtml(filters.booking || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListPolicy">${U.escapeHtml(T.t('ui.policyNumber', 'Polizza / BL / AWB'))}</label><input id="practiceListPolicy" type="search" data-practice-list-filter="policy" value="${U.escapeHtml(filters.policy || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListVessel">${U.escapeHtml(T.t('ui.vesselVoyage', 'Nave / viaggio'))}</label><input id="practiceListVessel" type="search" data-practice-list-filter="vessel" value="${U.escapeHtml(filters.vessel || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListOrigin">${U.escapeHtml(T.t('ui.originDirectory', 'Origine'))}</label><input id="practiceListOrigin" type="search" data-practice-list-filter="origin" value="${U.escapeHtml(filters.origin || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListDestination">${U.escapeHtml(T.t('ui.destinationDirectory', 'Destinazione'))}</label><input id="practiceListDestination" type="search" data-practice-list-filter="destination" value="${U.escapeHtml(filters.destination || '')}" autocomplete="off" /></div>
+      <div class="form-grid three practice-list-filter-grid">
+        <div class="field"><label for="practiceListQuick">${U.escapeHtml(T.t('ui.quickFilter', 'Filtro rapido elenco'))}</label><input id="practiceListQuick" type="search" data-practice-list-filter="quick" value="${U.escapeHtml(filters.quick || '')}" placeholder="${U.escapeHtml(T.t('ui.practiceListQuickPlaceholder', 'Cliente, numero pratica, booking, container...'))}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListStatus">${U.escapeHtml(T.t('ui.statusFilter', 'Filtro stato'))}</label><select id="practiceListStatus" data-practice-list-filter="status">${statusOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.status === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="practiceListDirection">${U.escapeHtml(T.t('ui.direction', 'Direzione'))}</label><select id="practiceListDirection" data-practice-list-filter="direction">${directionOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.direction === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="practiceListType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))}</label><select id="practiceListType" data-practice-list-filter="practiceType">${practiceTypes.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.practiceType === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="practiceListReference">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</label><input id="practiceListReference" type="search" data-practice-list-filter="reference" value="${U.escapeHtml(filters.reference || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListClient">${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</label><input id="practiceListClient" type="search" data-practice-list-filter="client" value="${U.escapeHtml(filters.client || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListImporter">${U.escapeHtml(T.t('ui.importer', 'Importatore'))}</label><input id="practiceListImporter" type="search" data-practice-list-filter="importer" value="${U.escapeHtml(filters.importer || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListExporter">${U.escapeHtml(T.t('ui.shipper', 'Mittente / esportatore'))}</label><input id="practiceListExporter" type="search" data-practice-list-filter="exporter" value="${U.escapeHtml(filters.exporter || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListConsignee">${U.escapeHtml(T.t('ui.consignee', 'Destinatario'))}</label><input id="practiceListConsignee" type="search" data-practice-list-filter="consignee" value="${U.escapeHtml(filters.consignee || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListContainer">${U.escapeHtml(T.t('ui.containerCode', 'Container / telaio'))}</label><input id="practiceListContainer" type="search" data-practice-list-filter="container" value="${U.escapeHtml(filters.container || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListBooking">${U.escapeHtml(T.t('ui.bookingWord', 'Booking'))}</label><input id="practiceListBooking" type="search" data-practice-list-filter="booking" value="${U.escapeHtml(filters.booking || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListPolicy">${U.escapeHtml(T.t('ui.policyNumber', 'Polizza / BL / AWB'))}</label><input id="practiceListPolicy" type="search" data-practice-list-filter="policy" value="${U.escapeHtml(filters.policy || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListVessel">${U.escapeHtml(T.t('ui.vesselVoyage', 'Nave / viaggio'))}</label><input id="practiceListVessel" type="search" data-practice-list-filter="vessel" value="${U.escapeHtml(filters.vessel || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListOrigin">${U.escapeHtml(T.t('ui.originDirectory', 'Origine'))}</label><input id="practiceListOrigin" type="search" data-practice-list-filter="origin" value="${U.escapeHtml(filters.origin || '')}" autocomplete="off" /></div>
+        <div class="field"><label for="practiceListDestination">${U.escapeHtml(T.t('ui.destinationDirectory', 'Destinazione'))}</label><input id="practiceListDestination" type="search" data-practice-list-filter="destination" value="${U.escapeHtml(filters.destination || '')}" autocomplete="off" /></div>
       </div>
-      <div class="form-grid four practice-list-filter-grid compact-date-grid density-compact">
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListDateFrom">${U.escapeHtml(T.t('ui.dateFrom', 'Data da'))}</label><input id="practiceListDateFrom" type="date" data-practice-list-filter="dateFrom" value="${U.escapeHtml(filters.dateFrom || '')}" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListDateTo">${U.escapeHtml(T.t('ui.dateTo', 'Data a'))}</label><input id="practiceListDateTo" type="date" data-practice-list-filter="dateTo" value="${U.escapeHtml(filters.dateTo || '')}" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListCompareDateFrom">${U.escapeHtml(T.t('ui.compareDateFrom', 'Confronta da'))}</label><input id="practiceListCompareDateFrom" type="date" data-practice-list-filter="compareDateFrom" value="${U.escapeHtml(filters.compareDateFrom || '')}" /></div>
-        <div class="${Density.append('field', 'compact')}"><label for="practiceListCompareDateTo">${U.escapeHtml(T.t('ui.compareDateTo', 'Confronta a'))}</label><input id="practiceListCompareDateTo" type="date" data-practice-list-filter="compareDateTo" value="${U.escapeHtml(filters.compareDateTo || '')}" /></div>
+      <div class="${densityCompactDateGrid()}">
+        <div class="field"><label for="practiceListDateFrom">${U.escapeHtml(T.t('ui.dateFrom', 'Data da'))}</label><input id="practiceListDateFrom" type="date" data-practice-list-filter="dateFrom" value="${U.escapeHtml(filters.dateFrom || '')}" /></div>
+        <div class="field"><label for="practiceListDateTo">${U.escapeHtml(T.t('ui.dateTo', 'Data a'))}</label><input id="practiceListDateTo" type="date" data-practice-list-filter="dateTo" value="${U.escapeHtml(filters.dateTo || '')}" /></div>
+        <div class="field"><label for="practiceListCompareDateFrom">${U.escapeHtml(T.t('ui.compareDateFrom', 'Confronta da'))}</label><input id="practiceListCompareDateFrom" type="date" data-practice-list-filter="compareDateFrom" value="${U.escapeHtml(filters.compareDateFrom || '')}" /></div>
+        <div class="field"><label for="practiceListCompareDateTo">${U.escapeHtml(T.t('ui.compareDateTo', 'Confronta a'))}</label><input id="practiceListCompareDateTo" type="date" data-practice-list-filter="compareDateTo" value="${U.escapeHtml(filters.compareDateTo || '')}" /></div>
       </div>
       <div class="practice-list-toolbar-row">
         <div class="practice-list-toolbar-left">
@@ -1075,11 +1111,11 @@ function practiceList(state, filtered = [], insights = {}) {
           <span class="table-meta-cell">${U.escapeHtml(T.t('ui.practiceListSortHint', 'Ordina l’elenco e leggi subito il confronto attivo vs periodo confronto senza cambiare vista.'))}</span>
         </div>
         <div class="practice-list-toolbar-right">
-          <div class="${Density.append('field compact', 'compact')}">
+          <div class="${densityCompactField()}">
             <label for="practiceListSortBy">${U.escapeHtml(T.t('ui.practiceListSortBy', 'Ordina per'))}</label>
             <select id="practiceListSortBy" data-practice-list-filter="sortBy">${sortOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${activeSortBy === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select>
           </div>
-          <div class="${Density.append('field compact', 'compact')}">
+          <div class="${densityCompactField()}">
             <label for="practiceListSortDirection">${U.escapeHtml(T.t('ui.practiceListSortDirection', 'Verso'))}</label>
             <select id="practiceListSortDirection" data-practice-list-filter="sortDirection">${sortDirectionOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${activeSortDirection === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select>
           </div>
@@ -1228,7 +1264,7 @@ function settings(state, modules, activeUser) {
         <p>${U.escapeHtml(T.t('ui.moduleSettingsDescription', ''))}</p>
       </section>
 
-      <section class="kpi-grid compact-kpi-grid">
+      <section class="${densityCompactKpiGrid()}">
         <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.company', 'Azienda'))}</div><div class="kpi-value">${U.escapeHtml(company.name || '—')}</div><div class="kpi-hint">${U.escapeHtml(T.t('ui.currentCustomer', ''))}</div></article>
         <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.plan', 'Piano'))}</div><div class="kpi-value">${U.escapeHtml(String(company.plan || 'base').toUpperCase())}</div><div class="kpi-hint">${companyEntitlements.size} modules</div></article>
         <article class="kpi-card"><div class="kpi-label">${U.escapeHtml(T.t('ui.activeUser', 'Utente attivo'))}</div><div class="kpi-value">${U.escapeHtml(activeUser ? activeUser.name : '—')}</div><div class="kpi-hint">${userEntitlements.size} modules</div></article>
@@ -1321,7 +1357,7 @@ function settings(state, modules, activeUser) {
     </div>
     <div class="field full">
       <label>${U.escapeHtml(T.t('ui.documentCategoriesActiveList', 'Categorie attive'))}</label>
-      <div class="tag-grid compact-tag-grid">
+      <div class="${densityCompactTagGrid()}">
         ${configuredDocumentTypes.map((item) => `<span class="tag-pill">${U.escapeHtml(item.label)}</span>`).join('')}
       </div>
     </div>
@@ -1405,7 +1441,7 @@ function settings(state, modules, activeUser) {
         <p>${U.escapeHtml(module.description)}</p>
       </section>
 
-      <section class="three-col compact-grid">
+      <section class="${densityCompactGrid('three-col')}">
         <article class="panel"><div class="summary-kicker">${U.escapeHtml(T.t('ui.status', 'Stato'))}</div><div class="summary-value">STEP 4D</div><p class="summary-text">${U.escapeHtml(T.t('ui.noDeadLinks', ''))}</p></article>
         <article class="panel"><div class="summary-kicker">${U.escapeHtml(T.t('ui.tier', 'Tier'))}</div><div class="summary-value">${U.escapeHtml(module.tierHint)}</div><p class="summary-text">${U.escapeHtml(T.t('ui.pricingHint', ''))}</p></article>
         <article class="panel"><div class="summary-kicker">${U.escapeHtml(T.t('ui.language', 'Lingua'))}</div><div class="summary-value">${U.escapeHtml(T.getLanguage().toUpperCase())}</div><p class="summary-text">${status.isUserEnabled ? U.escapeHtml(T.t('ui.visible', '')) : U.escapeHtml(T.t('ui.hiddenLabel', ''))}</p></article>
@@ -1435,7 +1471,7 @@ function settings(state, modules, activeUser) {
         <p>${U.escapeHtml(meta.fullTitle)} · ${U.escapeHtml(T.t('ui.routeReady', ''))}</p>
       </section>
 
-      <section class="three-col compact-grid">
+      <section class="${densityCompactGrid('three-col')}">
         <article class="panel"><div class="summary-kicker">${U.escapeHtml(T.t('ui.parentModule', ''))}</div><div class="summary-value">${U.escapeHtml(module.label)}</div><p class="summary-text">${U.escapeHtml(T.t('ui.enterpriseNavigation', ''))}</p></article>
         <article class="panel"><div class="summary-kicker">${U.escapeHtml(T.t('ui.licensingReadiness', ''))}</div><div class="summary-value">${U.escapeHtml(T.t('ui.granular', 'granulare'))}</div><p class="summary-text">${U.escapeHtml(T.t('ui.pricingHint', ''))}</p></article>
         <article class="panel"><div class="summary-kicker">${U.escapeHtml(T.t('ui.status', 'Stato'))}</div><div class="summary-value">${U.escapeHtml(T.t('ui.placeholder', 'placeholder'))}</div><p class="summary-text">${U.escapeHtml(T.t('ui.nextFocusHint', ''))}</p></article>

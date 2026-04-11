@@ -1,33 +1,83 @@
 window.KedrixOneDensitySystem = (() => {
   'use strict';
 
-  const DENSITIES = ['compact', 'medium', 'wide', 'full'];
-
-  function normalize(value, fallback = 'medium') {
-    const clean = String(value || '').trim().toLowerCase();
-    if (DENSITIES.includes(clean)) return clean;
-    return DENSITIES.includes(fallback) ? fallback : 'medium';
+  function flattenTokens(values) {
+    const tokens = [];
+    values.forEach((value) => {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        tokens.push(...flattenTokens(value));
+        return;
+      }
+      if (typeof value === 'string') {
+        tokens.push(...value.split(/\s+/).map((item) => item.trim()).filter(Boolean));
+      }
+    });
+    return tokens;
   }
 
-  function resolve(value, options = {}) {
-    if (options.full) return 'full';
-    return normalize(value, options.fallback || 'medium');
+  function classes() {
+    return Array.from(new Set(flattenTokens(Array.from(arguments)))).join(' ');
   }
 
-  function className(value, options = {}) {
-    return `density-${resolve(value, options)}`;
+  function grid(baseClass) {
+    return classes(baseClass, 'density-grid', Array.from(arguments).slice(1));
   }
 
-  function append(baseClass, value, options = {}) {
-    const base = String(baseClass || '').trim();
-    return [base, className(value, options)].filter(Boolean).join(' ');
+  function field(options = {}) {
+    return classes(
+      options.baseClass || 'field',
+      'density-field',
+      options.full ? 'full' : '',
+      options.compact ? 'density-field--compact' : '',
+      options.incoterm ? 'density-field--incoterm' : '',
+      options.extra || []
+    );
+  }
+
+  function head(options = {}) {
+    return classes(
+      options.baseClass || 'panel-head',
+      'density-head',
+      options.compact ? 'density-head--compact' : '',
+      options.extra || []
+    );
+  }
+
+  function compactGrid(baseClass) {
+    return grid(baseClass, 'density-grid--compact');
+  }
+
+  function compactKpiGrid(baseClass = 'kpi-grid') {
+    return grid(baseClass, 'density-grid--compact-kpi');
+  }
+
+  function compactTagGrid(baseClass = 'tag-grid') {
+    return grid(baseClass, 'density-grid--compact-tag');
+  }
+
+  function compactDateGrid(baseClass = 'form-grid') {
+    return grid(baseClass, 'density-grid--compact-date');
+  }
+
+  function sectionGrid(baseClass = 'dynamic-section-grid') {
+    return grid(baseClass, 'density-grid--section');
+  }
+
+  function customsLineGrid(baseClass = 'customs-line-grid') {
+    return grid(baseClass, 'density-grid--customs-lines');
   }
 
   return {
-    DENSITIES,
-    normalize,
-    resolve,
-    className,
-    append
+    classes,
+    grid,
+    field,
+    head,
+    compactGrid,
+    compactKpiGrid,
+    compactTagGrid,
+    compactDateGrid,
+    sectionGrid,
+    customsLineGrid
   };
 })();
