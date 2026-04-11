@@ -47,6 +47,7 @@
   const CustomsInstructionsWorkspace = window.KedrixOneCustomsInstructionsWorkspace || null;
   const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
   const BookingEmbarkationModule = window.KedrixOneBookingEmbarkationModule || null;
+  const ArrivalNoticeModule = window.KedrixOneArrivalNoticeModule || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -65,6 +66,9 @@
   }
   if (CustomsInstructionsModule && typeof CustomsInstructionsModule.ensureState === 'function') {
     CustomsInstructionsModule.ensureState(state);
+  }
+  if (ArrivalNoticeModule && typeof ArrivalNoticeModule.ensureState === 'function') {
+    ArrivalNoticeModule.ensureState(state);
   }
 
   function ensurePracticeListState() {
@@ -2136,6 +2140,17 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
+    if (route === 'practices/notifica-arrivo-merce') {
+      if (!ArrivalNoticeModule || typeof ArrivalNoticeModule.render !== 'function') {
+        main.innerHTML = Templates.submodulePlaceholder(module, routeMeta);
+        return;
+      }
+      ArrivalNoticeModule.ensureState?.(state);
+      main.innerHTML = ArrivalNoticeModule.render(state, { i18n: I18N, getSelectedPractice: selectedPractice });
+      bindArrivalNoticeEvents();
+      return;
+    }
+
     if (route === 'documents') {
       ensureDocumentPreviewSelection();
       main.innerHTML = Templates.documents(state, module, documentSearchResults());
@@ -2225,6 +2240,20 @@ function renderDocumentPreviewPanel() {
   function bindBookingEmbarkationEvents() {
     if (!BookingEmbarkationModule || typeof BookingEmbarkationModule.bind !== 'function') return;
     BookingEmbarkationModule.bind({
+      root: main,
+      state,
+      save,
+      render,
+      toast,
+      i18n: I18N,
+      getSelectedPractice: selectedPractice
+    });
+  }
+
+
+  function bindArrivalNoticeEvents() {
+    if (!ArrivalNoticeModule || typeof ArrivalNoticeModule.bind !== 'function') return;
+    ArrivalNoticeModule.bind({
       root: main,
       state,
       save,
