@@ -7,6 +7,10 @@ window.KedrixOnePracticeFormRenderer = (() => {
   const PracticeFormLayout = window.KedrixOnePracticeFormLayout;
   const PracticeOverview = window.KedrixOnePracticeOverview;
   const PracticeFieldRelations = window.KedrixOnePracticeFieldRelations;
+  const Density = window.KedrixOneDensitySystem || {
+    resolve: (value, options = {}) => options.full ? 'full' : String(value || options.fallback || 'medium').trim().toLowerCase(),
+    append: (base, value, options = {}) => [String(base || '').trim(), `density-${options.full ? 'full' : (String(value || options.fallback || 'medium').trim().toLowerCase() || 'medium')}`].filter(Boolean).join(' ')
+  };
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -91,7 +95,8 @@ window.KedrixOnePracticeFormRenderer = (() => {
       ? `<div class="field-label-row"><label for="dyn_${field.name}">${label}</label><div class="field-label-actions">${fieldActionsHtml}</div></div>`
       : `<label for="dyn_${field.name}">${label}</label>`;
     const incotermCompactClass = field.name === 'incoterm' ? ' practice-incoterm-compact' : '';
-    const wrapClass = `field${field.full ? ' full' : ''}${incotermCompactClass}`;
+    const density = Density.resolve(field.density, { full: field.full, fallback: field.name === 'incoterm' ? 'compact' : 'medium' });
+    const wrapClass = Density.append(`field${field.full ? ' full' : ''}${incotermCompactClass}`, density, { full: field.full, fallback: field.full ? 'full' : 'medium' });
     const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const fieldOptions = PracticeSchemas.getFieldOptions(type, field, companyConfig);
     const fieldOptionEntries = (typeof PracticeSchemas.getFieldOptionEntries === 'function'
@@ -174,8 +179,8 @@ window.KedrixOnePracticeFormRenderer = (() => {
     const currencyOptions = PracticeSchemas.getFieldOptions(type, currencyField, companyConfig);
     const currencyValue = String(draft.dynamicData?.[currencyField.name] || '');
     const amountValue = String(draft.dynamicData?.[amountField.name] || '');
-    const amountWrapAttrs = `class="field practice-economic-pair" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
-    const currencyWrapAttrs = `class="field practice-economic-pair-currency-wrap" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const amountWrapAttrs = `class="${Density.append('field practice-economic-pair', amountField.density || 'wide')}" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const currencyWrapAttrs = `class="${Density.append('field practice-economic-pair-currency-wrap', currencyField.density || 'compact')}" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const currencyLabel = Utils.escapeHtml(I18N.t(currencyField.labelKey, currencyField.name));
     const amountRelationMetaHtml = PracticeFieldRelations && typeof PracticeFieldRelations.renderFieldRelationMeta === 'function'
       ? PracticeFieldRelations.renderFieldRelationMeta({ state, type, field: amountField, draft, companyConfig, i18n: I18N, utils: Utils })
