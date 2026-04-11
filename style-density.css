@@ -1,13 +1,8 @@
 :root {
-  --density-gap-compact: 8px;
-  --density-gap-medium: 10px;
-  --density-gap-wide: 12px;
-  --density-control-height: 40px;
-  --density-control-padding-y: 8px;
-  --density-control-padding-x: 10px;
-  --density-label-size: 12px;
-  --density-text-size: 13px;
-  --density-textarea-min-height: 78px;
+  --density-column-gap-compact: 8px;
+  --density-column-gap-medium: 10px;
+  --density-column-gap-wide: 12px;
+  --density-row-gap: 14px;
 }
 
 .practice-form-stack,
@@ -22,38 +17,7 @@
 }
 
 .dynamic-field-section-head {
-  gap: 3px;
-}
-
-.field {
-  gap: 6px;
-}
-
-.field label {
-  font-size: var(--density-label-size);
-  line-height: 1.15;
-}
-
-.field-hint,
-.field-note,
-.field-error,
-.field-relation-text,
-.dynamic-field-section-subtitle,
-.panel-subtitle {
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-.field input,
-.field select,
-.field textarea {
-  min-height: var(--density-control-height);
-  padding: var(--density-control-padding-y) var(--density-control-padding-x);
-  font-size: var(--density-text-size);
-}
-
-.field textarea {
-  min-height: var(--density-textarea-min-height);
+  gap: 4px;
 }
 
 .practice-identity-grid,
@@ -62,9 +26,10 @@
 .practice-list-filter-grid,
 .customs-line-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(24, minmax(0, 1fr));
   align-items: start;
-  gap: var(--density-grid-gap, var(--density-gap-medium));
+  row-gap: var(--density-row-gap);
+  column-gap: var(--density-column-gap, var(--density-column-gap-medium));
 }
 
 .practice-identity-grid,
@@ -73,7 +38,7 @@
 .practice-list-filter-grid,
 .practice-list-filter-grid.compact-date-grid,
 .customs-line-grid {
-  --density-grid-gap: var(--density-gap-compact);
+  --density-column-gap: var(--density-column-gap-compact);
 }
 
 .practice-identity-grid > .field,
@@ -90,7 +55,7 @@
 .customs-instructions-form-grid > .field,
 .practice-list-filter-grid > .field,
 .customs-line-grid > .field {
-  grid-column: span 3;
+  grid-column: span 4;
 }
 
 .practice-identity-grid > .field.density-compact,
@@ -98,7 +63,7 @@
 .customs-instructions-form-grid > .field.density-compact,
 .practice-list-filter-grid > .field.density-compact,
 .customs-line-grid > .field.density-compact {
-  grid-column: span 2;
+  grid-column: span 3;
 }
 
 .practice-identity-grid > .field.density-medium,
@@ -106,7 +71,7 @@
 .customs-instructions-form-grid > .field.density-medium,
 .practice-list-filter-grid > .field.density-medium,
 .customs-line-grid > .field.density-medium {
-  grid-column: span 3;
+  grid-column: span 4;
 }
 
 .practice-identity-grid > .field.density-wide,
@@ -114,7 +79,7 @@
 .customs-instructions-form-grid > .field.density-wide,
 .practice-list-filter-grid > .field.density-wide,
 .customs-line-grid > .field.density-wide {
-  grid-column: span 4;
+  grid-column: span 6;
 }
 
 .practice-identity-grid > .field.density-full,
@@ -131,19 +96,16 @@
 }
 
 .compact-grid {
-  gap: var(--density-gap-compact);
+  column-gap: var(--density-column-gap-compact);
 }
 
-.compact-kpi-grid {
-  gap: var(--density-gap-medium);
-}
-
-.compact-tag-grid {
-  gap: var(--density-gap-compact);
+.compact-kpi-grid,
+.compact-tag-grid,
+.compact-head {
+  column-gap: var(--density-column-gap-medium);
 }
 
 .compact-head {
-  gap: var(--density-gap-compact);
   margin-bottom: 10px;
 }
 
@@ -164,9 +126,8 @@
 }
 
 .practice-list-toolbar-right > .field {
-  flex: 0 1 164px;
-  max-width: 176px;
-  gap: 5px;
+  flex: 0 1 176px;
+  max-width: 188px;
 }
 
 .practice-list-toolbar-right > .field select {
@@ -175,11 +136,11 @@
 
 .practice-economic-pair-row,
 .customs-instructions-currency-row {
-  gap: 8px;
+  column-gap: 8px;
 }
 
 .customs-instructions-currency-row {
-  grid-template-columns: minmax(0, 1fr) 84px;
+  grid-template-columns: minmax(0, 1fr) 92px;
 }
 
 .customs-instructions-summary-pills {
@@ -190,13 +151,13 @@
   padding: 12px;
 }
 
-@media (max-width: 1680px) {
+@media (max-width: 1760px) {
   .practice-identity-grid > .field,
   .dynamic-section-grid > .field,
   .customs-instructions-form-grid > .field,
   .practice-list-filter-grid > .field,
   .customs-line-grid > .field {
-    grid-column: span 4;
+    grid-column: span 6;
   }
 
   .practice-identity-grid > .field.density-compact,
@@ -204,14 +165,6 @@
   .customs-instructions-form-grid > .field.density-compact,
   .practice-list-filter-grid > .field.density-compact,
   .customs-line-grid > .field.density-compact {
-    grid-column: span 3;
-  }
-
-  .practice-identity-grid > .field.density-medium,
-  .dynamic-section-grid > .field.density-medium,
-  .customs-instructions-form-grid > .field.density-medium,
-  .practice-list-filter-grid > .field.density-medium,
-  .customs-line-grid > .field.density-medium {
     grid-column: span 4;
   }
 
@@ -220,7 +173,34 @@
   .customs-instructions-form-grid > .field.density-wide,
   .practice-list-filter-grid > .field.density-wide,
   .customs-line-grid > .field.density-wide {
+    grid-column: span 8;
+  }
+}
+
+@media (max-width: 1400px) {
+  .practice-identity-grid > .field,
+  .dynamic-section-grid > .field,
+  .customs-instructions-form-grid > .field,
+  .practice-list-filter-grid > .field,
+  .customs-line-grid > .field {
+    grid-column: span 8;
+  }
+
+  .practice-identity-grid > .field.density-compact,
+  .dynamic-section-grid > .field.density-compact,
+  .customs-instructions-form-grid > .field.density-compact,
+  .practice-list-filter-grid > .field.density-compact,
+  .customs-line-grid > .field.density-compact,
+  .practice-list-filter-grid.compact-date-grid > .field {
     grid-column: span 6;
+  }
+
+  .practice-identity-grid > .field.density-wide,
+  .dynamic-section-grid > .field.density-wide,
+  .customs-instructions-form-grid > .field.density-wide,
+  .practice-list-filter-grid > .field.density-wide,
+  .customs-line-grid > .field.density-wide {
+    grid-column: span 12;
   }
 }
 
@@ -231,7 +211,7 @@
   .practice-list-filter-grid > .field,
   .customs-line-grid > .field,
   .practice-list-filter-grid.compact-date-grid > .field {
-    grid-column: span 6;
+    grid-column: span 12;
   }
 
   .practice-identity-grid > .field.density-compact,
@@ -239,7 +219,7 @@
   .customs-instructions-form-grid > .field.density-compact,
   .practice-list-filter-grid > .field.density-compact,
   .customs-line-grid > .field.density-compact {
-    grid-column: span 4;
+    grid-column: span 8;
   }
 
   .practice-identity-grid > .field.density-wide,
@@ -263,7 +243,7 @@
 
 @media (max-width: 820px) {
   .practice-list-toolbar-right > .field {
-    flex: 1 1 160px;
+    flex: 1 1 170px;
     max-width: none;
   }
 }

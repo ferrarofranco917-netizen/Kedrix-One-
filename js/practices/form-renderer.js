@@ -71,11 +71,37 @@ window.KedrixOnePracticeFormRenderer = (() => {
     if (field.full || field.type === 'textarea') return 'full';
     if (field.density) return Density.resolve(field.density, { full: field.full, fallback: 'medium' });
     const name = String(field.name || '').toLowerCase();
-    if (field.type === 'date' || field.type === 'number') return 'compact';
-    if (field.type === 'select') return 'compact';
+    if (field.type === 'date' || field.type === 'number' || field.type === 'select') return 'compact';
     if (field.type === 'checkbox-group') return 'full';
-    if (name.includes('description') || name.includes('declaration') || name.includes('instruction') || name.includes('note') || name.includes('text') || name.includes('address')) return 'wide';
-    if (name.includes('reference') || name.includes('booking') || name.includes('policy') || name.includes('container') || name.includes('taric') || name.includes('incoterm')) return 'compact';
+    if (name.includes('address') || name.includes('description') || name.includes('declaration') || name.includes('instruction') || name.includes('note') || name.includes('text')) return 'wide';
+    if (
+      name.includes('client')
+      || name.includes('importer')
+      || name.includes('exporter')
+      || name.includes('shipper')
+      || name.includes('consignee')
+      || name.includes('sender')
+      || name.includes('receiver')
+      || name.includes('carrier')
+      || name.includes('company')
+      || name.includes('vessel')
+      || name.includes('origin')
+      || name.includes('destination')
+      || name.includes('airport')
+      || name.includes('port')
+      || name.includes('customs')
+      || name.includes('depot')
+      || name.includes('warehouse')
+      || name.includes('operator')
+      || name.includes('transport')
+      || name.includes('section')
+      || name.includes('reference')
+      || name.includes('booking')
+      || name.includes('policy')
+      || name.includes('container')
+      || name.includes('taric')
+      || name.includes('incoterm')
+    ) return 'compact';
     return 'medium';
   }
 
@@ -192,7 +218,7 @@ window.KedrixOnePracticeFormRenderer = (() => {
     const currencyOptions = PracticeSchemas.getFieldOptions(type, currencyField, companyConfig);
     const currencyValue = String(draft.dynamicData?.[currencyField.name] || '');
     const amountValue = String(draft.dynamicData?.[amountField.name] || '');
-    const amountDensity = Density.resolve(amountField.density || 'medium', { fallback: 'medium' });
+    const amountDensity = Density.resolve(amountField.density || 'compact', { fallback: 'compact' });
     const currencyDensity = Density.resolve(currencyField.density || 'compact', { fallback: 'compact' });
     const amountWrapAttrs = `class="${Density.append('field practice-economic-pair', amountDensity)}" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const currencyWrapAttrs = `class="${Density.append('field practice-economic-pair-currency-wrap', currencyDensity)}" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
