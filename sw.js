@@ -1,10 +1,11 @@
 // AQ35 practice quick add overlay
-const STATIC_CACHE = 'kedrix-one-stepaq35-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq35-runtime-v1';
+const STATIC_CACHE = 'kedrix-one-stepaq36-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq36-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',
   './style.css',
+  './style-density.css',
   './manifest.json',
   './favicon.ico',
   './brand/kedrix-one-mark.svg'

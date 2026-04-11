@@ -2536,15 +2536,15 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     const linkedSummaryToggle = event.target.closest('[data-linked-summary-action="toggle"]');
     if (linkedSummaryToggle) {
       const summaryCard = linkedSummaryToggle.closest('.linked-entity-summary-card');
-      const details = summaryCard ? summaryCard.querySelector('.linked-entity-summary-details') : null;
-      if (!summaryCard || !details) return;
-      const isHidden = details.hasAttribute('hidden');
+      const body = summaryCard ? summaryCard.querySelector('.linked-entity-summary-body') : null;
+      if (!summaryCard || !body) return;
+      const isHidden = body.hasAttribute('hidden');
       if (isHidden) {
-        details.removeAttribute('hidden');
+        body.removeAttribute('hidden');
         summaryCard.dataset.expanded = 'true';
       } else {
-        details.setAttribute('hidden', 'hidden');
-        delete summaryCard.dataset.expanded;
+        body.setAttribute('hidden', 'hidden');
+        summaryCard.dataset.expanded = 'false';
       }
       const expandLabel = String(linkedSummaryToggle.dataset.expandLabel || I18N.t('ui.linkedEntitySummaryDetailAction', 'Dettaglio')).trim();
       const collapseLabel = String(linkedSummaryToggle.dataset.collapseLabel || I18N.t('ui.linkedEntitySummaryCollapseAction', 'Nascondi')).trim();

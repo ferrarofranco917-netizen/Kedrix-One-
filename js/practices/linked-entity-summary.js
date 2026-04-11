@@ -217,7 +217,6 @@ window.KedrixOneLinkedEntitySummary = (() => {
     const actionOpenLabel = t(options.i18n, 'ui.linkedEntitySummaryOpenAction', 'Apri scheda');
     const actionCopyLabel = t(options.i18n, 'ui.linkedEntitySummaryCopyAction', 'Copia dati');
     const collapseLabel = t(options.i18n, 'ui.linkedEntitySummaryCollapseAction', 'Nascondi');
-    const toggleButtonHtml = `<button type="button" class="linked-entity-summary-action linked-entity-summary-toggle" data-linked-summary-action="toggle" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}" data-expand-label="${escape(options.utils, actionDetailLabel)}" data-collapse-label="${escape(options.utils, collapseLabel)}">${escape(options.utils, actionDetailLabel)}</button>`;
 
     const detailsHtml = summary.detailRows.length
       ? `<div class="linked-entity-summary-details">${summary.detailRows.map((row) => `
@@ -225,15 +224,15 @@ window.KedrixOneLinkedEntitySummary = (() => {
       : '';
 
     return `
-      <div class="linked-entity-summary-card" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}">
+      <div class="linked-entity-summary-card" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}" data-expanded="false">
         <div class="linked-entity-summary-head">
           <div class="linked-entity-summary-head-main">
             ${microHeader ? `<div class="linked-entity-summary-microhead">${microHeader}</div>` : ''}
             <div class="linked-entity-summary-title">${escape(options.utils, summary.title)}</div>
           </div>
-          <div class="linked-entity-summary-head-side">
+          <div class="linked-entity-summary-head-actions">
             ${htmlInactive}
-            ${toggleButtonHtml}
+            <button type="button" class="linked-entity-summary-action" data-linked-summary-action="toggle" data-linked-summary-field="${escape(options.utils, resolvedFieldName)}" data-expand-label="${escape(options.utils, actionDetailLabel)}" data-collapse-label="${escape(options.utils, collapseLabel)}">${escape(options.utils, actionDetailLabel)}</button>
           </div>
         </div>
         <div class="linked-entity-summary-body" hidden>

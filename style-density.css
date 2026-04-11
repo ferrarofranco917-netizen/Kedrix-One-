@@ -381,8 +381,32 @@
 }
 
 
-/* AQ34 alignment + collapsible linked summary */
-.dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid,
+/* AQ36 alignment and collapsible linked summaries */
+.dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="shipper"],
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="sender"],
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="importer"],
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="client"],
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="consignee"],
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="receiver"],
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="correspondent"],
+.dynamic-field-section[data-section-key="linkedParties"] [data-field-wrap="warehouseContact"] {
+  display: grid;
+  align-content: start;
+}
+
+.field-label-row {
+  min-height: 34px;
+}
+
+.field-label-actions {
+  gap: 6px;
+}
+
 .dynamic-field-section[data-section-key="transportUnit"] .dynamic-section-grid,
 .dynamic-field-section[data-section-key="logisticsNodes"] .dynamic-section-grid,
 .dynamic-field-section[data-section-key="goods"] .dynamic-section-grid,
@@ -391,90 +415,79 @@
   align-items: start;
 }
 
-.dynamic-field-section[data-section-key="linkedParties"] .field-label-row,
-.dynamic-field-section[data-section-key="transportUnit"] .field-label-row,
-.dynamic-field-section[data-section-key="logisticsNodes"] .field-label-row,
-.dynamic-field-section[data-section-key="goods"] .field-label-row,
-.dynamic-field-section[data-section-key="transportUnits"] .field-label-row,
-.dynamic-field-section[data-section-key="measures"] .field-label-row {
-  min-height: 28px;
-  align-items: start;
+.dynamic-field-section[data-section-key="transportUnit"] .field,
+.dynamic-field-section[data-section-key="logisticsNodes"] .field,
+.dynamic-field-section[data-section-key="goods"] .field,
+.dynamic-field-section[data-section-key="transportUnits"] .field,
+.dynamic-field-section[data-section-key="measures"] .field {
+  align-content: start;
 }
 
-.dynamic-field-section[data-section-key="linkedParties"] .field-label-row label,
-.dynamic-field-section[data-section-key="transportUnit"] .field-label-row label,
-.dynamic-field-section[data-section-key="logisticsNodes"] .field-label-row label,
-.dynamic-field-section[data-section-key="goods"] .field-label-row label,
-.dynamic-field-section[data-section-key="transportUnits"] .field-label-row label,
-.dynamic-field-section[data-section-key="measures"] .field-label-row label {
-  white-space: nowrap;
-}
-
-.dynamic-field-section[data-section-key="linkedParties"] .field-relation-meta {
-  align-self: start;
-}
-
-.dynamic-field-section[data-section-key="linkedParties"] .linked-entity-summary-card {
-  align-self: start;
+.linked-entity-summary-card {
+  gap: 10px;
 }
 
 .linked-entity-summary-head {
-  align-items: flex-start;
+  align-items: start;
 }
 
-.linked-entity-summary-head-side {
+.linked-entity-summary-head-actions {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
-}
-
-.linked-entity-summary-toggle {
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .linked-entity-summary-body {
   display: grid;
   gap: 8px;
-  padding-top: 6px;
-  border-top: 1px dashed rgba(148, 163, 184, 0.18);
 }
 
 .linked-entity-summary-body[hidden] {
   display: none !important;
 }
 
-.dynamic-field-section[data-section-key="transportUnit"] .field,
-.dynamic-field-section[data-section-key="logisticsNodes"] .field,
-.dynamic-field-section[data-section-key="goods"] .field,
-.dynamic-field-section[data-section-key="transportUnits"] .field,
-.dynamic-field-section[data-section-key="measures"] .field {
-  align-self: start;
+.linked-entity-summary-card[data-expanded='true'] {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageCount"] {
+  grid-column: span 2;
+}
+
+.dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageType"] {
+  grid-column: span 2;
 }
 
 .dynamic-field-section[data-section-key="goods"] [data-field-wrap="articleCode"],
-.dynamic-field-section[data-section-key="goods"] [data-field-wrap="taric"],
-.dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageCount"],
-.dynamic-field-section[data-section-key="goods"] [data-field-wrap="packageType"],
-.dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="containerCode"],
-.dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="booking"],
-.dynamic-field-section[data-section-key="measures"] [data-field-wrap] {
-  align-self: start;
+.dynamic-field-section[data-section-key="goods"] [data-field-wrap="taric"] {
+  grid-column: span 3;
 }
 
-@media (max-width: 1480px) {
-  .dynamic-field-section[data-section-key="linkedParties"] .field-label-row label,
-  .dynamic-field-section[data-section-key="transportUnit"] .field-label-row label,
-  .dynamic-field-section[data-section-key="logisticsNodes"] .field-label-row label,
-  .dynamic-field-section[data-section-key="goods"] .field-label-row label,
-  .dynamic-field-section[data-section-key="transportUnits"] .field-label-row label,
-  .dynamic-field-section[data-section-key="measures"] .field-label-row label {
-    white-space: normal;
+.dynamic-field-section[data-section-key="goods"] [data-field-wrap="goodsDescription"] {
+  grid-column: span 4;
+}
+
+.dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="containerCode"],
+.dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="transportUnitType"],
+.dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="booking"] {
+  grid-column: span 4;
+}
+
+.dynamic-field-section[data-section-key="transportUnits"] [data-field-wrap="policyNumber"] {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1180px) {
+  .dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 760px) {
-  .linked-entity-summary-head-side {
-    margin-left: 0;
+  .dynamic-field-section[data-section-key="linkedParties"] .dynamic-section-grid {
+    grid-template-columns: 1fr;
   }
 }
