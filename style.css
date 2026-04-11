@@ -4121,89 +4121,50 @@ body.dialog-open {
   }
 }
 
-
-.booking-embarkation-launcher-grid {
+.booking-embarkation-launcher-panel,
+.booking-embarkation-editor-panel,
+.booking-embarkation-workspace-panel {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
-.booking-embarkation-practice-picker,
-.booking-embarkation-practice-search {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+.booking-embarkation-practice-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.booking-embarkation-editor,
-.booking-embarkation-launcher,
-.booking-embarkation-workspace-panel,
-.booking-embarkation-records-panel,
-.booking-embarkation-record-card,
-.booking-embarkation-form-grid,
-.booking-embarkation-text-grid,
-.booking-embarkation-form-grid .field,
-.booking-embarkation-records-grid {
-  min-width: 0;
+.booking-embarkation-practice-chip,
+.booking-embarkation-record-card {
+  text-align: left;
+}
+
+.booking-embarkation-summary-pills {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .booking-embarkation-form-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.booking-embarkation-inline-pair.full {
-  grid-column: 1 / -1;
-}
-
-.booking-embarkation-date-time-row,
-.booking-embarkation-port-row,
-.booking-embarkation-vgm-row {
-  display: grid;
-  gap: 10px;
-}
-
-.booking-embarkation-date-time-row {
-  grid-template-columns: minmax(0, 1fr) 120px;
-}
-
-.booking-embarkation-port-row {
-  grid-template-columns: minmax(0, 1fr) 88px;
-}
-
-.booking-embarkation-vgm-row {
-  grid-template-columns: minmax(220px, 1fr) 120px 90px;
+  align-items: start;
 }
 
 .booking-embarkation-records-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.booking-embarkation-record-card {
-  display: grid;
-  gap: 12px;
+.booking-embarkation-tabs {
+  margin-top: -4px;
 }
 
-.booking-embarkation-tab-row {
-  margin-bottom: 16px;
-}
-
-.booking-embarkation-actions-row {
-  flex-wrap: wrap;
-}
-
-@media (max-width: 1100px) {
-  .booking-embarkation-launcher-grid,
-  .booking-embarkation-practice-picker,
-  .booking-embarkation-practice-search,
-  .booking-embarkation-form-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 1180px) {
+  .booking-embarkation-practice-grid,
+  .booking-embarkation-summary-pills,
+  .booking-embarkation-records-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .booking-embarkation-date-time-row,
-  .booking-embarkation-port-row,
-  .booking-embarkation-vgm-row {
+@media (max-width: 760px) {
+  .booking-embarkation-practice-grid,
+  .booking-embarkation-summary-pills,
+  .booking-embarkation-records-grid {
     grid-template-columns: 1fr;
   }
 }

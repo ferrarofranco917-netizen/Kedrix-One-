@@ -6,62 +6,51 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
   }
 
   function nextSessionId() {
-    return `bki-session-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    return `be-session-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
   function cloneDraft(draft = {}) {
     return {
       editingRecordId: '',
-      documentReference: '',
       practiceId: '',
       practiceReference: '',
       practiceType: '',
-      practiceTypeLabel: '',
-      practiceDate: '',
+      status: 'draft',
+      documentDate: new Date().toISOString().slice(0, 10),
       copies: '',
       transitary: '',
-      transitaryPreview: '',
       company: '',
       attentionTo: '',
-      fax: '',
-      loadPlace: '',
+      email: '',
+      loadingPlace: '',
       loadingDate: '',
-      loadingTime: '',
-      portLoading: '',
-      portLoadingCode: '',
-      portDischarge: '',
-      portDischargeCode: '',
+      loadingPort: '',
+      unloadingPort: '',
       vessel: '',
       voyage: '',
-      customsAt: '',
+      customsTo: '',
       positioning: '',
       positioningAt: '',
-      positioningPreview: '',
       finalDestination: '',
       goods: '',
       weight: '',
-      freightMode: '',
-      booking: '',
+      freightMode: 'PREPAID',
+      bookingReference: '',
       containers: '',
       ets: '',
-      vgmMode: '',
+      vgmReason: '',
       vgmCost: '',
-      vgmCostCurrency: 'EUR',
-      generalText: '',
-      additionalText: '',
-      footerText: '',
-      notes: '',
+      vgmCurrency: 'EUR',
+      internalText: '',
+      customerText: '',
       sourcePracticeSnapshot: {},
-      ...draft,
-      sourcePracticeSnapshot: draft?.sourcePracticeSnapshot && typeof draft.sourcePracticeSnapshot === 'object'
-        ? { ...draft.sourcePracticeSnapshot }
-        : {}
+      ...draft
     };
   }
 
-  function buildDraftSignature(draft = {}) {
+  function signatureOf(draft = {}) {
     try {
-      return JSON.stringify(cloneDraft(draft || {}));
+      return JSON.stringify(cloneDraft(draft));
     } catch (error) {
       return '';
     }
@@ -71,7 +60,7 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
     const draft = cloneDraft(session?.draft && typeof session.draft === 'object'
       ? session.draft
       : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : {}));
-    const currentSignature = buildDraftSignature(draft);
+    const currentSignature = signatureOf(draft);
     const savedSignature = String(session?.lastSavedDraftSignature || '').trim() || (Boolean(session?.isDirty) ? '' : currentSignature);
     return {
       id: String(session?.id || '').trim() || nextSessionId(),
@@ -85,19 +74,6 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
       },
       draft
     };
-  }
-
-  function createSession(options = {}) {
-    const { draft, source = 'manual', createEmptyDraft, isDirty = false, uiState = {} } = options;
-    return normalizeSession({
-      id: nextSessionId(),
-      source,
-      openedAt: nowIso(),
-      lastTouchedAt: nowIso(),
-      isDirty,
-      uiState,
-      draft: draft && typeof draft === 'object' ? draft : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : {})
-    }, createEmptyDraft);
   }
 
   function ensureState(state, options = {}) {
@@ -124,38 +100,38 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
     return workspace ? [...workspace.sessions] : [];
   }
 
+  function getActiveSession(state, options = {}) {
+    const workspace = ensureState(state, options);
+    if (!workspace) return null;
+    if (!workspace.activeSessionId) return workspace.sessions[0] || null;
+    return workspace.sessions.find((session) => session.id === workspace.activeSessionId) || workspace.sessions[0] || null;
+  }
+
   function findSession(state, sessionId, options = {}) {
     const workspace = ensureState(state, options);
     if (!workspace || !sessionId) return null;
     return workspace.sessions.find((session) => session.id === sessionId) || null;
   }
 
-  function getActiveSession(state, options = {}) {
-    const workspace = ensureState(state, options);
-    if (!workspace || !workspace.activeSessionId) return workspace?.sessions?.[0] || null;
-    return workspace.sessions.find((session) => session.id === workspace.activeSessionId) || workspace.sessions[0] || null;
-  }
-
   function touchSession(session) {
-    if (!session || typeof session !== 'object') return session;
+    if (!session) return session;
     session.lastTouchedAt = nowIso();
     return session;
-  }
-
-  function switchSession(state, sessionId, options = {}) {
-    const workspace = ensureState(state, options);
-    if (!workspace) return null;
-    const exists = workspace.sessions.some((session) => session.id === sessionId);
-    if (!exists) return getActiveSession(state, options);
-    workspace.activeSessionId = sessionId;
-    return getActiveSession(state, options);
   }
 
   function openDraftSession(state, options = {}) {
     const { draft, source = 'manual', createEmptyDraft, isDirty = true, tab = 'general' } = options;
     const workspace = ensureState(state, { createEmptyDraft });
     if (!workspace) return null;
-    const session = createSession({ draft, source, createEmptyDraft, isDirty, uiState: { tab } });
+    const session = normalizeSession({
+      id: nextSessionId(),
+      source,
+      openedAt: nowIso(),
+      lastTouchedAt: nowIso(),
+      isDirty,
+      uiState: { tab },
+      draft: draft && typeof draft === 'object' ? draft : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : {})
+    }, createEmptyDraft);
     workspace.sessions = [session, ...workspace.sessions];
     workspace.activeSessionId = session.id;
     return session;
@@ -171,7 +147,7 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
     if (existing) {
       existing.draft = cloneDraft(record);
       existing.isDirty = false;
-      existing.lastSavedDraftSignature = buildDraftSignature(existing.draft);
+      existing.lastSavedDraftSignature = signatureOf(existing.draft);
       existing.uiState = { ...(existing.uiState || {}), tab };
       workspace.activeSessionId = existing.id;
       touchSession(existing);
@@ -186,37 +162,49 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
     });
   }
 
-  function setSessionDirty(state, sessionId, dirty = true, options = {}) {
+  function switchSession(state, sessionId, options = {}) {
+    const workspace = ensureState(state, options);
+    if (!workspace) return null;
+    if (!workspace.sessions.some((session) => session.id === sessionId)) return getActiveSession(state, options);
+    workspace.activeSessionId = sessionId;
+    return getActiveSession(state, options);
+  }
+
+  function setSessionField(state, sessionId, fieldName, value, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return null;
-    session.isDirty = Boolean(dirty);
-    if (!dirty) session.lastSavedDraftSignature = buildDraftSignature(session.draft);
+    session.draft = cloneDraft({ ...session.draft, [fieldName]: value });
+    session.isDirty = true;
     touchSession(session);
     return session;
   }
 
-  function markSessionSaved(state, sessionId, options = {}) {
-    return setSessionDirty(state, sessionId, false, options);
+  function setSessionTab(state, sessionId, tab, options = {}) {
+    const session = findSession(state, sessionId, options);
+    if (!session) return null;
+    session.uiState = { ...(session.uiState || {}), tab: String(tab || 'general').trim() || 'general' };
+    touchSession(session);
+    return session;
   }
 
   function hasSessionUnsavedChanges(state, sessionId, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return false;
     if (!session.isDirty) return false;
-    const currentSignature = buildDraftSignature(session.draft);
+    const currentSignature = signatureOf(session.draft);
     const savedSignature = String(session.lastSavedDraftSignature || '').trim();
-    if (savedSignature && currentSignature === savedSignature) {
+    if (savedSignature && savedSignature === currentSignature) {
       session.isDirty = false;
-      touchSession(session);
       return false;
     }
     return true;
   }
 
-  function setSessionTab(state, sessionId, tab = 'general', options = {}) {
+  function markSessionSaved(state, sessionId, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return null;
-    session.uiState = { ...(session.uiState || {}), tab: String(tab || 'general').trim() || 'general' };
+    session.isDirty = false;
+    session.lastSavedDraftSignature = signatureOf(session.draft);
     touchSession(session);
     return session;
   }
@@ -229,11 +217,8 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
     const [removed] = workspace.sessions.splice(index, 1);
     if (!workspace.sessions.length) {
       workspace.activeSessionId = '';
-      return removed;
-    }
-    if (workspace.activeSessionId === sessionId) {
-      const fallback = workspace.sessions[Math.max(0, index - 1)] || workspace.sessions[0];
-      workspace.activeSessionId = fallback.id;
+    } else if (workspace.activeSessionId === sessionId) {
+      workspace.activeSessionId = workspace.sessions[Math.max(0, index - 1)].id;
     }
     return removed;
   }
@@ -242,15 +227,15 @@ window.KedrixOneBookingEmbarkationWorkspace = (() => {
     cloneDraft,
     ensureState,
     listSessions,
-    findSession,
     getActiveSession,
-    switchSession,
+    findSession,
     openDraftSession,
     openRecordSession,
-    setSessionDirty,
-    markSessionSaved,
-    hasSessionUnsavedChanges,
+    switchSession,
+    setSessionField,
     setSessionTab,
+    hasSessionUnsavedChanges,
+    markSessionSaved,
     closeSession
   };
 })();
