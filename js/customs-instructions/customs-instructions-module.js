@@ -440,36 +440,41 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     };
   }
 
+  function resolveFieldDensity(name, options = {}) {
+    if (options.full) return 'full';
+    if (options.density) return Density.resolve(options.density, { full: options.full, fallback: 'compact' });
+    const key = String(name || '').trim().toLowerCase();
+    if (options.type === 'textarea') return 'full';
+    if (options.type === 'date' || options.type === 'select') return 'compact';
+    if (key.includes('reference') || key.includes('booking') || key.includes('taric') || key.includes('incoterm')) return 'compact';
+    if (key.includes('party') || key.includes('node') || key.includes('transitary') || key.includes('carrier') || key.includes('customs')) return 'medium';
+    return 'compact';
+  }
+
   function renderField(label, name, value, options = {}) {
     const type = options.type || 'text';
     const placeholder = options.placeholder || '';
     const readonly = options.readonly ? ' readonly' : '';
     const disabled = options.disabled ? ' disabled' : '';
     const rows = Number(options.rows || 4);
-    const density = Density.resolve(options.density, { full: options.full, fallback: options.full ? 'full' : 'medium' });
-    const classes = Density.append(`field${options.full ? ' full' : ''}`, density, { full: options.full, fallback: options.full ? 'full' : 'medium' });
+    const density = resolveFieldDensity(name, { ...options, type });
+    const wrapClass = Density.append(`field${options.full ? ' full' : ''}`, density, { full: options.full, fallback: 'compact' });
     const escapedLabel = U.escapeHtml(label);
     const escapedName = U.escapeHtml(name);
     const escapedValue = U.escapeHtml(value || '');
     const escapedPlaceholder = U.escapeHtml(placeholder);
     if (type === 'textarea') {
-      return `<div class="${classes}"><label for="${escapedName}">${escapedLabel}</label><textarea id="${escapedName}" data-customs-field="${escapedName}" rows="${rows}" placeholder="${escapedPlaceholder}"${readonly}${disabled}>${escapedValue}</textarea></div>`;
+      return `<div class="${wrapClass}"><label for="${escapedName}">${escapedLabel}</label><textarea id="${escapedName}" data-customs-field="${escapedName}" rows="${rows}" placeholder="${escapedPlaceholder}"${readonly}${disabled}>${escapedValue}</textarea></div>`;
     }
     if (type === 'select') {
       const items = Array.isArray(options.items) ? options.items : [];
-      return `<div class="${classes}"><label for="${escapedName}">${escapedLabel}</label><select id="${escapedName}" data-customs-field="${escapedName}"${disabled}>${items.map((item) => {
+      return `<div class="${wrapClass}"><label for="${escapedName}">${escapedLabel}</label><select id="${escapedName}" data-customs-field="${escapedName}"${disabled}>${items.map((item) => {
         const itemValue = String(item?.value ?? '');
         const selected = itemValue === String(value ?? '') ? ' selected' : '';
         return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
       }).join('')}</select></div>`;
     }
-    return `<div class="${classes}"><label for="${escapedName}">${escapedLabel}</label><input id="${escapedName}" type="${U.escapeHtml(type)}" value="${escapedValue}" placeholder="${escapedPlaceholder}" data-customs-field="${escapedName}"${readonly}${disabled}></div>`;
-  }
-
-  function renderCurrencyField(label, amountFieldName, currencyFieldName, draft, currencies, options = {}) {
-    const density = Density.resolve(options.density, { fallback: 'wide' });
-    const fieldClass = Density.append('field', density, { fallback: 'wide' });
-    return `<div class="${fieldClass}"><label>${U.escapeHtml(label)}</label><div class="customs-instructions-currency-row"><input type="text" value="${U.escapeHtml(draft?.[amountFieldName] || '')}" data-customs-field="${U.escapeHtml(amountFieldName)}"><select data-customs-field="${U.escapeHtml(currencyFieldName)}">${currencies.map((currency) => `<option value="${U.escapeHtml(currency)}"${currency === String(draft?.[currencyFieldName] || 'EUR') ? ' selected' : ''}>${U.escapeHtml(currency)}</option>`).join('')}</select></div></div>`;
+    return `<div class="${wrapClass}"><label for="${escapedName}">${escapedLabel}</label><input id="${escapedName}" type="${U.escapeHtml(type)}" value="${escapedValue}" placeholder="${escapedPlaceholder}" data-customs-field="${escapedName}"${readonly}${disabled}></div>`;
   }
 
   function renderSessionStrip(state, i18n) {
@@ -631,8 +636,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       : meta?.kind === 'inherited'
         ? (i18n?.t('ui.customsInstructionsInheritedValueHint', 'Valore ereditato dalla pratica madre') || 'Valore ereditato dalla pratica madre')
         : (i18n?.t('ui.customsInstructionsControlledValueHint', 'Selezione da directory/profilo') || 'Selezione da directory/profilo');
-    const fieldClass = Density.append('field', 'medium', { fallback: 'medium' });
-    return `<div class="${fieldClass}"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(label)}</label><input id="${U.escapeHtml(inputId)}" type="text" value="${U.escapeHtml(draft?.[fieldName] || '')}" data-customs-rel-field="${U.escapeHtml(fieldKey)}" list="${U.escapeHtml(listId)}" autocomplete="off"><datalist id="${U.escapeHtml(listId)}">${options.map((entry) => `<option value="${U.escapeHtml(entry.value)}">${U.escapeHtml(entry.displayValue || entry.label || entry.value)}</option>`).join('')}</datalist>${meta ? `<div class="field-relation-meta"><div class="field-relation-row"><span class="field-relation-pill ${U.escapeHtml(meta.tone)}">${U.escapeHtml(metaBadge)}</span><span class="field-relation-text">${U.escapeHtml(metaDetail)}</span></div></div>` : ''}</div>`;
+    return `<div class="${Density.append('field', 'medium')}"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(label)}</label><input id="${U.escapeHtml(inputId)}" type="text" value="${U.escapeHtml(draft?.[fieldName] || '')}" data-customs-rel-field="${U.escapeHtml(fieldKey)}" list="${U.escapeHtml(listId)}" autocomplete="off"><datalist id="${U.escapeHtml(listId)}">${options.map((entry) => `<option value="${U.escapeHtml(entry.value)}">${U.escapeHtml(entry.displayValue || entry.label || entry.value)}</option>`).join('')}</datalist>${meta ? `<div class="field-relation-meta"><div class="field-relation-row"><span class="field-relation-pill ${U.escapeHtml(meta.tone)}">${U.escapeHtml(metaBadge)}</span><span class="field-relation-text">${U.escapeHtml(metaDetail)}</span></div></div>` : ''}</div>`;
   }
 
   function renderCustomsSectionField(draft, i18n) {
@@ -641,8 +645,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     const options = Relations && typeof Relations.customsSectionSuggestions === 'function'
       ? Relations.customsSectionSuggestions(draft)
       : ['Import', 'Export', 'Transito'];
-    const fieldClass = Density.append('field', 'compact', { fallback: 'compact' });
-    return `<div class="${fieldClass}"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(i18n?.t('ui.customsInstructionsCustomsSection', 'Sezione doganale'))}</label><input id="${U.escapeHtml(inputId)}" type="text" value="${U.escapeHtml(draft?.customsSection || '')}" data-customs-field="${U.escapeHtml(inputId)}" list="${U.escapeHtml(listId)}" autocomplete="off"><datalist id="${U.escapeHtml(listId)}">${options.map((entry) => `<option value="${U.escapeHtml(entry)}"></option>`).join('')}</datalist></div>`;
+    return `<div class="${Density.append('field', 'compact')}"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(i18n?.t('ui.customsInstructionsCustomsSection', 'Sezione doganale'))}</label><input id="${U.escapeHtml(inputId)}" type="text" value="${U.escapeHtml(draft?.customsSection || '')}" data-customs-field="${U.escapeHtml(inputId)}" list="${U.escapeHtml(listId)}" autocomplete="off"><datalist id="${U.escapeHtml(listId)}">${options.map((entry) => `<option value="${U.escapeHtml(entry)}"></option>`).join('')}</datalist></div>`;
   }
 
   function renderGeneralTab(draft, i18n, state) {
@@ -652,32 +655,32 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     const columns = Array.isArray(draft.lineColumns) && draft.lineColumns.length ? draft.lineColumns : buildLineColumns(mode);
     return `
       ${renderSummaryPills(draft, i18n)}
-      <div class="form-grid three customs-instructions-form-grid density-medium">
-        ${renderField(i18n?.t('ui.customsInstructionsInstructionDate', 'Data istruzione'), 'instructionDate', draft.instructionDate, { type: 'date', density: 'compact' })}
-        ${renderField(i18n?.t('ui.customsInstructionsCompileLocation', 'Luogo compilazione'), 'compileLocation', draft.compileLocation, { density: 'medium' })}
-        ${renderField(i18n?.t('ui.operator', 'Operatore'), 'operatorName', draft.operatorName, { density: 'compact' })}
-        ${renderField(i18n?.t('ui.customsInstructionsTransitary', 'Transitario'), 'transitary', draft.transitary, { density: 'medium' })}
+      <div class="form-grid three customs-instructions-form-grid density-compact">
+        ${renderField(i18n?.t('ui.customsInstructionsInstructionDate', 'Data istruzione'), 'instructionDate', draft.instructionDate, { type: 'date' })}
+        ${renderField(i18n?.t('ui.customsInstructionsCompileLocation', 'Luogo compilazione'), 'compileLocation', draft.compileLocation)}
+        ${renderField(i18n?.t('ui.operator', 'Operatore'), 'operatorName', draft.operatorName)}
+        ${renderField(i18n?.t('ui.customsInstructionsTransitary', 'Transitario'), 'transitary', draft.transitary)}
         ${renderField(draft.principalPartyLabel || i18n?.t('ui.client', 'Cliente'), 'principalParty', draft.principalParty)}
-        ${renderField(i18n?.t('ui.customsInstructionsMainReference', 'Riferimento'), 'mainReference', draft.mainReference, { density: 'compact' })}
+        ${renderField(i18n?.t('ui.customsInstructionsMainReference', 'Riferimento'), 'mainReference', draft.mainReference)}
         ${renderField(draft.senderPartyLabel || i18n?.t('ui.customsInstructionsSender', 'Mittente'), 'senderParty', draft.senderParty)}
-        ${renderField(i18n?.t('ui.customsInstructionsSenderReference', 'Riferimento mittente'), 'senderReference', draft.senderReference, { density: 'compact' })}
+        ${renderField(i18n?.t('ui.customsInstructionsSenderReference', 'Riferimento mittente'), 'senderReference', draft.senderReference)}
         ${renderField(draft.receiverPartyLabel || i18n?.t('ui.customsInstructionsReceiver', 'Destinatario'), 'receiverParty', draft.receiverParty)}
         ${renderField(draft.originNodeLabel || i18n?.t('ui.origin', 'Origine'), 'originNode', draft.originNode)}
         ${renderField(draft.destinationNodeLabel || i18n?.t('ui.destination', 'Destinazione'), 'destinationNode', draft.destinationNode)}
         ${renderField(draft.carrierReferenceLabel || i18n?.t('ui.customsInstructionsCarrierReference', 'Riferimento vettore'), 'carrierReference', draft.carrierReference)}
         ${renderRelationalField(draft, i18n, 'carrierCompany', i18n?.t('ui.company', 'Compagnia'), 'carrierCompany', state)}
-        ${renderField(i18n?.t('ui.booking', 'Booking'), 'booking', draft.booking, { density: 'compact' })}
-        ${renderField(i18n?.t('ui.customsInstructionsPolicyReference', 'Polizza / BL / AWB'), 'policyReference', draft.policyReference, { density: 'compact' })}
-        ${renderField(i18n?.t('ui.customsInstructionsDtd', 'DTD'), 'dtd', draft.dtd, { type: 'date', density: 'compact' })}
+        ${renderField(i18n?.t('ui.booking', 'Booking'), 'booking', draft.booking)}
+        ${renderField(i18n?.t('ui.customsInstructionsPolicyReference', 'Polizza / BL / AWB'), 'policyReference', draft.policyReference)}
+        ${renderField(i18n?.t('ui.customsInstructionsDtd', 'DTD'), 'dtd', draft.dtd, { type: 'date' })}
         ${renderRelationalField(draft, i18n, 'customsOffice', i18n?.t('ui.customsInstructionsCustomsOffice', 'Dogana / Sezione'), 'customsOffice', state)}
         ${renderCustomsSectionField(draft, i18n)}
         ${renderRelationalField(draft, i18n, 'incoterm', i18n?.t('ui.incoterm', 'Incoterm'), 'incoterm', state)}
-        ${renderCurrencyField(i18n?.t('ui.customsInstructionsGoodsValue', 'Valore merce'), 'goodsValue', 'goodsValueCurrency', draft, currencies, { density: 'wide' })}
-        ${renderCurrencyField(i18n?.t('ui.customsInstructionsCustomsValue', 'Valore fiscale'), 'customsValue', 'customsValueCurrency', draft, currencies, { density: 'wide' })}
-        ${renderCurrencyField(i18n?.t('ui.customsInstructionsFreightAmount', 'Nolo bolla'), 'freightAmount', 'freightCurrency', draft, currencies, { density: 'wide' })}
-        ${renderField(i18n?.t('ui.taric', 'TARIC'), 'taric', draft.taric, { density: 'compact' })}
-        ${renderField(i18n?.t('ui.customsInstructionsDisposition', 'Disp. op. doganali'), 'customsDisposition', draft.customsDisposition, { density: 'medium' })}
-        ${renderField(i18n?.t('ui.customsInstructionsPrebill', 'Richiesta prebolla'), 'prebillRequired', draft.prebillRequired, { type: 'select', items: [{ value: 'no', label: 'NO' }, { value: 'yes', label: 'SI' }], density: 'compact' })}
+        <div class="${Density.append('field', 'medium')}"><label>${U.escapeHtml(i18n?.t('ui.customsInstructionsGoodsValue', 'Valore merce'))}</label><div class="customs-instructions-currency-row"><input type="text" value="${U.escapeHtml(draft.goodsValue || '')}" data-customs-field="goodsValue"><select data-customs-field="goodsValueCurrency">${currencies.map((currency) => `<option value="${U.escapeHtml(currency)}"${currency === String(draft.goodsValueCurrency || 'EUR') ? ' selected' : ''}>${U.escapeHtml(currency)}</option>`).join('')}</select></div></div>
+        <div class="${Density.append('field', 'medium')}"><label>${U.escapeHtml(i18n?.t('ui.customsInstructionsCustomsValue', 'Valore fiscale'))}</label><div class="customs-instructions-currency-row"><input type="text" value="${U.escapeHtml(draft.customsValue || '')}" data-customs-field="customsValue"><select data-customs-field="customsValueCurrency">${currencies.map((currency) => `<option value="${U.escapeHtml(currency)}"${currency === String(draft.customsValueCurrency || 'EUR') ? ' selected' : ''}>${U.escapeHtml(currency)}</option>`).join('')}</select></div></div>
+        <div class="${Density.append('field', 'medium')}"><label>${U.escapeHtml(i18n?.t('ui.customsInstructionsFreightAmount', 'Nolo bolla'))}</label><div class="customs-instructions-currency-row"><input type="text" value="${U.escapeHtml(draft.freightAmount || '')}" data-customs-field="freightAmount"><select data-customs-field="freightCurrency">${currencies.map((currency) => `<option value="${U.escapeHtml(currency)}"${currency === String(draft.freightCurrency || 'EUR') ? ' selected' : ''}>${U.escapeHtml(currency)}</option>`).join('')}</select></div></div>
+        ${renderField(i18n?.t('ui.taric', 'TARIC'), 'taric', draft.taric)}
+        ${renderField(i18n?.t('ui.customsInstructionsDisposition', 'Disp. op. doganali'), 'customsDisposition', draft.customsDisposition)}
+        ${renderField(i18n?.t('ui.customsInstructionsPrebill', 'Richiesta prebolla'), 'prebillRequired', draft.prebillRequired, { type: 'select', items: [{ value: 'no', label: 'NO' }, { value: 'yes', label: 'SI' }] })}
         ${renderField(i18n?.t('ui.customsInstructionsAdditional', 'Ulteriori istruzioni'), 'additionalInstructions', draft.additionalInstructions, { type: 'textarea', rows: 4, full: true })}
         ${renderField(i18n?.t('ui.customsInstructionsGoodsDeclaration', 'Dichiaraz. merce in bolla'), 'goodsDeclaration', draft.goodsDeclaration, { type: 'textarea', rows: 4, full: true })}
         ${renderField(i18n?.t('ui.customsInstructionsAttachedText', 'Testo allegati'), 'attachedText', draft.attachedText, { type: 'textarea', rows: 4, full: true })}
@@ -708,10 +711,10 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   function renderLineCardField(column, row, rowIndex, i18n, options = {}) {
     const meta = lineColumnMeta(column, i18n);
-    const density = Density.resolve(options.density, { full: options.full, fallback: options.full ? 'full' : 'medium' });
-    const fieldClass = Density.append(`field customs-line-field${options.full ? ' full' : ''}`, density, { full: options.full, fallback: options.full ? 'full' : 'medium' });
+    const full = options.full ? ' full' : '';
     const inputId = `customs-line-${rowIndex}-${column}`;
-    return `<div class="${fieldClass}"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(meta.label)}</label><input id="${U.escapeHtml(inputId)}" type="${U.escapeHtml(meta.type)}" value="${U.escapeHtml(row?.[column] || '')}" data-customs-line-field="${U.escapeHtml(column)}" data-customs-line-index="${rowIndex}"></div>`;
+    const density = options.full ? 'full' : (meta.type === 'date' ? 'compact' : 'compact');
+    return `<div class="${Density.append(`field customs-line-field${full}`, density, { full: options.full, fallback: 'compact' })}"><label for="${U.escapeHtml(inputId)}">${U.escapeHtml(meta.label)}</label><input id="${U.escapeHtml(inputId)}" type="${U.escapeHtml(meta.type)}" value="${U.escapeHtml(row?.[column] || '')}" data-customs-line-field="${U.escapeHtml(column)}" data-customs-line-index="${rowIndex}"></div>`;
   }
 
   function lineCardGroups(mode) {

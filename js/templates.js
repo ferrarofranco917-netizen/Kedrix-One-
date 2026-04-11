@@ -39,7 +39,7 @@ window.KedrixOneTemplates = (() => {
   const PracticeListPartyGaps = window.KedrixOnePracticeListPartyGaps || null;
   const PracticeStatusI18n = window.KedrixOnePracticeStatusI18n || null;
   const Density = window.KedrixOneDensitySystem || {
-    append: (base, value, options = {}) => [String(base || '').trim(), `density-${options.full ? 'full' : (String(value || options.fallback || 'medium').trim().toLowerCase() || 'medium')}`].filter(Boolean).join(' ')
+    append: (base, value) => [String(base || '').trim(), `density-${String(value || 'medium').trim().toLowerCase() || 'medium'}`].filter(Boolean).join(' ')
   };
 
   function getMasterDataQuickAdd() {
@@ -382,8 +382,8 @@ window.KedrixOneTemplates = (() => {
                   <span class="badge info">${U.escapeHtml(T.t('ui.duplicateSourceReferenceBadge', 'Copiata da'))} ${U.escapeHtml(duplicateSource.reference || '—')}</span>
                 </div>
               </div>` : ''}
-            <div class="form-grid three">
-              <div class="field" data-field-wrap="practiceType">
+            <div class="form-grid three practice-identity-grid density-compact">
+              <div class="field density-compact" data-field-wrap="practiceType">
                 <label for="practiceType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))} <span class="required-mark">*</span></label>
                 <select id="practiceType" name="practiceType" required>
                   <option value="">—</option>
@@ -391,7 +391,7 @@ window.KedrixOneTemplates = (() => {
                 </select>
               </div>
 
-              <div class="field" data-field-wrap="clientName">
+              <div class="field density-medium" data-field-wrap="clientName">
                 <div class="field-label-row">
                   <label for="clientName">${U.escapeHtml(T.t('ui.clientEditable', 'Cliente (editabile)'))} <span class="required-mark">*</span></label>
                   ${(() => {
@@ -415,18 +415,18 @@ window.KedrixOneTemplates = (() => {
                 <input id="clientId" name="clientId" type="hidden" value="${U.escapeHtml(draft.clientId || '')}" />
               </div>
 
-              <div class="field" data-field-wrap="practiceDate">
+              <div class="field density-compact" data-field-wrap="practiceDate">
                 <label for="practiceDate">${U.escapeHtml(T.t('ui.practiceDate', 'Data pratica'))} <span class="required-mark">*</span></label>
                 <input id="practiceDate" name="practiceDate" type="date" value="${U.escapeHtml(draft.practiceDate || new Date().toISOString().slice(0, 10))}" ${draft.practiceType ? '' : 'disabled'} required />
               </div>
 
-              <div class="field" data-practice-dependent data-field-wrap="generatedReference">
+              <div class="field density-compact" data-practice-dependent data-field-wrap="generatedReference">
                 <label for="generatedReference">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</label>
                 <input id="generatedReference" name="generatedReference" readonly value="${U.escapeHtml(draft.generatedReference || '')}" ${draft.practiceType ? '' : 'disabled'} />
                 <div class="field-hint">${U.escapeHtml(T.t('ui.profileByClient', 'Numero progressivo generato in base al cliente selezionato.'))}</div>
               </div>
 
-              <div class="field" data-practice-dependent data-field-wrap="category">
+              <div class="field density-compact" data-practice-dependent data-field-wrap="category">
                 <label for="category">${U.escapeHtml(T.t('ui.categoryLabel', 'Categoria'))} <span class="required-mark">*</span></label>
                 <select id="category" name="category" ${draft.practiceType ? '' : 'disabled'}>
                   <option value="">—</option>
@@ -435,7 +435,7 @@ window.KedrixOneTemplates = (() => {
                 <div class="field-hint">${U.escapeHtml(T.t('ui.categoryHint', 'La categoria viene filtrata in base al tipo pratica selezionato.'))}</div>
               </div>
 
-              <div class="field" data-field-wrap="status">
+              <div class="field density-compact" data-field-wrap="status">
                 <label for="status">${U.escapeHtml(T.t('ui.status', 'Stato'))}</label>
                 <select id="status" name="status" ${draft.practiceType ? '' : 'disabled'}>
                   ${['In attesa documenti', 'Operativa', 'Sdoganamento', 'Chiusa'].map((option) => `<option value="${U.escapeHtml(option)}" ${draft.status === option ? 'selected' : ''}>${U.escapeHtml(option)}</option>`).join('')}
@@ -1046,11 +1046,11 @@ function practiceList(state, filtered = [], insights = {}) {
           <button class="btn secondary" type="button" data-action="reset-practice-list-filters">${U.escapeHtml(T.t('ui.resetPracticeListFilters', 'Reset filtri'))}</button>
         </div>
       </div>
-      <div class="form-grid three practice-list-filter-grid density-medium">
+      <div class="form-grid three practice-list-filter-grid density-compact">
         <div class="${Density.append('field', 'wide')}"><label for="practiceListQuick">${U.escapeHtml(T.t('ui.quickFilter', 'Filtro rapido elenco'))}</label><input id="practiceListQuick" type="search" data-practice-list-filter="quick" value="${U.escapeHtml(filters.quick || '')}" placeholder="${U.escapeHtml(T.t('ui.practiceListQuickPlaceholder', 'Cliente, numero pratica, booking, container...'))}" autocomplete="off" /></div>
         <div class="${Density.append('field', 'compact')}"><label for="practiceListStatus">${U.escapeHtml(T.t('ui.statusFilter', 'Filtro stato'))}</label><select id="practiceListStatus" data-practice-list-filter="status">${statusOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.status === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
         <div class="${Density.append('field', 'compact')}"><label for="practiceListDirection">${U.escapeHtml(T.t('ui.direction', 'Direzione'))}</label><select id="practiceListDirection" data-practice-list-filter="direction">${directionOptions.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.direction === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
-        <div class="${Density.append('field', 'medium')}"><label for="practiceListType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))}</label><select id="practiceListType" data-practice-list-filter="practiceType">${practiceTypes.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.practiceType === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
+        <div class="${Density.append('field', 'compact')}"><label for="practiceListType">${U.escapeHtml(T.t('ui.practiceType', 'Tipo pratica'))}</label><select id="practiceListType" data-practice-list-filter="practiceType">${practiceTypes.map((item) => `<option value="${U.escapeHtml(item.value)}" ${filters.practiceType === item.value ? 'selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></div>
         <div class="${Density.append('field', 'compact')}"><label for="practiceListReference">${U.escapeHtml(T.t('ui.generatedNumber', 'Numero pratica'))}</label><input id="practiceListReference" type="search" data-practice-list-filter="reference" value="${U.escapeHtml(filters.reference || '')}" autocomplete="off" /></div>
         <div class="${Density.append('field', 'medium')}"><label for="practiceListClient">${U.escapeHtml(T.t('ui.clientRequired', 'Cliente'))}</label><input id="practiceListClient" type="search" data-practice-list-filter="client" value="${U.escapeHtml(filters.client || '')}" autocomplete="off" /></div>
         <div class="${Density.append('field', 'medium')}"><label for="practiceListImporter">${U.escapeHtml(T.t('ui.importer', 'Importatore'))}</label><input id="practiceListImporter" type="search" data-practice-list-filter="importer" value="${U.escapeHtml(filters.importer || '')}" autocomplete="off" /></div>
@@ -1059,7 +1059,7 @@ function practiceList(state, filtered = [], insights = {}) {
         <div class="${Density.append('field', 'compact')}"><label for="practiceListContainer">${U.escapeHtml(T.t('ui.containerCode', 'Container / telaio'))}</label><input id="practiceListContainer" type="search" data-practice-list-filter="container" value="${U.escapeHtml(filters.container || '')}" autocomplete="off" /></div>
         <div class="${Density.append('field', 'compact')}"><label for="practiceListBooking">${U.escapeHtml(T.t('ui.bookingWord', 'Booking'))}</label><input id="practiceListBooking" type="search" data-practice-list-filter="booking" value="${U.escapeHtml(filters.booking || '')}" autocomplete="off" /></div>
         <div class="${Density.append('field', 'compact')}"><label for="practiceListPolicy">${U.escapeHtml(T.t('ui.policyNumber', 'Polizza / BL / AWB'))}</label><input id="practiceListPolicy" type="search" data-practice-list-filter="policy" value="${U.escapeHtml(filters.policy || '')}" autocomplete="off" /></div>
-        <div class="${Density.append('field', 'medium')}"><label for="practiceListVessel">${U.escapeHtml(T.t('ui.vesselVoyage', 'Nave / viaggio'))}</label><input id="practiceListVessel" type="search" data-practice-list-filter="vessel" value="${U.escapeHtml(filters.vessel || '')}" autocomplete="off" /></div>
+        <div class="${Density.append('field', 'compact')}"><label for="practiceListVessel">${U.escapeHtml(T.t('ui.vesselVoyage', 'Nave / viaggio'))}</label><input id="practiceListVessel" type="search" data-practice-list-filter="vessel" value="${U.escapeHtml(filters.vessel || '')}" autocomplete="off" /></div>
         <div class="${Density.append('field', 'medium')}"><label for="practiceListOrigin">${U.escapeHtml(T.t('ui.originDirectory', 'Origine'))}</label><input id="practiceListOrigin" type="search" data-practice-list-filter="origin" value="${U.escapeHtml(filters.origin || '')}" autocomplete="off" /></div>
         <div class="${Density.append('field', 'medium')}"><label for="practiceListDestination">${U.escapeHtml(T.t('ui.destinationDirectory', 'Destinazione'))}</label><input id="practiceListDestination" type="search" data-practice-list-filter="destination" value="${U.escapeHtml(filters.destination || '')}" autocomplete="off" /></div>
       </div>

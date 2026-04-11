@@ -66,6 +66,19 @@ window.KedrixOnePracticeFormRenderer = (() => {
     return { value, label, description, displayValue, aliases };
   }
 
+  function resolveFieldDensity(field = {}) {
+    if (!field || typeof field !== 'object') return 'medium';
+    if (field.full || field.type === 'textarea') return 'full';
+    if (field.density) return Density.resolve(field.density, { full: field.full, fallback: 'medium' });
+    const name = String(field.name || '').toLowerCase();
+    if (field.type === 'date' || field.type === 'number') return 'compact';
+    if (field.type === 'select') return 'compact';
+    if (field.type === 'checkbox-group') return 'full';
+    if (name.includes('description') || name.includes('declaration') || name.includes('instruction') || name.includes('note') || name.includes('text') || name.includes('address')) return 'wide';
+    if (name.includes('reference') || name.includes('booking') || name.includes('policy') || name.includes('container') || name.includes('taric') || name.includes('incoterm')) return 'compact';
+    return 'medium';
+  }
+
   function groupFieldsBySection(tab, fields = []) {
     const sections = [];
     const sectionMap = new Map();
@@ -95,8 +108,8 @@ window.KedrixOnePracticeFormRenderer = (() => {
       ? `<div class="field-label-row"><label for="dyn_${field.name}">${label}</label><div class="field-label-actions">${fieldActionsHtml}</div></div>`
       : `<label for="dyn_${field.name}">${label}</label>`;
     const incotermCompactClass = field.name === 'incoterm' ? ' practice-incoterm-compact' : '';
-    const density = Density.resolve(field.density, { full: field.full, fallback: field.name === 'incoterm' ? 'compact' : 'medium' });
-    const wrapClass = Density.append(`field${field.full ? ' full' : ''}${incotermCompactClass}`, density, { full: field.full, fallback: field.full ? 'full' : 'medium' });
+    const density = resolveFieldDensity(field);
+    const wrapClass = Density.append(`field${field.full ? ' full' : ''}${incotermCompactClass}`, density, { full: field.full, fallback: 'medium' });
     const wrapAttrs = `class="${wrapClass}" data-field-wrap="${Utils.escapeHtml(field.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const fieldOptions = PracticeSchemas.getFieldOptions(type, field, companyConfig);
     const fieldOptionEntries = (typeof PracticeSchemas.getFieldOptionEntries === 'function'
@@ -179,8 +192,10 @@ window.KedrixOnePracticeFormRenderer = (() => {
     const currencyOptions = PracticeSchemas.getFieldOptions(type, currencyField, companyConfig);
     const currencyValue = String(draft.dynamicData?.[currencyField.name] || '');
     const amountValue = String(draft.dynamicData?.[amountField.name] || '');
-    const amountWrapAttrs = `class="${Density.append('field practice-economic-pair', amountField.density || 'wide')}" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
-    const currencyWrapAttrs = `class="${Density.append('field practice-economic-pair-currency-wrap', currencyField.density || 'compact')}" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const amountDensity = Density.resolve(amountField.density || 'medium', { fallback: 'medium' });
+    const currencyDensity = Density.resolve(currencyField.density || 'compact', { fallback: 'compact' });
+    const amountWrapAttrs = `class="${Density.append('field practice-economic-pair', amountDensity)}" data-field-wrap="${Utils.escapeHtml(amountField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
+    const currencyWrapAttrs = `class="${Density.append('field practice-economic-pair-currency-wrap', currencyDensity)}" data-field-wrap="${Utils.escapeHtml(currencyField.name)}" data-field-tab="${Utils.escapeHtml(tab)}"`;
     const currencyLabel = Utils.escapeHtml(I18N.t(currencyField.labelKey, currencyField.name));
     const amountRelationMetaHtml = PracticeFieldRelations && typeof PracticeFieldRelations.renderFieldRelationMeta === 'function'
       ? PracticeFieldRelations.renderFieldRelationMeta({ state, type, field: amountField, draft, companyConfig, i18n: I18N, utils: Utils })
