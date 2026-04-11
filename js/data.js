@@ -69,6 +69,11 @@ window.KedrixOneData = (() => {
         sessions: []
       },
       customsInstructionRecords: [],
+      bookingEmbarkationWorkspace: {
+        activeSessionId: '',
+        sessions: []
+      },
+      bookingEmbarkationRecords: [],
       practiceDuplicateSource: null,
       masterDataModule: {
         activeEntity: 'client',

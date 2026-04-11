@@ -4120,3 +4120,90 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 }
+
+
+.booking-embarkation-launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.booking-embarkation-practice-picker,
+.booking-embarkation-practice-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.booking-embarkation-editor,
+.booking-embarkation-launcher,
+.booking-embarkation-workspace-panel,
+.booking-embarkation-records-panel,
+.booking-embarkation-record-card,
+.booking-embarkation-form-grid,
+.booking-embarkation-text-grid,
+.booking-embarkation-form-grid .field,
+.booking-embarkation-records-grid {
+  min-width: 0;
+}
+
+.booking-embarkation-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.booking-embarkation-inline-pair.full {
+  grid-column: 1 / -1;
+}
+
+.booking-embarkation-date-time-row,
+.booking-embarkation-port-row,
+.booking-embarkation-vgm-row {
+  display: grid;
+  gap: 10px;
+}
+
+.booking-embarkation-date-time-row {
+  grid-template-columns: minmax(0, 1fr) 120px;
+}
+
+.booking-embarkation-port-row {
+  grid-template-columns: minmax(0, 1fr) 88px;
+}
+
+.booking-embarkation-vgm-row {
+  grid-template-columns: minmax(220px, 1fr) 120px 90px;
+}
+
+.booking-embarkation-records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.booking-embarkation-record-card {
+  display: grid;
+  gap: 12px;
+}
+
+.booking-embarkation-tab-row {
+  margin-bottom: 16px;
+}
+
+.booking-embarkation-actions-row {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1100px) {
+  .booking-embarkation-launcher-grid,
+  .booking-embarkation-practice-picker,
+  .booking-embarkation-practice-search,
+  .booking-embarkation-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-embarkation-date-time-row,
+  .booking-embarkation-port-row,
+  .booking-embarkation-vgm-row {
+    grid-template-columns: 1fr;
+  }
+}

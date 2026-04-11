@@ -46,6 +46,7 @@
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const CustomsInstructionsWorkspace = window.KedrixOneCustomsInstructionsWorkspace || null;
   const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
+  const BookingEmbarkationModule = window.KedrixOneBookingEmbarkationModule || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -64,6 +65,9 @@
   }
   if (CustomsInstructionsModule && typeof CustomsInstructionsModule.ensureState === 'function') {
     CustomsInstructionsModule.ensureState(state);
+  }
+  if (BookingEmbarkationModule && typeof BookingEmbarkationModule.ensureState === 'function') {
+    BookingEmbarkationModule.ensureState(state);
   }
 
   function ensurePracticeListState() {
@@ -2124,6 +2128,17 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
+    if (route === 'practices/booking-d-imbarco') {
+      if (!BookingEmbarkationModule || typeof BookingEmbarkationModule.render !== 'function') {
+        main.innerHTML = Templates.submodulePlaceholder(module, routeMeta);
+        return;
+      }
+      BookingEmbarkationModule.ensureState?.(state);
+      main.innerHTML = BookingEmbarkationModule.render(state, { i18n: I18N });
+      bindBookingEmbarkationEvents();
+      return;
+    }
+
     if (route === 'documents') {
       ensureDocumentPreviewSelection();
       main.innerHTML = Templates.documents(state, module, documentSearchResults());
@@ -2207,6 +2222,34 @@ function renderDocumentPreviewPanel() {
       i18n: I18N,
       getSelectedPractice: selectedPractice,
       confirmClose: confirmCloseCustomsInstructionSession
+    });
+  }
+
+
+  function confirmCloseBookingEmbarkationSession() {
+    if (!AppFeedback || typeof AppFeedback.confirm !== 'function') {
+      return Promise.resolve(window.confirm(I18N.t('ui.workspaceDirtyCloseMessage', 'Questa maschera contiene modifiche non salvate. Se la chiudi adesso, le modifiche andranno perse.')));
+    }
+    return AppFeedback.confirm({
+      title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
+      message: I18N.t('ui.workspaceDirtyCloseMessage', 'Questa maschera contiene modifiche non salvate. Se la chiudi adesso, le modifiche andranno perse.'),
+      confirmLabel: I18N.t('ui.workspaceDiscardMask', 'Chiudi senza salvare'),
+      cancelLabel: I18N.t('ui.workspaceKeepMask', 'Torna alla maschera'),
+      tone: 'warning'
+    });
+  }
+
+  function bindBookingEmbarkationEvents() {
+    if (!BookingEmbarkationModule || typeof BookingEmbarkationModule.bind !== 'function') return;
+    BookingEmbarkationModule.bind({
+      root: main,
+      state,
+      save,
+      render,
+      toast,
+      i18n: I18N,
+      getSelectedPractice: selectedPractice,
+      confirmClose: confirmCloseBookingEmbarkationSession
     });
   }
 
@@ -2509,6 +2552,7 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const CustomsInstructionsWorkspace = window.KedrixOneCustomsInstructionsWorkspace || null;
   const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
+  const BookingEmbarkationModule = window.KedrixOneBookingEmbarkationModule || null;
     if (linkPracticeEntity && MasterDataEntities && typeof MasterDataEntities.getEntityRecordById === 'function' && typeof MasterDataEntities.applyLinkedRecordToDraft === 'function') {
       if (typeof state._persistActivePracticeDraft === 'function') {
         state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
