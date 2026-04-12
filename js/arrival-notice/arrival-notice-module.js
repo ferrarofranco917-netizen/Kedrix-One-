@@ -150,12 +150,14 @@ window.KedrixOneArrivalNoticeModule = (() => {
   function fieldSize(name, options = {}) {
     if (options.full || options.type === 'textarea') return 'full';
     const key = String(name || '').trim();
-    const xs = new Set(['tripType', 'amount', 'originalNo', 'originalCopyCount']);
-    const sm = new Set(['practiceReference', 'documentDate', 'documentReceiptDate', 'emptyingAppointmentDate', 'operatorName', 'bookingReference', 'policyReference', 'atd']);
-    const md = new Set(['client', 'sender', 'destinationDepot', 'importer', 'consignee', 'notifyParty', 'compileLocation', 'reference', 'attentionTo', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'goodsType', 'voyage', 'vessel', 'deliveryConditions', 'originGoods', 'customsSection']);
+    const xs = new Set(['originalNo', 'originalCopyCount']);
+    const sm = new Set(['tripType', 'amount', 'documentDate', 'documentReceiptDate', 'emptyingAppointmentDate', 'operatorName', 'etdEta']);
+    const md = new Set(['practiceReference', 'reference', 'bookingReference', 'policyReference', 'customsSection', 'compileLocation', 'goodsType', 'voyage', 'vessel', 'attentionTo']);
+    const lg = new Set(['client', 'sender', 'destinationDepot', 'importer', 'consignee', 'notifyParty', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'deliveryConditions', 'originGoods']);
     if (xs.has(key)) return 'xs';
     if (sm.has(key)) return 'sm';
     if (md.has(key)) return 'md';
+    if (lg.has(key)) return 'lg';
     return 'md';
   }
 
@@ -346,8 +348,8 @@ window.KedrixOneArrivalNoticeModule = (() => {
   function renderTextsTab(draft, i18n) {
     return `
       <div class="form-grid two arrival-notice-form-grid">
-        ${renderField(i18n?.t('ui.arrivalNoticeInternalText', 'Testo interno'), 'internalText', draft.internalText, { type: 'textarea', rows: 12, full: true })}
-        ${renderField(i18n?.t('ui.arrivalNoticeCustomerText', 'Testo cliente'), 'customerText', draft.customerText, { type: 'textarea', rows: 12, full: true })}
+        ${renderField(i18n?.t('ui.arrivalNoticeInternalText', 'Testo interno'), 'internalText', draft.internalText, { type: 'textarea', rows: 8, full: true })}
+        ${renderField(i18n?.t('ui.arrivalNoticeCustomerText', 'Testo cliente'), 'customerText', draft.customerText, { type: 'textarea', rows: 8, full: true })}
       </div>`;
   }
 
@@ -455,6 +457,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
     const kpis = buildKpis(state);
     const selectedPractice = typeof options.getSelectedPractice === 'function' ? options.getSelectedPractice() : null;
     return `
+      <div class="notice-module notice-module-arrival">
       <section class="hero">
         <div class="hero-meta">${U.escapeHtml(i18n?.t('ui.arrivalNoticeEyebrow', 'PRATICHE · NOTIFICA ARRIVO MERCE'))}</div>
         <h2>${U.escapeHtml(i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce'))}</h2>
@@ -469,6 +472,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
       ${renderSessionStrip(state, i18n)}
       ${renderEditor(state, i18n)}
       ${renderSavedRecords(state, i18n)}
+      </div>
     `;
   }
 

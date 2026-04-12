@@ -4245,7 +4245,27 @@ body.dialog-open {
 .departure-notice-editor-panel,
 .departure-notice-workspace-panel {
   display: grid;
-  gap: 14px;
+  gap: 10px;
+}
+
+.notice-module {
+  display: grid;
+  gap: 12px;
+}
+
+.notice-module .hero,
+.notice-module .panel,
+.notice-module .table-panel {
+  padding: 14px;
+}
+
+.notice-module .three-col {
+  gap: 10px;
+}
+
+.notice-module .stack-item,
+.notice-module .module-card {
+  padding: 10px 12px;
 }
 
 .arrival-notice-practice-grid,
@@ -4259,43 +4279,45 @@ body.dialog-open {
 
 .arrival-notice-form-grid,
 .departure-notice-form-grid {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(18, minmax(0, 1fr));
+  gap: 10px 12px;
   align-items: start;
+  grid-auto-flow: dense;
 }
 
 .arrival-notice-form-grid .notice-field,
 .departure-notice-form-grid .notice-field {
   min-width: 0;
-  grid-column: span 3;
+  grid-column: span 4;
 }
 
-.notice-size-xs { grid-column: span 1; }
-.notice-size-sm { grid-column: span 2; }
-.notice-size-md { grid-column: span 3; }
-.notice-size-lg { grid-column: span 4; }
-.notice-size-xl { grid-column: span 6; }
+.notice-size-xs { grid-column: span 2; }
+.notice-size-sm { grid-column: span 3; }
+.notice-size-md { grid-column: span 4; }
+.notice-size-lg { grid-column: span 6; }
+.notice-size-xl { grid-column: span 9; }
 .arrival-notice-form-grid .notice-size-full,
 .departure-notice-form-grid .notice-size-full { grid-column: 1 / -1; }
 
 .arrival-notice-form-grid .notice-field textarea,
 .departure-notice-form-grid .notice-field textarea {
-  min-height: 132px;
+  min-height: 112px;
 }
 
 .notice-session-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .notice-session-chip {
   display: inline-flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 6px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: rgba(255,255,255,0.03);
-  overflow: hidden;
+  padding: 6px;
   min-width: 220px;
   max-width: 320px;
 }
@@ -4312,9 +4334,9 @@ body.dialog-open {
   color: inherit;
   flex: 1;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 6px 8px;
   display: grid;
-  gap: 4px;
+  gap: 2px;
   text-align: left;
 }
 
@@ -4329,17 +4351,19 @@ body.dialog-open {
 
 .notice-session-close {
   appearance: none;
-  border: 0;
-  border-left: 1px solid var(--line);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(255,255,255,0.04);
   color: var(--text2);
-  width: 34px;
-  min-width: 34px;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1;
   padding: 0;
+  border-radius: 999px;
+  align-self: center;
 }
 
 .notice-session-close:hover {
@@ -4364,6 +4388,10 @@ body.dialog-open {
   padding: 8px 6px;
 }
 
+.notice-lines-table th {
+  font-size: 11px;
+}
+
 .notice-lines-table input {
   width: 100%;
   min-width: 0;
@@ -4371,7 +4399,7 @@ body.dialog-open {
 
 .notice-lines-table td:last-child,
 .notice-lines-table th:last-child {
-  width: 78px;
+  width: 74px;
 }
 
 .notice-lines-table td:last-child .btn {
@@ -4379,11 +4407,114 @@ body.dialog-open {
   justify-content: center;
 }
 
+.arrival-notice-lines-table,
+.departure-notice-lines-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.arrival-notice-lines-table th,
+.arrival-notice-lines-table td,
+.departure-notice-lines-table th,
+.departure-notice-lines-table td {
+  white-space: normal;
+}
+
+.arrival-notice-lines-table input,
+.departure-notice-lines-table input,
+.arrival-notice-lines-table td:nth-child(3) input,
+.departure-notice-lines-table td:nth-child(3) input {
+  min-width: 0;
+  width: 100%;
+}
+
+
 .arrival-notice-editor-panel,
 .departure-notice-editor-panel,
 .arrival-notice-workspace-panel,
 .departure-notice-workspace-panel {
   overflow: hidden;
+}
+
+.notice-field-practiceReference,
+.notice-field-reference,
+.notice-field-bookingReference,
+.notice-field-policyReference,
+.notice-field-compileLocation,
+.notice-field-loadingPort,
+.notice-field-unloadingPort,
+.notice-field-supplierInvoice,
+.notice-field-deliveryConditions,
+.notice-field-originGoods,
+.notice-field-customsSection,
+.notice-field-attentionTo,
+.notice-field-vessel,
+.notice-field-voyage,
+.notice-field-client,
+.notice-field-sender,
+.notice-field-destinationDepot,
+.notice-field-importer,
+.notice-field-consignee,
+.notice-field-notifyParty {
+  grid-column: span 6;
+}
+
+.notice-field-tripType,
+.notice-field-amount,
+.notice-field-documentDate,
+.notice-field-documentReceiptDate,
+.notice-field-emptyingAppointmentDate,
+.notice-field-operatorName,
+.notice-field-atd,
+.notice-field-etdEta {
+  grid-column: span 3;
+}
+
+.notice-field-originalNo,
+.notice-field-originalCopyCount {
+  grid-column: span 2;
+}
+
+@media (max-width: 1400px) {
+  .arrival-notice-form-grid,
+  .departure-notice-form-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .arrival-notice-form-grid .notice-field,
+  .departure-notice-form-grid .notice-field {
+    grid-column: span 4;
+  }
+
+  .notice-size-xs { grid-column: span 2; }
+  .notice-size-sm { grid-column: span 3; }
+  .notice-size-md { grid-column: span 4; }
+  .notice-size-lg,
+  .notice-size-xl { grid-column: span 6; }
+
+  .notice-field-practiceReference,
+  .notice-field-reference,
+  .notice-field-bookingReference,
+  .notice-field-policyReference,
+  .notice-field-compileLocation,
+  .notice-field-loadingPort,
+  .notice-field-unloadingPort,
+  .notice-field-supplierInvoice,
+  .notice-field-deliveryConditions,
+  .notice-field-originGoods,
+  .notice-field-customsSection,
+  .notice-field-attentionTo,
+  .notice-field-vessel,
+  .notice-field-voyage,
+  .notice-field-client,
+  .notice-field-sender,
+  .notice-field-destinationDepot,
+  .notice-field-importer,
+  .notice-field-consignee,
+  .notice-field-notifyParty {
+    grid-column: span 6;
+  }
 }
 
 @media (max-width: 1180px) {
@@ -4409,6 +4540,29 @@ body.dialog-open {
   .notice-size-lg,
   .notice-size-xl,
   .notice-size-full { grid-column: 1 / -1; }
+
+  .notice-field-practiceReference,
+  .notice-field-reference,
+  .notice-field-bookingReference,
+  .notice-field-policyReference,
+  .notice-field-compileLocation,
+  .notice-field-loadingPort,
+  .notice-field-unloadingPort,
+  .notice-field-supplierInvoice,
+  .notice-field-deliveryConditions,
+  .notice-field-originGoods,
+  .notice-field-customsSection,
+  .notice-field-attentionTo,
+  .notice-field-vessel,
+  .notice-field-voyage,
+  .notice-field-client,
+  .notice-field-sender,
+  .notice-field-destinationDepot,
+  .notice-field-importer,
+  .notice-field-consignee,
+  .notice-field-notifyParty {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 760px) {
@@ -4433,7 +4587,27 @@ body.dialog-open {
   .notice-size-md,
   .notice-size-lg,
   .notice-size-xl,
-  .notice-size-full {
+  .notice-size-full,
+  .notice-field-practiceReference,
+  .notice-field-reference,
+  .notice-field-bookingReference,
+  .notice-field-policyReference,
+  .notice-field-compileLocation,
+  .notice-field-loadingPort,
+  .notice-field-unloadingPort,
+  .notice-field-supplierInvoice,
+  .notice-field-deliveryConditions,
+  .notice-field-originGoods,
+  .notice-field-customsSection,
+  .notice-field-attentionTo,
+  .notice-field-vessel,
+  .notice-field-voyage,
+  .notice-field-client,
+  .notice-field-sender,
+  .notice-field-destinationDepot,
+  .notice-field-importer,
+  .notice-field-consignee,
+  .notice-field-notifyParty {
     grid-column: 1 / -1;
   }
 
@@ -4443,3 +4617,4 @@ body.dialog-open {
     max-width: none;
   }
 }
+
