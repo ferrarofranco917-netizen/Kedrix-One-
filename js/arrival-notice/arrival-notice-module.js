@@ -150,15 +150,15 @@ window.KedrixOneArrivalNoticeModule = (() => {
   function fieldSize(name, options = {}) {
     if (options.full || options.type === 'textarea') return 'full';
     const key = String(name || '').trim();
-    const xs = new Set(['originalNo', 'originalCopyCount']);
-    const sm = new Set(['tripType', 'amount', 'documentDate', 'documentReceiptDate', 'emptyingAppointmentDate', 'operatorName', 'etdEta']);
-    const md = new Set(['practiceReference', 'reference', 'bookingReference', 'policyReference', 'customsSection', 'compileLocation', 'goodsType', 'voyage', 'vessel', 'attentionTo']);
-    const lg = new Set(['client', 'sender', 'destinationDepot', 'importer', 'consignee', 'notifyParty', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'deliveryConditions', 'originGoods']);
+    const xs = new Set(['originalNo', 'originalCopyCount', 'amount']);
+    const sm = new Set(['tripType', 'documentDate', 'documentReceiptDate', 'emptyingAppointmentDate', 'operatorName', 'etdEta', 'atd', 'practiceReference', 'bookingReference', 'policyReference', 'compileLocation', 'goodsType', 'voyage', 'vessel', 'customsSection']);
+    const md = new Set(['reference', 'attentionTo', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'deliveryConditions', 'originGoods']);
+    const lg = new Set(['client', 'sender', 'destinationDepot', 'importer', 'consignee', 'notifyParty']);
     if (xs.has(key)) return 'xs';
     if (sm.has(key)) return 'sm';
     if (md.has(key)) return 'md';
     if (lg.has(key)) return 'lg';
-    return 'md';
+    return 'sm';
   }
 
   function renderField(label, name, value, options = {}) {

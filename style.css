@@ -4618,3 +4618,257 @@ body.dialog-open {
   }
 }
 
+
+
+/* AQ46B notices compact desktop realignment */
+.notice-module {
+  overflow-x: hidden;
+}
+
+.notice-module .hero,
+.notice-module .panel,
+.notice-module .table-panel {
+  padding: 12px 14px;
+}
+
+.notice-module .panel-head {
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.notice-module .panel-title {
+  margin-bottom: 4px;
+}
+
+.notice-module .field,
+.notice-module .stack-item {
+  gap: 4px;
+}
+
+.notice-module .stack-item {
+  padding: 12px;
+}
+
+.notice-module .summary-value {
+  font-size: 24px;
+}
+
+.arrival-notice-form-grid,
+.departure-notice-form-grid {
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 8px 10px;
+  grid-auto-flow: dense;
+}
+
+.arrival-notice-form-grid .notice-field,
+.departure-notice-form-grid .notice-field {
+  min-width: 0;
+  grid-column: span 6;
+}
+
+.notice-size-xs { grid-column: span 3; }
+.notice-size-sm { grid-column: span 4; }
+.notice-size-md { grid-column: span 6; }
+.notice-size-lg { grid-column: span 8; }
+.notice-size-xl { grid-column: span 12; }
+
+.arrival-notice-form-grid .notice-field textarea,
+.departure-notice-form-grid .notice-field textarea {
+  min-height: 96px;
+}
+
+.notice-field-practiceReference,
+.notice-field-bookingReference,
+.notice-field-policyReference,
+.notice-field-compileLocation,
+.notice-field-tripType,
+.notice-field-documentDate,
+.notice-field-documentReceiptDate,
+.notice-field-emptyingAppointmentDate,
+.notice-field-operatorName,
+.notice-field-atd,
+.notice-field-etdEta,
+.notice-field-goodsType,
+.notice-field-customsSection,
+.notice-field-voyage,
+.notice-field-vessel,
+.notice-field-supplierInvoice,
+.notice-field-loadingPort,
+.notice-field-unloadingPort,
+.notice-field-attentionTo {
+  grid-column: span 4;
+}
+
+.notice-field-reference,
+.notice-field-deliveryConditions,
+.notice-field-originGoods {
+  grid-column: span 6;
+}
+
+.notice-field-client,
+.notice-field-sender,
+.notice-field-destinationDepot,
+.notice-field-importer,
+.notice-field-consignee,
+.notice-field-notifyParty {
+  grid-column: span 8;
+}
+
+.notice-field-originalNo,
+.notice-field-originalCopyCount,
+.notice-field-amount {
+  grid-column: span 3;
+}
+
+.notice-lines-wrap {
+  overflow-x: hidden;
+}
+
+.notice-lines-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.notice-lines-table th,
+.notice-lines-table td {
+  padding: 6px 4px;
+}
+
+.notice-lines-table th {
+  font-size: 10px;
+}
+
+.notice-lines-table input {
+  width: 100%;
+  min-width: 0;
+}
+
+.notice-session-strip {
+  gap: 6px;
+}
+
+.notice-session-chip {
+  min-width: 0;
+  max-width: 300px;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 12px;
+}
+
+.notice-session-main {
+  padding: 4px 8px;
+}
+
+.notice-session-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  line-height: 1;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0;
+  border-radius: 999px;
+}
+
+@media (max-width: 1600px) {
+  .arrival-notice-form-grid,
+  .departure-notice-form-grid {
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+  }
+
+  .arrival-notice-form-grid .notice-field,
+  .departure-notice-form-grid .notice-field {
+    grid-column: span 4;
+  }
+
+  .notice-size-xs,
+  .notice-field-originalNo,
+  .notice-field-originalCopyCount,
+  .notice-field-amount { grid-column: span 2; }
+
+  .notice-size-sm,
+  .notice-field-practiceReference,
+  .notice-field-bookingReference,
+  .notice-field-policyReference,
+  .notice-field-compileLocation,
+  .notice-field-tripType,
+  .notice-field-documentDate,
+  .notice-field-documentReceiptDate,
+  .notice-field-emptyingAppointmentDate,
+  .notice-field-operatorName,
+  .notice-field-atd,
+  .notice-field-etdEta,
+  .notice-field-goodsType,
+  .notice-field-customsSection,
+  .notice-field-voyage,
+  .notice-field-vessel,
+  .notice-field-supplierInvoice,
+  .notice-field-loadingPort,
+  .notice-field-unloadingPort,
+  .notice-field-attentionTo { grid-column: span 4; }
+
+  .notice-size-md,
+  .notice-field-reference,
+  .notice-field-deliveryConditions,
+  .notice-field-originGoods { grid-column: span 4; }
+
+  .notice-size-lg,
+  .notice-field-client,
+  .notice-field-sender,
+  .notice-field-destinationDepot,
+  .notice-field-importer,
+  .notice-field-consignee,
+  .notice-field-notifyParty { grid-column: span 8; }
+}
+
+@media (max-width: 1180px) {
+  .arrival-notice-form-grid,
+  .departure-notice-form-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .arrival-notice-form-grid .notice-field,
+  .departure-notice-form-grid .notice-field,
+  .notice-size-md,
+  .notice-size-lg,
+  .notice-size-xl,
+  .notice-field-reference,
+  .notice-field-deliveryConditions,
+  .notice-field-originGoods,
+  .notice-field-client,
+  .notice-field-sender,
+  .notice-field-destinationDepot,
+  .notice-field-importer,
+  .notice-field-consignee,
+  .notice-field-notifyParty {
+    grid-column: span 4;
+  }
+
+  .notice-size-xs,
+  .notice-size-sm,
+  .notice-field-originalNo,
+  .notice-field-originalCopyCount,
+  .notice-field-amount,
+  .notice-field-practiceReference,
+  .notice-field-bookingReference,
+  .notice-field-policyReference,
+  .notice-field-compileLocation,
+  .notice-field-tripType,
+  .notice-field-documentDate,
+  .notice-field-documentReceiptDate,
+  .notice-field-emptyingAppointmentDate,
+  .notice-field-operatorName,
+  .notice-field-atd,
+  .notice-field-etdEta,
+  .notice-field-goodsType,
+  .notice-field-customsSection,
+  .notice-field-voyage,
+  .notice-field-vessel,
+  .notice-field-supplierInvoice,
+  .notice-field-loadingPort,
+  .notice-field-unloadingPort,
+  .notice-field-attentionTo { grid-column: span 2; }
+}
