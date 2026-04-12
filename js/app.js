@@ -48,6 +48,7 @@
   const CustomsInstructionsModule = window.KedrixOneCustomsInstructionsModule || null;
   const BookingEmbarkationModule = window.KedrixOneBookingEmbarkationModule || null;
   const ArrivalNoticeModule = window.KedrixOneArrivalNoticeModule || null;
+  const DepartureNoticeModule = window.KedrixOneDepartureNoticeModule || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -69,6 +70,9 @@
   }
   if (ArrivalNoticeModule && typeof ArrivalNoticeModule.ensureState === 'function') {
     ArrivalNoticeModule.ensureState(state);
+  }
+  if (DepartureNoticeModule && typeof DepartureNoticeModule.ensureState === 'function') {
+    DepartureNoticeModule.ensureState(state);
   }
 
   function ensurePracticeListState() {
@@ -2151,6 +2155,17 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
+    if (route === 'practices/notifica-partenza-merce') {
+      if (!DepartureNoticeModule || typeof DepartureNoticeModule.render !== 'function') {
+        main.innerHTML = Templates.submodulePlaceholder(module, routeMeta);
+        return;
+      }
+      DepartureNoticeModule.ensureState?.(state);
+      main.innerHTML = DepartureNoticeModule.render(state, { i18n: I18N, getSelectedPractice: selectedPractice });
+      bindDepartureNoticeEvents();
+      return;
+    }
+
     if (route === 'documents') {
       ensureDocumentPreviewSelection();
       main.innerHTML = Templates.documents(state, module, documentSearchResults());
@@ -2254,6 +2269,19 @@ function renderDocumentPreviewPanel() {
   function bindArrivalNoticeEvents() {
     if (!ArrivalNoticeModule || typeof ArrivalNoticeModule.bind !== 'function') return;
     ArrivalNoticeModule.bind({
+      root: main,
+      state,
+      save,
+      render,
+      toast,
+      i18n: I18N,
+      getSelectedPractice: selectedPractice
+    });
+  }
+
+  function bindDepartureNoticeEvents() {
+    if (!DepartureNoticeModule || typeof DepartureNoticeModule.bind !== 'function') return;
+    DepartureNoticeModule.bind({
       root: main,
       state,
       save,

@@ -4238,3 +4238,73 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 }
+
+.departure-notice-launcher-panel,
+.departure-notice-editor-panel,
+.departure-notice-workspace-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.departure-notice-practice-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.departure-notice-practice-chip,
+.departure-notice-record-card {
+  text-align: left;
+}
+
+.departure-notice-summary-pills {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.departure-notice-form-grid {
+  align-items: start;
+}
+
+.departure-notice-records-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.departure-notice-tabs {
+  margin-top: -4px;
+}
+
+.departure-notice-lines-panel .table-wrap {
+  overflow-x: auto;
+}
+
+.departure-notice-lines-table {
+  min-width: 1320px;
+}
+
+.departure-notice-lines-table th,
+.departure-notice-lines-table td {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.departure-notice-lines-table input {
+  min-width: 110px;
+}
+
+.departure-notice-lines-table td:nth-child(3) input {
+  min-width: 220px;
+}
+
+@media (max-width: 1180px) {
+  .departure-notice-practice-grid,
+  .departure-notice-summary-pills,
+  .departure-notice-records-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .departure-notice-practice-grid,
+  .departure-notice-summary-pills,
+  .departure-notice-records-grid {
+    grid-template-columns: 1fr;
+  }
+}
