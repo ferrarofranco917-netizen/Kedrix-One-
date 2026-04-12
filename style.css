@@ -4256,7 +4256,7 @@ body.dialog-open {
 .notice-module .hero,
 .notice-module .panel,
 .notice-module .table-panel {
-  padding: 14px;
+  padding: 10px 12px;
 }
 
 .notice-module .three-col {
@@ -4277,27 +4277,41 @@ body.dialog-open {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.arrival-notice-form-grid,
-.departure-notice-form-grid {
-  grid-template-columns: repeat(18, minmax(0, 1fr));
-  gap: 10px 12px;
+.notice-general-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px 10px;
   align-items: start;
-  grid-auto-flow: dense;
 }
 
+.notice-general-grid .notice-field,
 .arrival-notice-form-grid .notice-field,
 .departure-notice-form-grid .notice-field {
   min-width: 0;
-  grid-column: span 4;
+  gap: 4px;
+  grid-column: span 1;
 }
 
-.notice-size-xs { grid-column: span 2; }
-.notice-size-sm { grid-column: span 3; }
-.notice-size-md { grid-column: span 4; }
-.notice-size-lg { grid-column: span 6; }
-.notice-size-xl { grid-column: span 9; }
+.notice-general-grid .notice-col-2 { grid-column: span 2; }
+.notice-general-grid .notice-col-3 { grid-column: span 3; }
+.notice-general-grid .notice-col-4 { grid-column: span 4; }
+.notice-general-grid .notice-col-5,
+.notice-general-grid .notice-size-full,
 .arrival-notice-form-grid .notice-size-full,
 .departure-notice-form-grid .notice-size-full { grid-column: 1 / -1; }
+
+.arrival-notice-form-grid,
+.departure-notice-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: start;
+}
+
+.notice-size-xs,
+.notice-size-sm,
+.notice-size-md,
+.notice-size-lg,
+.notice-size-xl { grid-column: span 1; }
 
 .arrival-notice-form-grid .notice-field textarea,
 .departure-notice-form-grid .notice-field textarea {
@@ -4354,9 +4368,9 @@ body.dialog-open {
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(255,255,255,0.04);
   color: var(--text2);
-  width: 24px;
-  min-width: 24px;
-  height: 24px;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
   font-size: 14px;
@@ -4385,7 +4399,7 @@ body.dialog-open {
 .notice-lines-table td {
   white-space: normal;
   vertical-align: top;
-  padding: 8px 6px;
+  padding: 6px 4px;
 }
 
 .notice-lines-table th {
@@ -4437,83 +4451,49 @@ body.dialog-open {
   overflow: hidden;
 }
 
-.notice-field-practiceReference,
-.notice-field-reference,
-.notice-field-bookingReference,
-.notice-field-policyReference,
-.notice-field-compileLocation,
-.notice-field-loadingPort,
-.notice-field-unloadingPort,
-.notice-field-supplierInvoice,
-.notice-field-deliveryConditions,
-.notice-field-originGoods,
-.notice-field-customsSection,
-.notice-field-attentionTo,
-.notice-field-vessel,
-.notice-field-voyage,
-.notice-field-client,
-.notice-field-sender,
-.notice-field-destinationDepot,
-.notice-field-importer,
-.notice-field-consignee,
-.notice-field-notifyParty {
-  grid-column: span 6;
+.notice-general-grid .notice-field-practiceReference,
+.notice-general-grid .notice-field-client,
+.notice-general-grid .notice-field-bookingReference,
+.notice-general-grid .notice-field-policyReference,
+.notice-general-grid .notice-field-tripType,
+.notice-general-grid .notice-field-sender,
+.notice-general-grid .notice-field-destinationDepot,
+.notice-general-grid .notice-field-importer,
+.notice-general-grid .notice-field-consignee,
+.notice-general-grid .notice-field-notifyParty,
+.notice-general-grid .notice-field-reference,
+.notice-general-grid .notice-field-attentionTo,
+.notice-general-grid .notice-field-compileLocation,
+.notice-general-grid .notice-field-documentDate,
+.notice-general-grid .notice-field-loadingPort,
+.notice-general-grid .notice-field-etdEta,
+.notice-general-grid .notice-field-atd,
+.notice-general-grid .notice-field-unloadingPort,
+.notice-general-grid .notice-field-supplierInvoice,
+.notice-general-grid .notice-field-amount,
+.notice-general-grid .notice-field-goodsType,
+.notice-general-grid .notice-field-voyage,
+.notice-general-grid .notice-field-vessel,
+.notice-general-grid .notice-field-deliveryConditions,
+.notice-general-grid .notice-field-originGoods,
+.notice-general-grid .notice-field-customsSection,
+.notice-general-grid .notice-field-originalNo,
+.notice-general-grid .notice-field-originalCopyCount,
+.notice-general-grid .notice-field-operatorName,
+.notice-general-grid .notice-field-documentReceiptDate,
+.notice-general-grid .notice-field-emptyingAppointmentDate {
+  grid-column: span 1;
 }
 
-.notice-field-tripType,
-.notice-field-amount,
-.notice-field-documentDate,
-.notice-field-documentReceiptDate,
-.notice-field-emptyingAppointmentDate,
-.notice-field-operatorName,
-.notice-field-atd,
-.notice-field-etdEta {
-  grid-column: span 3;
-}
-
-.notice-field-originalNo,
-.notice-field-originalCopyCount {
-  grid-column: span 2;
+@media (max-width: 1680px) {
+  .notice-general-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1400px) {
-  .arrival-notice-form-grid,
-  .departure-notice-form-grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-
-  .arrival-notice-form-grid .notice-field,
-  .departure-notice-form-grid .notice-field {
-    grid-column: span 4;
-  }
-
-  .notice-size-xs { grid-column: span 2; }
-  .notice-size-sm { grid-column: span 3; }
-  .notice-size-md { grid-column: span 4; }
-  .notice-size-lg,
-  .notice-size-xl { grid-column: span 6; }
-
-  .notice-field-practiceReference,
-  .notice-field-reference,
-  .notice-field-bookingReference,
-  .notice-field-policyReference,
-  .notice-field-compileLocation,
-  .notice-field-loadingPort,
-  .notice-field-unloadingPort,
-  .notice-field-supplierInvoice,
-  .notice-field-deliveryConditions,
-  .notice-field-originGoods,
-  .notice-field-customsSection,
-  .notice-field-attentionTo,
-  .notice-field-vessel,
-  .notice-field-voyage,
-  .notice-field-client,
-  .notice-field-sender,
-  .notice-field-destinationDepot,
-  .notice-field-importer,
-  .notice-field-consignee,
-  .notice-field-notifyParty {
-    grid-column: span 6;
+  .notice-general-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -4527,41 +4507,15 @@ body.dialog-open {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .arrival-notice-form-grid,
-  .departure-notice-form-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+  .notice-general-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .arrival-notice-form-grid .notice-field,
-  .departure-notice-form-grid .notice-field {
+  .notice-general-grid .notice-col-2,
+  .notice-general-grid .notice-col-3,
+  .notice-general-grid .notice-col-4,
+  .notice-general-grid .notice-col-5 {
     grid-column: span 3;
-  }
-
-  .notice-size-lg,
-  .notice-size-xl,
-  .notice-size-full { grid-column: 1 / -1; }
-
-  .notice-field-practiceReference,
-  .notice-field-reference,
-  .notice-field-bookingReference,
-  .notice-field-policyReference,
-  .notice-field-compileLocation,
-  .notice-field-loadingPort,
-  .notice-field-unloadingPort,
-  .notice-field-supplierInvoice,
-  .notice-field-deliveryConditions,
-  .notice-field-originGoods,
-  .notice-field-customsSection,
-  .notice-field-attentionTo,
-  .notice-field-vessel,
-  .notice-field-voyage,
-  .notice-field-client,
-  .notice-field-sender,
-  .notice-field-destinationDepot,
-  .notice-field-importer,
-  .notice-field-consignee,
-  .notice-field-notifyParty {
-    grid-column: 1 / -1;
   }
 }
 
@@ -4575,11 +4529,13 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 
+  .notice-general-grid,
   .arrival-notice-form-grid,
   .departure-notice-form-grid {
     grid-template-columns: 1fr;
   }
 
+  .notice-general-grid .notice-field,
   .arrival-notice-form-grid .notice-field,
   .departure-notice-form-grid .notice-field,
   .notice-size-xs,
@@ -4618,257 +4574,3 @@ body.dialog-open {
   }
 }
 
-
-
-/* AQ46B notices compact desktop realignment */
-.notice-module {
-  overflow-x: hidden;
-}
-
-.notice-module .hero,
-.notice-module .panel,
-.notice-module .table-panel {
-  padding: 12px 14px;
-}
-
-.notice-module .panel-head {
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.notice-module .panel-title {
-  margin-bottom: 4px;
-}
-
-.notice-module .field,
-.notice-module .stack-item {
-  gap: 4px;
-}
-
-.notice-module .stack-item {
-  padding: 12px;
-}
-
-.notice-module .summary-value {
-  font-size: 24px;
-}
-
-.arrival-notice-form-grid,
-.departure-notice-form-grid {
-  grid-template-columns: repeat(24, minmax(0, 1fr));
-  gap: 8px 10px;
-  grid-auto-flow: dense;
-}
-
-.arrival-notice-form-grid .notice-field,
-.departure-notice-form-grid .notice-field {
-  min-width: 0;
-  grid-column: span 6;
-}
-
-.notice-size-xs { grid-column: span 3; }
-.notice-size-sm { grid-column: span 4; }
-.notice-size-md { grid-column: span 6; }
-.notice-size-lg { grid-column: span 8; }
-.notice-size-xl { grid-column: span 12; }
-
-.arrival-notice-form-grid .notice-field textarea,
-.departure-notice-form-grid .notice-field textarea {
-  min-height: 96px;
-}
-
-.notice-field-practiceReference,
-.notice-field-bookingReference,
-.notice-field-policyReference,
-.notice-field-compileLocation,
-.notice-field-tripType,
-.notice-field-documentDate,
-.notice-field-documentReceiptDate,
-.notice-field-emptyingAppointmentDate,
-.notice-field-operatorName,
-.notice-field-atd,
-.notice-field-etdEta,
-.notice-field-goodsType,
-.notice-field-customsSection,
-.notice-field-voyage,
-.notice-field-vessel,
-.notice-field-supplierInvoice,
-.notice-field-loadingPort,
-.notice-field-unloadingPort,
-.notice-field-attentionTo {
-  grid-column: span 4;
-}
-
-.notice-field-reference,
-.notice-field-deliveryConditions,
-.notice-field-originGoods {
-  grid-column: span 6;
-}
-
-.notice-field-client,
-.notice-field-sender,
-.notice-field-destinationDepot,
-.notice-field-importer,
-.notice-field-consignee,
-.notice-field-notifyParty {
-  grid-column: span 8;
-}
-
-.notice-field-originalNo,
-.notice-field-originalCopyCount,
-.notice-field-amount {
-  grid-column: span 3;
-}
-
-.notice-lines-wrap {
-  overflow-x: hidden;
-}
-
-.notice-lines-table {
-  width: 100%;
-  table-layout: fixed;
-}
-
-.notice-lines-table th,
-.notice-lines-table td {
-  padding: 6px 4px;
-}
-
-.notice-lines-table th {
-  font-size: 10px;
-}
-
-.notice-lines-table input {
-  width: 100%;
-  min-width: 0;
-}
-
-.notice-session-strip {
-  gap: 6px;
-}
-
-.notice-session-chip {
-  min-width: 0;
-  max-width: 300px;
-  padding: 4px;
-  gap: 4px;
-  border-radius: 12px;
-}
-
-.notice-session-main {
-  padding: 4px 8px;
-}
-
-.notice-session-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  min-width: 26px;
-  height: 26px;
-  line-height: 1;
-  font-size: 16px;
-  font-weight: 700;
-  padding: 0;
-  border-radius: 999px;
-}
-
-@media (max-width: 1600px) {
-  .arrival-notice-form-grid,
-  .departure-notice-form-grid {
-    grid-template-columns: repeat(16, minmax(0, 1fr));
-  }
-
-  .arrival-notice-form-grid .notice-field,
-  .departure-notice-form-grid .notice-field {
-    grid-column: span 4;
-  }
-
-  .notice-size-xs,
-  .notice-field-originalNo,
-  .notice-field-originalCopyCount,
-  .notice-field-amount { grid-column: span 2; }
-
-  .notice-size-sm,
-  .notice-field-practiceReference,
-  .notice-field-bookingReference,
-  .notice-field-policyReference,
-  .notice-field-compileLocation,
-  .notice-field-tripType,
-  .notice-field-documentDate,
-  .notice-field-documentReceiptDate,
-  .notice-field-emptyingAppointmentDate,
-  .notice-field-operatorName,
-  .notice-field-atd,
-  .notice-field-etdEta,
-  .notice-field-goodsType,
-  .notice-field-customsSection,
-  .notice-field-voyage,
-  .notice-field-vessel,
-  .notice-field-supplierInvoice,
-  .notice-field-loadingPort,
-  .notice-field-unloadingPort,
-  .notice-field-attentionTo { grid-column: span 4; }
-
-  .notice-size-md,
-  .notice-field-reference,
-  .notice-field-deliveryConditions,
-  .notice-field-originGoods { grid-column: span 4; }
-
-  .notice-size-lg,
-  .notice-field-client,
-  .notice-field-sender,
-  .notice-field-destinationDepot,
-  .notice-field-importer,
-  .notice-field-consignee,
-  .notice-field-notifyParty { grid-column: span 8; }
-}
-
-@media (max-width: 1180px) {
-  .arrival-notice-form-grid,
-  .departure-notice-form-grid {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-  }
-
-  .arrival-notice-form-grid .notice-field,
-  .departure-notice-form-grid .notice-field,
-  .notice-size-md,
-  .notice-size-lg,
-  .notice-size-xl,
-  .notice-field-reference,
-  .notice-field-deliveryConditions,
-  .notice-field-originGoods,
-  .notice-field-client,
-  .notice-field-sender,
-  .notice-field-destinationDepot,
-  .notice-field-importer,
-  .notice-field-consignee,
-  .notice-field-notifyParty {
-    grid-column: span 4;
-  }
-
-  .notice-size-xs,
-  .notice-size-sm,
-  .notice-field-originalNo,
-  .notice-field-originalCopyCount,
-  .notice-field-amount,
-  .notice-field-practiceReference,
-  .notice-field-bookingReference,
-  .notice-field-policyReference,
-  .notice-field-compileLocation,
-  .notice-field-tripType,
-  .notice-field-documentDate,
-  .notice-field-documentReceiptDate,
-  .notice-field-emptyingAppointmentDate,
-  .notice-field-operatorName,
-  .notice-field-atd,
-  .notice-field-etdEta,
-  .notice-field-goodsType,
-  .notice-field-customsSection,
-  .notice-field-voyage,
-  .notice-field-vessel,
-  .notice-field-supplierInvoice,
-  .notice-field-loadingPort,
-  .notice-field-unloadingPort,
-  .notice-field-attentionTo { grid-column: span 2; }
-}

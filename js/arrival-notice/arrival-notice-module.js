@@ -150,15 +150,15 @@ window.KedrixOneArrivalNoticeModule = (() => {
   function fieldSize(name, options = {}) {
     if (options.full || options.type === 'textarea') return 'full';
     const key = String(name || '').trim();
-    const xs = new Set(['originalNo', 'originalCopyCount', 'amount']);
-    const sm = new Set(['tripType', 'documentDate', 'documentReceiptDate', 'emptyingAppointmentDate', 'operatorName', 'etdEta', 'atd', 'practiceReference', 'bookingReference', 'policyReference', 'compileLocation', 'goodsType', 'voyage', 'vessel', 'customsSection']);
-    const md = new Set(['reference', 'attentionTo', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'deliveryConditions', 'originGoods']);
-    const lg = new Set(['client', 'sender', 'destinationDepot', 'importer', 'consignee', 'notifyParty']);
+    const xs = new Set(['originalNo', 'originalCopyCount']);
+    const sm = new Set(['tripType', 'amount', 'documentDate', 'documentReceiptDate', 'emptyingAppointmentDate', 'operatorName', 'etdEta']);
+    const md = new Set(['practiceReference', 'reference', 'bookingReference', 'policyReference', 'customsSection', 'compileLocation', 'goodsType', 'voyage', 'vessel', 'attentionTo']);
+    const lg = new Set(['client', 'sender', 'destinationDepot', 'importer', 'consignee', 'notifyParty', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'deliveryConditions', 'originGoods']);
     if (xs.has(key)) return 'xs';
     if (sm.has(key)) return 'sm';
     if (md.has(key)) return 'md';
     if (lg.has(key)) return 'lg';
-    return 'sm';
+    return 'md';
   }
 
   function renderField(label, name, value, options = {}) {
@@ -168,7 +168,8 @@ window.KedrixOneArrivalNoticeModule = (() => {
     const disabled = options.disabled ? ' disabled' : '';
     const placeholder = U.escapeHtml(options.placeholder || '');
     const size = fieldSize(name, options);
-    const classes = ['field', 'notice-field', `notice-size-${size}`, `notice-field-${String(name || '').trim()}`];
+    const span = Number(options.span || 1);
+    const classes = ['field', 'notice-field', `notice-size-${size}`, `notice-field-${String(name || '').trim()}`, `notice-col-${Number.isFinite(span) ? span : 1}`];
     if (options.full || size === 'full') classes.push('full');
     const baseAttrs = `id="an-${U.escapeHtml(name)}" data-arrival-notice-field="${U.escapeHtml(name)}"${disabled}`;
     if (type === 'textarea') {
@@ -307,41 +308,46 @@ window.KedrixOneArrivalNoticeModule = (() => {
       </section>`;
   }
 
+  function renderGeneralFieldGrid(fields) {
+    return `<div class="notice-general-grid">${fields.map((field) => renderField(field.label, field.name, field.value, { ...(field.options || {}), span: field.span || 1 })).join('')}</div>`;
+  }
+
   function renderGeneralTab(draft, i18n) {
+    const fields = [
+      { label: i18n?.t('ui.generatedNumber', 'Pratica'), name: 'practiceReference', value: draft.practiceReference, options: { disabled: true } },
+      { label: i18n?.t('ui.clientRequired', 'Cliente'), name: 'client', value: draft.client },
+      { label: i18n?.t('ui.bookingWord', 'Booking'), name: 'bookingReference', value: draft.bookingReference },
+      { label: i18n?.t('ui.policyNumber', 'Polizza'), name: 'policyReference', value: draft.policyReference },
+      { label: i18n?.t('ui.arrivalNoticeTripType', 'Tipo viaggio'), name: 'tripType', value: draft.tripType, options: { type: 'select', items: [{ value: 'MARE', label: 'MARE' }, { value: 'AEREO', label: 'AEREO' }, { value: 'TERRA', label: 'TERRA' }] } },
+      { label: i18n?.t('ui.sender', 'Mittente'), name: 'sender', value: draft.sender },
+      { label: i18n?.t('ui.arrivalNoticeDestinationDepot', 'Deposito di destinazione'), name: 'destinationDepot', value: draft.destinationDepot },
+      { label: i18n?.t('ui.importer', 'Importatore'), name: 'importer', value: draft.importer },
+      { label: i18n?.t('ui.consignee', 'Consignee'), name: 'consignee', value: draft.consignee },
+      { label: i18n?.t('ui.notify', 'Notify'), name: 'notifyParty', value: draft.notifyParty },
+      { label: i18n?.t('ui.reference', 'Riferimento'), name: 'reference', value: draft.reference },
+      { label: i18n?.t('ui.arrivalNoticeAttentionTo', 'All’attenzione di'), name: 'attentionTo', value: draft.attentionTo },
+      { label: i18n?.t('ui.arrivalNoticeCompileLocation', 'Luogo compilazione'), name: 'compileLocation', value: draft.compileLocation },
+      { label: i18n?.t('ui.date', 'Data'), name: 'documentDate', value: draft.documentDate, options: { type: 'date' } },
+      { label: i18n?.t('ui.arrivalNoticeLoadingPort', 'Porto imbarco'), name: 'loadingPort', value: draft.loadingPort },
+      { label: i18n?.t('ui.arrivalNoticeEtdEta', 'ETD/ETA'), name: 'etdEta', value: draft.etdEta },
+      { label: i18n?.t('ui.arrivalNoticeUnloadingPort', 'Porto sbarco'), name: 'unloadingPort', value: draft.unloadingPort },
+      { label: i18n?.t('ui.arrivalNoticeSupplierInvoice', 'Fattura fornitore'), name: 'supplierInvoice', value: draft.supplierInvoice },
+      { label: i18n?.t('ui.amount', 'Importo'), name: 'amount', value: draft.amount },
+      { label: i18n?.t('ui.arrivalNoticeGoodsType', 'Tipo merce'), name: 'goodsType', value: draft.goodsType },
+      { label: i18n?.t('ui.voyage', 'Viaggio'), name: 'voyage', value: draft.voyage },
+      { label: i18n?.t('ui.vessel', 'Nave'), name: 'vessel', value: draft.vessel },
+      { label: i18n?.t('ui.arrivalNoticeDeliveryConditions', 'Condizioni di consegna'), name: 'deliveryConditions', value: draft.deliveryConditions },
+      { label: i18n?.t('ui.arrivalNoticeOriginGoods', 'Origine merce'), name: 'originGoods', value: draft.originGoods },
+      { label: i18n?.t('ui.customsSection', 'Sez. doganale'), name: 'customsSection', value: draft.customsSection },
+      { label: i18n?.t('ui.arrivalNoticeOriginalNo', 'Original NO.'), name: 'originalNo', value: draft.originalNo },
+      { label: i18n?.t('ui.arrivalNoticeOriginalCopies', 'Original copie'), name: 'originalCopyCount', value: draft.originalCopyCount },
+      { label: i18n?.t('ui.operator', 'Operatore'), name: 'operatorName', value: draft.operatorName },
+      { label: i18n?.t('ui.arrivalNoticeDocumentReceiptDate', 'Data ricezione documenti'), name: 'documentReceiptDate', value: draft.documentReceiptDate, options: { type: 'date' } },
+      { label: i18n?.t('ui.arrivalNoticeEmptyingDate', 'Data pres. svuotamento'), name: 'emptyingAppointmentDate', value: draft.emptyingAppointmentDate, options: { type: 'date' } }
+    ];
     return `
       ${renderSummaryPills(draft, i18n)}
-      <div class="form-grid three arrival-notice-form-grid">
-        ${renderField(i18n?.t('ui.clientRequired', 'Cliente'), 'client', draft.client)}
-        ${renderField(i18n?.t('ui.sender', 'Mittente'), 'sender', draft.sender)}
-        ${renderField(i18n?.t('ui.arrivalNoticeDestinationDepot', 'Deposito di destinazione'), 'destinationDepot', draft.destinationDepot)}
-        ${renderField(i18n?.t('ui.importer', 'Importatore'), 'importer', draft.importer)}
-        ${renderField(i18n?.t('ui.consignee', 'Consignee'), 'consignee', draft.consignee)}
-        ${renderField(i18n?.t('ui.notify', 'Notify'), 'notifyParty', draft.notifyParty)}
-        ${renderField(i18n?.t('ui.generatedNumber', 'Pratica'), 'practiceReference', draft.practiceReference, { disabled: true })}
-        ${renderField(i18n?.t('ui.arrivalNoticeTripType', 'Tipo viaggio'), 'tripType', draft.tripType, { type: 'select', items: [{ value: 'MARE', label: 'MARE' }, { value: 'AEREO', label: 'AEREO' }, { value: 'TERRA', label: 'TERRA' }] })}
-        ${renderField(i18n?.t('ui.arrivalNoticeCompileLocation', 'Luogo compilazione'), 'compileLocation', draft.compileLocation)}
-        ${renderField(i18n?.t('ui.reference', 'Riferimento'), 'reference', draft.reference)}
-        ${renderField(i18n?.t('ui.arrivalNoticeAttentionTo', 'All’attenzione di'), 'attentionTo', draft.attentionTo)}
-        ${renderField(i18n?.t('ui.date', 'Data'), 'documentDate', draft.documentDate, { type: 'date' })}
-        ${renderField(i18n?.t('ui.arrivalNoticeLoadingPort', 'Porto imbarco'), 'loadingPort', draft.loadingPort)}
-        ${renderField(i18n?.t('ui.arrivalNoticeEtdEta', 'ETD/ETA'), 'etdEta', draft.etdEta)}
-        ${renderField(i18n?.t('ui.arrivalNoticeUnloadingPort', 'Porto sbarco'), 'unloadingPort', draft.unloadingPort)}
-        ${renderField(i18n?.t('ui.arrivalNoticeSupplierInvoice', 'Fattura fornitore'), 'supplierInvoice', draft.supplierInvoice)}
-        ${renderField(i18n?.t('ui.amount', 'Importo'), 'amount', draft.amount)}
-        ${renderField(i18n?.t('ui.arrivalNoticeGoodsType', 'Tipo merce'), 'goodsType', draft.goodsType)}
-        ${renderField(i18n?.t('ui.voyage', 'Viaggio'), 'voyage', draft.voyage)}
-        ${renderField(i18n?.t('ui.vessel', 'Nave'), 'vessel', draft.vessel)}
-        ${renderField(i18n?.t('ui.arrivalNoticeDeliveryConditions', 'Condizioni di consegna'), 'deliveryConditions', draft.deliveryConditions)}
-        ${renderField(i18n?.t('ui.arrivalNoticeOriginGoods', 'Origine merce'), 'originGoods', draft.originGoods)}
-        ${renderField(i18n?.t('ui.bookingWord', 'Booking'), 'bookingReference', draft.bookingReference)}
-        ${renderField(i18n?.t('ui.policyNumber', 'Polizza'), 'policyReference', draft.policyReference)}
-        ${renderField(i18n?.t('ui.arrivalNoticeOriginalNo', 'Original NO.'), 'originalNo', draft.originalNo)}
-        ${renderField(i18n?.t('ui.arrivalNoticeOriginalCopies', 'Original copie'), 'originalCopyCount', draft.originalCopyCount)}
-        ${renderField(i18n?.t('ui.operator', 'Operatore'), 'operatorName', draft.operatorName)}
-        ${renderField(i18n?.t('ui.arrivalNoticeDocumentReceiptDate', 'Data ricezione documenti'), 'documentReceiptDate', draft.documentReceiptDate, { type: 'date' })}
-        ${renderField(i18n?.t('ui.customsSection', 'Sez. doganale'), 'customsSection', draft.customsSection)}
-        ${renderField(i18n?.t('ui.arrivalNoticeEmptyingDate', 'Data pres. svuotamento'), 'emptyingAppointmentDate', draft.emptyingAppointmentDate, { type: 'date' })}
-      </div>
+      ${renderGeneralFieldGrid(fields)}
       ${renderLineTable(draft, i18n)}`;
   }
 
