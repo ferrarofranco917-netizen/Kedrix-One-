@@ -4239,15 +4239,16 @@ body.dialog-open {
   }
 }
 
+
 .departure-notice-launcher-panel,
 .departure-notice-editor-panel,
 .departure-notice-workspace-panel {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .departure-notice-practice-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .departure-notice-practice-chip,
@@ -4256,7 +4257,7 @@ body.dialog-open {
 }
 
 .departure-notice-summary-pills {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .departure-notice-form-grid {
@@ -4264,11 +4265,11 @@ body.dialog-open {
 }
 
 .departure-notice-records-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .departure-notice-tabs {
-  margin-top: -4px;
+  margin-bottom: 4px;
 }
 
 .departure-notice-lines-panel .table-wrap {
@@ -4276,17 +4277,16 @@ body.dialog-open {
 }
 
 .departure-notice-lines-table {
-  min-width: 1320px;
+  min-width: 1180px;
 }
 
 .departure-notice-lines-table th,
 .departure-notice-lines-table td {
   white-space: nowrap;
-  vertical-align: top;
 }
 
 .departure-notice-lines-table input {
-  min-width: 110px;
+  min-width: 92px;
 }
 
 .departure-notice-lines-table td:nth-child(3) input {
@@ -4297,7 +4297,7 @@ body.dialog-open {
   .departure-notice-practice-grid,
   .departure-notice-summary-pills,
   .departure-notice-records-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr 1fr;
   }
 }
 

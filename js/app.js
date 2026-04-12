@@ -2279,6 +2279,7 @@ function renderDocumentPreviewPanel() {
     });
   }
 
+
   function bindDepartureNoticeEvents() {
     if (!DepartureNoticeModule || typeof DepartureNoticeModule.bind !== 'function') return;
     DepartureNoticeModule.bind({

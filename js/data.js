@@ -180,6 +180,7 @@ window.KedrixOneData = (() => {
           extraSubmodules: [
             'practices/booking-d-imbarco',
             'practices/notifica-arrivo-merce',
+            'practices/notifica-partenza-merce',
             'crm/indicatori'
           ],
           disabledSubmodules: ['practices/buono-consegna-merce-aerea']

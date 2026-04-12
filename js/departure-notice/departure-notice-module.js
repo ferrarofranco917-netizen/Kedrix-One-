@@ -38,6 +38,7 @@ window.KedrixOneDepartureNoticeModule = (() => {
       client: '',
       sender: '',
       destinationDepot: '',
+      attentionTo: '',
       importer: '',
       consignee: '',
       notifyParty: '',
@@ -83,18 +84,18 @@ window.KedrixOneDepartureNoticeModule = (() => {
       status: String(practice?.status || 'draft').trim() || 'draft',
       client: String(practice?.clientName || practice?.client || '').trim(),
       sender: String(dynamic.senderParty || dynamic.exporter || dynamic.shipper || '').trim(),
-      destinationDepot: String(dynamic.originDepot || dynamic.loadingDepot || dynamic.depot || '').trim(),
-      importer: String(dynamic.exporter || dynamic.shipper || '').trim(),
+      destinationDepot: String(dynamic.destinationDepot || dynamic.depot || '').trim(),
+      importer: String(dynamic.importer || '').trim(),
       consignee: String(dynamic.consignee || dynamic.receiverParty || '').trim(),
       notifyParty: String(dynamic.notifyParty || '').trim(),
       reference: String(dynamic.mainReference || practice?.reference || '').trim(),
       tripType: inferTripType(practice),
-      compileLocation: String(dynamic.compileLocation || dynamic.loadingPlace || '').trim(),
+      compileLocation: String(dynamic.compileLocation || dynamic.loadingPlace || dynamic.loadingPort || '').trim(),
       documentDate: String(practice?.practiceDate || today()).trim() || today(),
       loadingPort: String(dynamic.loadingPort || dynamic.originPort || dynamic.originNode || '').trim(),
-      etdEta: String(dynamic.etdAta || dynamic.etdEta || dynamic.departureDate || dynamic.etd || '').trim(),
+      etdEta: String(dynamic.etd || dynamic.etdEta || dynamic.departureDate || '').trim(),
       unloadingPort: String(dynamic.unloadingPort || dynamic.destinationPort || dynamic.destinationNode || '').trim(),
-      supplierInvoice: String(dynamic.foreignInvoice || dynamic.referenceInvoice || dynamic.supplierInvoice || '').trim(),
+      supplierInvoice: String(dynamic.foreignInvoice || dynamic.supplierInvoice || '').trim(),
       amount: String(dynamic.invoiceAmount || dynamic.amount || '').trim(),
       goodsType: String(dynamic.goodsType || dynamic.packageType || '').trim(),
       voyage: String(dynamic.voyage || '').trim(),
@@ -108,7 +109,7 @@ window.KedrixOneDepartureNoticeModule = (() => {
       operatorName: currentOperatorName(state),
       documentReceiptDate: String(dynamic.documentReceiptDate || '').trim(),
       customsSection: String(dynamic.customsSection || dynamic.customsOffice || '').trim(),
-      emptyingAppointmentDate: String(dynamic.loadingPresentationDate || dynamic.loadingDate || dynamic.pickupDate || '').trim(),
+      emptyingAppointmentDate: String(dynamic.departureDate || dynamic.loadingDate || dynamic.emptyingAppointmentDate || '').trim(),
       sourcePracticeSnapshot: {
         id: String(practice?.id || '').trim(),
         reference: String(practice?.reference || '').trim(),
@@ -205,7 +206,7 @@ window.KedrixOneDepartureNoticeModule = (() => {
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.departureNoticeLauncherTitle', 'Apri o crea notifica partenza merce'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.departureNoticeLauncherHint', 'Apri il documento dalla pratica mare attiva o scegli una pratica dall’elenco.'))}</p>
+            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.departureNoticeLauncherHint', 'Apri il documento di partenza dalla pratica mare attiva o scegli una pratica dall’elenco.'))}</p>
           </div>
           <div class="action-row">
             ${selectedSea ? `<button class="btn" type="button" data-departure-notice-open-active>${U.escapeHtml(i18n?.t('ui.useCurrentPractice', 'Usa pratica attiva'))}</button>` : ''}
@@ -290,8 +291,8 @@ window.KedrixOneDepartureNoticeModule = (() => {
       <div class="form-grid three departure-notice-form-grid">
         ${renderField(i18n?.t('ui.clientRequired', 'Cliente'), 'client', draft.client)}
         ${renderField(i18n?.t('ui.sender', 'Mittente'), 'sender', draft.sender)}
-        ${renderField(i18n?.t('ui.departureNoticeDepartureDepot', 'Deposito di partenza'), 'destinationDepot', draft.destinationDepot)}
-        ${renderField(i18n?.t('ui.departureNoticeExporter', 'Esportatore'), 'importer', draft.importer)}
+        ${renderField(i18n?.t('ui.departureNoticeDestinationDepot', 'Deposito di partenza'), 'destinationDepot', draft.destinationDepot)}
+        ${renderField(i18n?.t('ui.importer', 'Importatore'), 'importer', draft.importer)}
         ${renderField(i18n?.t('ui.consignee', 'Consignee'), 'consignee', draft.consignee)}
         ${renderField(i18n?.t('ui.notify', 'Notify'), 'notifyParty', draft.notifyParty)}
         ${renderField(i18n?.t('ui.generatedNumber', 'Pratica'), 'practiceReference', draft.practiceReference, { disabled: true })}
@@ -301,11 +302,11 @@ window.KedrixOneDepartureNoticeModule = (() => {
         ${renderField(i18n?.t('ui.departureNoticeAttentionTo', 'All’attenzione di'), 'attentionTo', draft.attentionTo)}
         ${renderField(i18n?.t('ui.date', 'Data'), 'documentDate', draft.documentDate, { type: 'date' })}
         ${renderField(i18n?.t('ui.departureNoticeLoadingPort', 'Porto imbarco'), 'loadingPort', draft.loadingPort)}
-        ${renderField(i18n?.t('ui.departureNoticeEtdAta', 'ETD/ATD'), 'etdEta', draft.etdEta)}
-        ${renderField(i18n?.t('ui.departureNoticeDestinationPort', 'Porto destino'), 'unloadingPort', draft.unloadingPort)}
-        ${renderField(i18n?.t('ui.departureNoticeReferenceInvoice', 'Fattura di riferimento'), 'supplierInvoice', draft.supplierInvoice)}
+        ${renderField(i18n?.t('ui.departureNoticeEtdEta', 'ETD'), 'etdEta', draft.etdEta)}
+        ${renderField(i18n?.t('ui.departureNoticeUnloadingPort', 'Porto destino'), 'unloadingPort', draft.unloadingPort)}
+        ${renderField(i18n?.t('ui.departureNoticeSupplierInvoice', 'Fattura fornitore'), 'supplierInvoice', draft.supplierInvoice)}
         ${renderField(i18n?.t('ui.amount', 'Importo'), 'amount', draft.amount)}
-        ${renderField(i18n?.t('ui.departureNoticeGoodsType', 'Tipo merce'), 'goodsType', draft.goodsType)}
+        ${renderField(i18n?.t('ui.departureNoticeGoodsType', 'Merce / tipologia'), 'goodsType', draft.goodsType)}
         ${renderField(i18n?.t('ui.voyage', 'Viaggio'), 'voyage', draft.voyage)}
         ${renderField(i18n?.t('ui.vessel', 'Nave'), 'vessel', draft.vessel)}
         ${renderField(i18n?.t('ui.departureNoticeDeliveryConditions', 'Condizioni di consegna'), 'deliveryConditions', draft.deliveryConditions)}
@@ -315,9 +316,9 @@ window.KedrixOneDepartureNoticeModule = (() => {
         ${renderField(i18n?.t('ui.departureNoticeOriginalNo', 'Original NO.'), 'originalNo', draft.originalNo)}
         ${renderField(i18n?.t('ui.departureNoticeOriginalCopies', 'Original copie'), 'originalCopyCount', draft.originalCopyCount)}
         ${renderField(i18n?.t('ui.operator', 'Operatore'), 'operatorName', draft.operatorName)}
-        ${renderField(i18n?.t('ui.departureNoticeInstructionReceiptDate', 'Data ricezione istruzioni'), 'documentReceiptDate', draft.documentReceiptDate, { type: 'date' })}
+        ${renderField(i18n?.t('ui.departureNoticeDocumentReceiptDate', 'Data invio documenti'), 'documentReceiptDate', draft.documentReceiptDate, { type: 'date' })}
         ${renderField(i18n?.t('ui.customsSection', 'Sez. doganale'), 'customsSection', draft.customsSection)}
-        ${renderField(i18n?.t('ui.departureNoticeLoadingPresentationDate', 'Data pres. carico'), 'emptyingAppointmentDate', draft.emptyingAppointmentDate, { type: 'date' })}
+        ${renderField(i18n?.t('ui.departureNoticeEmptyingDate', 'Data partenza prevista'), 'emptyingAppointmentDate', draft.emptyingAppointmentDate, { type: 'date' })}
       </div>
       ${renderLineTable(draft, i18n)}`;
   }
@@ -325,8 +326,8 @@ window.KedrixOneDepartureNoticeModule = (() => {
   function renderTextsTab(draft, i18n) {
     return `
       <div class="form-grid two departure-notice-form-grid">
-        ${renderField(i18n?.t('ui.departureNoticeInternalText', 'Testo interno'), 'internalText', draft.internalText, { type: 'textarea', rows: 12, full: true })}
-        ${renderField(i18n?.t('ui.departureNoticeCustomerText', 'Testo cliente'), 'customerText', draft.customerText, { type: 'textarea', rows: 12, full: true })}
+        ${renderField(i18n?.t('ui.departureNoticeInternalText', 'Testo operativo'), 'internalText', draft.internalText, { type: 'textarea', rows: 12, full: true })}
+        ${renderField(i18n?.t('ui.departureNoticeCustomerText', 'Testo destinatario'), 'customerText', draft.customerText, { type: 'textarea', rows: 12, full: true })}
       </div>`;
   }
 
@@ -340,7 +341,7 @@ window.KedrixOneDepartureNoticeModule = (() => {
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('practices/notifica-partenza-merce', 'Notifica partenza merce'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.departureNoticeEditorHint', 'Documento operativo collegato alla pratica madre, con dati generali, dettagli merce e testi pronti per invio o stampa di partenza.'))}</p>
+            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.departureNoticeEditorHint', 'Documento operativo di partenza collegato alla pratica madre, con dati generali, dettagli merce e testi pronti per invio o stampa.'))}</p>
           </div>
           <div class="action-row">
             <button class="btn secondary" type="button" data-departure-notice-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
