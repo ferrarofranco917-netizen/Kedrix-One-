@@ -2238,6 +2238,44 @@ function renderDocumentPreviewPanel() {
     });
   }
 
+  async function confirmCloseArrivalNoticeSession(sessionId) {
+    const Workspace = window.KedrixOneArrivalNoticeWorkspace || null;
+    if (!Workspace || typeof Workspace.hasSessionUnsavedChanges !== 'function') return true;
+    const hasUnsaved = Workspace.hasSessionUnsavedChanges(state, sessionId, {
+      createEmptyDraft: () => ArrivalNoticeModule && typeof ArrivalNoticeModule.createEmptyDraft === 'function'
+        ? ArrivalNoticeModule.createEmptyDraft(state)
+        : {}
+    });
+    if (!hasUnsaved) return true;
+    if (!AppFeedback || typeof AppFeedback.confirm !== 'function') return false;
+    return AppFeedback.confirm({
+      title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
+      message: I18N.t('ui.workspaceDirtyCloseMessage', 'Questa maschera contiene modifiche non salvate. Se la chiudi adesso, le modifiche andranno perse.'),
+      confirmLabel: I18N.t('ui.workspaceDiscardMask', 'Chiudi senza salvare'),
+      cancelLabel: I18N.t('ui.workspaceKeepMask', 'Torna alla maschera'),
+      tone: 'warning'
+    });
+  }
+
+  async function confirmCloseDepartureNoticeSession(sessionId) {
+    const Workspace = window.KedrixOneDepartureNoticeWorkspace || null;
+    if (!Workspace || typeof Workspace.hasSessionUnsavedChanges !== 'function') return true;
+    const hasUnsaved = Workspace.hasSessionUnsavedChanges(state, sessionId, {
+      createEmptyDraft: () => DepartureNoticeModule && typeof DepartureNoticeModule.createEmptyDraft === 'function'
+        ? DepartureNoticeModule.createEmptyDraft(state)
+        : {}
+    });
+    if (!hasUnsaved) return true;
+    if (!AppFeedback || typeof AppFeedback.confirm !== 'function') return false;
+    return AppFeedback.confirm({
+      title: I18N.t('ui.workspaceDirtyCloseTitle', 'Chiudere la maschera con modifiche non salvate?'),
+      message: I18N.t('ui.workspaceDirtyCloseMessage', 'Questa maschera contiene modifiche non salvate. Se la chiudi adesso, le modifiche andranno perse.'),
+      confirmLabel: I18N.t('ui.workspaceDiscardMask', 'Chiudi senza salvare'),
+      cancelLabel: I18N.t('ui.workspaceKeepMask', 'Torna alla maschera'),
+      tone: 'warning'
+    });
+  }
+
   function bindCustomsInstructionsEvents() {
     if (!CustomsInstructionsModule || typeof CustomsInstructionsModule.bind !== 'function') return;
     CustomsInstructionsModule.bind({
@@ -2275,10 +2313,10 @@ function renderDocumentPreviewPanel() {
       render,
       toast,
       i18n: I18N,
-      getSelectedPractice: selectedPractice
+      getSelectedPractice: selectedPractice,
+      confirmClose: confirmCloseArrivalNoticeSession
     });
   }
-
 
   function bindDepartureNoticeEvents() {
     if (!DepartureNoticeModule || typeof DepartureNoticeModule.bind !== 'function') return;
@@ -2289,7 +2327,8 @@ function renderDocumentPreviewPanel() {
       render,
       toast,
       i18n: I18N,
-      getSelectedPractice: selectedPractice
+      getSelectedPractice: selectedPractice,
+      confirmClose: confirmCloseDepartureNoticeSession
     });
   }
 

@@ -214,6 +214,21 @@ window.KedrixOneDepartureNoticeWorkspace = (() => {
     return session;
   }
 
+
+  function hasSessionUnsavedChanges(state, sessionId, options = {}) {
+    const session = findSession(state, sessionId, options);
+    if (!session) return false;
+    if (!session.isDirty) return false;
+    const currentSignature = signatureOf(session.draft);
+    const savedSignature = String(session.lastSavedDraftSignature || '').trim();
+    if (savedSignature && currentSignature === savedSignature) {
+      session.isDirty = false;
+      touchSession(session);
+      return false;
+    }
+    return true;
+  }
+
   function setSessionTab(state, sessionId, tab, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return null;
@@ -258,6 +273,7 @@ window.KedrixOneDepartureNoticeWorkspace = (() => {
     setSessionField,
     updateSessionDraft,
     setSessionTab,
+    hasSessionUnsavedChanges,
     markSessionSaved,
     closeSession
   };

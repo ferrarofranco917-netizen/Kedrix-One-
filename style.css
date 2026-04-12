@@ -4171,62 +4171,81 @@ body.dialog-open {
 
 .arrival-notice-launcher-panel,
 .arrival-notice-editor-panel,
-.arrival-notice-workspace-panel {
+.arrival-notice-workspace-panel,
+.departure-notice-launcher-panel,
+.departure-notice-editor-panel,
+.departure-notice-workspace-panel {
   display: grid;
   gap: 14px;
 }
 
-.arrival-notice-practice-grid {
+.arrival-notice-practice-grid,
+.departure-notice-practice-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .arrival-notice-practice-chip,
-.arrival-notice-record-card {
+.arrival-notice-record-card,
+.departure-notice-practice-chip,
+.departure-notice-record-card {
   text-align: left;
 }
 
-.arrival-notice-summary-pills {
+.arrival-notice-summary-pills,
+.departure-notice-summary-pills {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.arrival-notice-form-grid {
+.arrival-notice-form-grid,
+.departure-notice-form-grid {
   align-items: start;
 }
 
-.arrival-notice-records-grid {
+.arrival-notice-records-grid,
+.departure-notice-records-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.arrival-notice-tabs {
+.arrival-notice-tabs,
+.departure-notice-tabs {
   margin-top: -4px;
 }
 
-.arrival-notice-lines-panel .table-wrap {
+.arrival-notice-lines-panel .table-wrap,
+.departure-notice-lines-panel .table-wrap {
   overflow-x: auto;
 }
 
-.arrival-notice-lines-table {
+.arrival-notice-lines-table,
+.departure-notice-lines-table {
   min-width: 1320px;
 }
 
 .arrival-notice-lines-table th,
-.arrival-notice-lines-table td {
+.arrival-notice-lines-table td,
+.departure-notice-lines-table th,
+.departure-notice-lines-table td {
   white-space: nowrap;
   vertical-align: top;
 }
 
-.arrival-notice-lines-table input {
+.arrival-notice-lines-table input,
+.departure-notice-lines-table input {
   min-width: 110px;
 }
 
-.arrival-notice-lines-table td:nth-child(3) input {
+.arrival-notice-lines-table td:nth-child(3) input,
+.departure-notice-lines-table td:nth-child(3) input {
   min-width: 220px;
 }
 
 @media (max-width: 1180px) {
   .arrival-notice-practice-grid,
   .arrival-notice-summary-pills,
-  .arrival-notice-records-grid {
+  .arrival-notice-records-grid,
+  .departure-notice-practice-grid,
+  .departure-notice-summary-pills,
+  .departure-notice-records-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -4240,71 +4259,38 @@ body.dialog-open {
 }
 
 
-.departure-notice-launcher-panel,
-.departure-notice-editor-panel,
-.departure-notice-workspace-panel {
-  display: grid;
-  gap: 16px;
+.practice-session-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.departure-notice-practice-grid {
-  align-items: stretch;
+.practice-session-chip-wrap {
+  position: relative;
+  min-width: 220px;
+  max-width: 320px;
 }
 
-.departure-notice-practice-chip,
-.departure-notice-record-card {
+.practice-session-chip {
+  width: 100%;
+  padding-right: 34px;
   text-align: left;
 }
 
-.departure-notice-summary-pills {
-  align-items: stretch;
+.practice-session-chip-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  color: var(--text2);
+  cursor: pointer;
 }
 
-.departure-notice-form-grid {
-  align-items: start;
-}
-
-.departure-notice-records-grid {
-  align-items: stretch;
-}
-
-.departure-notice-tabs {
-  margin-bottom: 4px;
-}
-
-.departure-notice-lines-panel .table-wrap {
-  overflow-x: auto;
-}
-
-.departure-notice-lines-table {
-  min-width: 1180px;
-}
-
-.departure-notice-lines-table th,
-.departure-notice-lines-table td {
-  white-space: nowrap;
-}
-
-.departure-notice-lines-table input {
-  min-width: 92px;
-}
-
-.departure-notice-lines-table td:nth-child(3) input {
-  min-width: 220px;
-}
-
-@media (max-width: 1180px) {
-  .departure-notice-practice-grid,
-  .departure-notice-summary-pills,
-  .departure-notice-records-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .departure-notice-practice-grid,
-  .departure-notice-summary-pills,
-  .departure-notice-records-grid {
-    grid-template-columns: 1fr;
-  }
+.practice-session-chip-close:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--text);
 }

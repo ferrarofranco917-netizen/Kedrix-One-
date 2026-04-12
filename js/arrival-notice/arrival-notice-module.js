@@ -42,6 +42,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
       consignee: '',
       notifyParty: '',
       reference: '',
+      attentionTo: '',
       tripType: 'MARE',
       compileLocation: '',
       documentDate: today(),
@@ -88,6 +89,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
       consignee: String(dynamic.consignee || dynamic.receiverParty || '').trim(),
       notifyParty: String(dynamic.notifyParty || '').trim(),
       reference: String(dynamic.mainReference || practice?.reference || '').trim(),
+      attentionTo: String(dynamic.attentionTo || dynamic.contactAttention || '').trim(),
       tripType: inferTripType(practice),
       compileLocation: String(dynamic.compileLocation || dynamic.loadingPlace || '').trim(),
       documentDate: String(practice?.practiceDate || today()).trim() || today(),
@@ -167,6 +169,94 @@ window.KedrixOneArrivalNoticeModule = (() => {
     return `<div class="field${fullClass}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><input ${baseAttrs} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}"></div>`;
   }
 
+
+  function buildPrintTitle(draft, i18n) {
+    const reference = String(draft?.practiceReference || '').trim();
+    const base = i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce') || 'Notifica arrivo merce';
+    return reference ? `${base} · ${reference}` : base;
+  }
+
+  function escapeForMail(value) {
+    return String(value || '').replace(/\r?\n/g, ' ').trim();
+  }
+
+  function buildPrintHtml(draft, i18n) {
+    const title = buildPrintTitle(draft, i18n);
+    const sections = [
+      [i18n?.t('ui.clientRequired', 'Cliente'), draft.client],
+      [i18n?.t('ui.sender', 'Mittente'), draft.sender],
+      [i18n?.t('ui.importer', 'Importatore'), draft.importer],
+      [i18n?.t('ui.consignee', 'Consignee'), draft.consignee],
+      [i18n?.t('ui.notify', 'Notify'), draft.notifyParty],
+      [i18n?.t('ui.generatedNumber', 'Pratica'), draft.practiceReference],
+      [i18n?.t('ui.reference', 'Riferimento'), draft.reference],
+      [i18n?.t('ui.arrivalNoticeCompileLocation', 'Luogo compilazione'), draft.compileLocation],
+      [i18n?.t('ui.date', 'Data'), draft.documentDate],
+      [i18n?.t('ui.arrivalNoticeLoadingPort', 'Porto imbarco'), draft.loadingPort],
+      [i18n?.t('ui.arrivalNoticeEtdEta', 'ETD/ETA'), draft.etdEta],
+      [i18n?.t('ui.arrivalNoticeUnloadingPort', 'Porto sbarco'), draft.unloadingPort],
+      [i18n?.t('ui.bookingWord', 'Booking'), draft.bookingReference],
+      [i18n?.t('ui.policyNumber', 'Polizza'), draft.policyReference],
+      [i18n?.t('ui.operator', 'Operatore'), draft.operatorName]
+    ].filter(([, value]) => String(value || '').trim());
+    const rows = Array.isArray(draft?.lineItems) ? draft.lineItems : [];
+    return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${U.escapeHtml(title)}</title><style>
+      body{font-family:Arial,sans-serif;margin:24px;color:#111;} h1{font-size:22px;margin:0 0 8px;} p.meta{color:#555;margin:0 0 18px;}
+      .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin-bottom:18px;} .item{padding:8px;border:1px solid #ddd;border-radius:6px;}
+      .item strong{display:block;font-size:12px;color:#555;margin-bottom:4px;} table{width:100%;border-collapse:collapse;margin-top:12px;} th,td{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left;vertical-align:top;} th{background:#f3f3f3;} .section{margin-top:18px;} .text-box{white-space:pre-wrap;border:1px solid #ddd;border-radius:6px;padding:10px;min-height:72px;}
+    </style></head><body><h1>${U.escapeHtml(title)}</h1><p class="meta">${U.escapeHtml(i18n?.t('ui.arrivalNoticeEditorHint', 'Documento operativo collegato alla pratica madre.'))}</p>
+      <div class="grid">${sections.map(([label, value]) => `<div class="item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value || '—')}</span></div>`).join('')}</div>
+      <div class="section"><h2>${U.escapeHtml(i18n?.t('ui.detail', 'Dettagli'))}</h2><table><thead><tr><th>${U.escapeHtml(i18n?.t('ui.container', 'Container'))}</th><th>${U.escapeHtml(i18n?.t('ui.transportUnitType', 'Tipologia'))}</th><th>${U.escapeHtml(i18n?.t('ui.description', 'Descrizione'))}</th><th>${U.escapeHtml(i18n?.t('ui.packageCount', 'Colli'))}</th><th>${U.escapeHtml(i18n?.t('ui.grossWeight', 'Peso lordo'))}</th><th>${U.escapeHtml(i18n?.t('ui.netWeight', 'Peso netto'))}</th><th>${U.escapeHtml(i18n?.t('ui.volume', 'CBM'))}</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${U.escapeHtml(row.containerCode || '')}</td><td>${U.escapeHtml(row.containerType || '')}</td><td>${U.escapeHtml(row.description || '')}</td><td>${U.escapeHtml(row.packageCount || '')}</td><td>${U.escapeHtml(row.grossWeight || '')}</td><td>${U.escapeHtml(row.netWeight || '')}</td><td>${U.escapeHtml(row.cbm || '')}</td></tr>`).join('') || `<tr><td colspan="7">—</td></tr>`}</tbody></table></div>
+      <div class="section"><h2>${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</h2><div class="text-box">${U.escapeHtml(draft.customerText || draft.internalText || '')}</div></div></body></html>`;
+  }
+
+  function triggerPrint(draft, i18n, toast) {
+    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=800');
+    if (!popup) {
+      toast?.(i18n?.t('ui.popupBlocked', 'Popup bloccato dal browser'), 'warning');
+      return;
+    }
+    popup.document.open();
+    popup.document.write(buildPrintHtml(draft, i18n));
+    popup.document.close();
+    popup.focus();
+    window.setTimeout(() => {
+      popup.print();
+    }, 250);
+  }
+
+  function buildEmailPayload(draft, i18n) {
+    const subject = buildPrintTitle(draft, i18n);
+    const lines = [
+      subject,
+      '',
+      `${i18n?.t('ui.generatedNumber', 'Pratica')}: ${escapeForMail(draft.practiceReference || '—')}`,
+      `${i18n?.t('ui.clientRequired', 'Cliente')}: ${escapeForMail(draft.client || '—')}`,
+      `${i18n?.t('ui.bookingWord', 'Booking')}: ${escapeForMail(draft.bookingReference || '—')}`,
+      `${i18n?.t('ui.policyNumber', 'Polizza')}: ${escapeForMail(draft.policyReference || '—')}`,
+      `${i18n?.t('ui.arrivalNoticeLoadingPort', 'Porto imbarco')}: ${escapeForMail(draft.loadingPort || '—')}`,
+      `${i18n?.t('ui.arrivalNoticeUnloadingPort', 'Porto sbarco')}: ${escapeForMail(draft.unloadingPort || '—')}`,
+      `${i18n?.t('ui.arrivalNoticeEtdEta', 'ETD/ETA')}: ${escapeForMail(draft.etdEta || '—')}`,
+      '',
+      i18n?.t('ui.arrivalNoticeCustomerText', 'Testo cliente') || 'Testo cliente',
+      escapeForMail(draft.customerText || draft.internalText || '')
+    ];
+    return {
+      subject,
+      body: lines.join('\n')
+    };
+  }
+
+  function triggerEmail(draft, i18n, toast) {
+    const payload = buildEmailPayload(draft, i18n);
+    const href = `mailto:?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.body)}`;
+    const opener = window.open(href, '_self');
+    if (!opener) {
+      window.location.href = href;
+    }
+    toast?.(i18n?.t('ui.emailComposerOpened', 'Compositore email aperto'), 'success');
+  }
+
   function renderSessionStrip(state, i18n) {
     const sessions = Workspace?.listSessions(state, { createEmptyDraft: () => createEmptyDraft(state) }) || [];
     const activeId = String(state?.arrivalNoticeWorkspace?.activeSessionId || '').trim();
@@ -187,11 +277,14 @@ window.KedrixOneArrivalNoticeModule = (() => {
             const meta = [draft.client, draft.bookingReference].filter(Boolean).join(' · ');
             const active = session.id === activeId;
             return `
-              <button class="practice-session-chip${active ? ' active' : ''}" type="button" data-arrival-notice-session-switch="${U.escapeHtml(session.id)}">
-                <strong>${U.escapeHtml(title)}</strong>
-                <span>${U.escapeHtml(meta || '—')}</span>
-                ${session.isDirty ? '<em>•</em>' : ''}
-              </button>`;
+              <div class="practice-session-chip-wrap${active ? ' active' : ''}">
+                <button class="practice-session-chip${active ? ' active' : ''}" type="button" data-arrival-notice-session-switch="${U.escapeHtml(session.id)}">
+                  <strong>${U.escapeHtml(title)}</strong>
+                  <span>${U.escapeHtml(meta || '—')}</span>
+                  ${session.isDirty ? '<em>•</em>' : ''}
+                </button>
+                <button class="practice-session-chip-close" type="button" aria-label="${U.escapeHtml(i18n?.t('ui.closeMask', 'Chiudi maschera'))}" title="${U.escapeHtml(i18n?.t('ui.closeMask', 'Chiudi maschera'))}" data-arrival-notice-session-close="${U.escapeHtml(session.id)}">×</button>
+              </div>`;
           }).join('')}
         </div>
       </section>`;
@@ -343,6 +436,8 @@ window.KedrixOneArrivalNoticeModule = (() => {
             <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.arrivalNoticeEditorHint', 'Documento operativo collegato alla pratica madre, con dati generali, dettagli merce e testi pronti per invio o stampa.'))}</p>
           </div>
           <div class="action-row">
+            <button class="btn secondary" type="button" data-arrival-notice-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
+            <button class="btn secondary" type="button" data-arrival-notice-email>${U.escapeHtml(i18n?.t('ui.sendEmail', 'Invia email'))}</button>
             <button class="btn secondary" type="button" data-arrival-notice-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
             <button class="btn" type="button" data-arrival-notice-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
@@ -456,7 +551,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   }
 
   function bind(context = {}) {
-    const { root, state, save, render, toast, i18n, getSelectedPractice } = context;
+    const { root, state, save, render, toast, i18n, getSelectedPractice, confirmClose } = context;
     if (!root || !state || !Workspace) return;
 
     root.querySelectorAll('[data-arrival-notice-new-session]').forEach((button) => {
@@ -517,6 +612,19 @@ window.KedrixOneArrivalNoticeModule = (() => {
       });
     });
 
+    root.querySelectorAll('[data-arrival-notice-session-close]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const sessionId = button.dataset.arrivalNoticeSessionClose;
+        const allowClose = typeof confirmClose === 'function' ? await confirmClose(sessionId) : true;
+        if (!allowClose) return;
+        Workspace.closeSession(state, sessionId, { createEmptyDraft: () => createEmptyDraft(state) });
+        save?.();
+        render?.();
+      });
+    });
+
     root.querySelectorAll('[data-arrival-notice-tab]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
@@ -562,6 +670,23 @@ window.KedrixOneArrivalNoticeModule = (() => {
         removeLineItem(state, index);
         save?.();
         render?.();
+      });
+    });
+
+
+    root.querySelectorAll('[data-arrival-notice-print]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
+        if (!session) return;
+        triggerPrint(session.draft || createEmptyDraft(state), i18n, toast);
+      });
+    });
+
+    root.querySelectorAll('[data-arrival-notice-email]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
+        if (!session) return;
+        triggerEmail(session.draft || createEmptyDraft(state), i18n, toast);
       });
     });
 
