@@ -3,6 +3,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
 
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneArrivalNoticeWorkspace || null;
+  const Feedback = window.KedrixOneAppFeedback || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -42,7 +43,6 @@ window.KedrixOneArrivalNoticeModule = (() => {
       consignee: '',
       notifyParty: '',
       reference: '',
-      attentionTo: '',
       tripType: 'MARE',
       compileLocation: '',
       documentDate: today(),
@@ -89,7 +89,6 @@ window.KedrixOneArrivalNoticeModule = (() => {
       consignee: String(dynamic.consignee || dynamic.receiverParty || '').trim(),
       notifyParty: String(dynamic.notifyParty || '').trim(),
       reference: String(dynamic.mainReference || practice?.reference || '').trim(),
-      attentionTo: String(dynamic.attentionTo || dynamic.contactAttention || '').trim(),
       tripType: inferTripType(practice),
       compileLocation: String(dynamic.compileLocation || dynamic.loadingPlace || '').trim(),
       documentDate: String(practice?.practiceDate || today()).trim() || today(),
@@ -148,113 +147,39 @@ window.KedrixOneArrivalNoticeModule = (() => {
     };
   }
 
+  function fieldSize(name, options = {}) {
+    if (options.full || options.type === 'textarea') return 'full';
+    const key = String(name || '').trim();
+    const xs = new Set(['tripType', 'amount', 'originalNo', 'originalCopyCount']);
+    const sm = new Set(['practiceReference', 'documentDate', 'documentReceiptDate', 'emptyingAppointmentDate', 'operatorName', 'bookingReference', 'policyReference', 'atd']);
+    const md = new Set(['client', 'sender', 'destinationDepot', 'importer', 'consignee', 'notifyParty', 'compileLocation', 'reference', 'attentionTo', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'goodsType', 'voyage', 'vessel', 'deliveryConditions', 'originGoods', 'customsSection']);
+    if (xs.has(key)) return 'xs';
+    if (sm.has(key)) return 'sm';
+    if (md.has(key)) return 'md';
+    return 'md';
+  }
+
   function renderField(label, name, value, options = {}) {
     const type = options.type || 'text';
     const rows = Number(options.rows || 4);
     const items = Array.isArray(options.items) ? options.items : [];
-    const fullClass = options.full ? ' full' : '';
     const disabled = options.disabled ? ' disabled' : '';
     const placeholder = U.escapeHtml(options.placeholder || '');
+    const size = fieldSize(name, options);
+    const classes = ['field', 'notice-field', `notice-size-${size}`, `notice-field-${String(name || '').trim()}`];
+    if (options.full || size === 'full') classes.push('full');
     const baseAttrs = `id="an-${U.escapeHtml(name)}" data-arrival-notice-field="${U.escapeHtml(name)}"${disabled}`;
     if (type === 'textarea') {
-      return `<div class="field${fullClass}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><textarea ${baseAttrs} rows="${rows}" placeholder="${placeholder}">${U.escapeHtml(value || '')}</textarea></div>`;
+      return `<div class="${classes.join(' ')}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><textarea ${baseAttrs} rows="${rows}" placeholder="${placeholder}">${U.escapeHtml(value || '')}</textarea></div>`;
     }
     if (type === 'select') {
-      return `<div class="field${fullClass}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><select ${baseAttrs}>${items.map((item) => {
+      return `<div class="${classes.join(' ')}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><select ${baseAttrs}>${items.map((item) => {
         const itemValue = String(item?.value ?? '');
         const selected = itemValue === String(value ?? '') ? ' selected' : '';
         return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
       }).join('')}</select></div>`;
     }
-    return `<div class="field${fullClass}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><input ${baseAttrs} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}"></div>`;
-  }
-
-
-  function buildPrintTitle(draft, i18n) {
-    const reference = String(draft?.practiceReference || '').trim();
-    const base = i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce') || 'Notifica arrivo merce';
-    return reference ? `${base} · ${reference}` : base;
-  }
-
-  function escapeForMail(value) {
-    return String(value || '').replace(/\r?\n/g, ' ').trim();
-  }
-
-  function buildPrintHtml(draft, i18n) {
-    const title = buildPrintTitle(draft, i18n);
-    const sections = [
-      [i18n?.t('ui.clientRequired', 'Cliente'), draft.client],
-      [i18n?.t('ui.sender', 'Mittente'), draft.sender],
-      [i18n?.t('ui.importer', 'Importatore'), draft.importer],
-      [i18n?.t('ui.consignee', 'Consignee'), draft.consignee],
-      [i18n?.t('ui.notify', 'Notify'), draft.notifyParty],
-      [i18n?.t('ui.generatedNumber', 'Pratica'), draft.practiceReference],
-      [i18n?.t('ui.reference', 'Riferimento'), draft.reference],
-      [i18n?.t('ui.arrivalNoticeCompileLocation', 'Luogo compilazione'), draft.compileLocation],
-      [i18n?.t('ui.date', 'Data'), draft.documentDate],
-      [i18n?.t('ui.arrivalNoticeLoadingPort', 'Porto imbarco'), draft.loadingPort],
-      [i18n?.t('ui.arrivalNoticeEtdEta', 'ETD/ETA'), draft.etdEta],
-      [i18n?.t('ui.arrivalNoticeUnloadingPort', 'Porto sbarco'), draft.unloadingPort],
-      [i18n?.t('ui.bookingWord', 'Booking'), draft.bookingReference],
-      [i18n?.t('ui.policyNumber', 'Polizza'), draft.policyReference],
-      [i18n?.t('ui.operator', 'Operatore'), draft.operatorName]
-    ].filter(([, value]) => String(value || '').trim());
-    const rows = Array.isArray(draft?.lineItems) ? draft.lineItems : [];
-    return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${U.escapeHtml(title)}</title><style>
-      body{font-family:Arial,sans-serif;margin:24px;color:#111;} h1{font-size:22px;margin:0 0 8px;} p.meta{color:#555;margin:0 0 18px;}
-      .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin-bottom:18px;} .item{padding:8px;border:1px solid #ddd;border-radius:6px;}
-      .item strong{display:block;font-size:12px;color:#555;margin-bottom:4px;} table{width:100%;border-collapse:collapse;margin-top:12px;} th,td{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left;vertical-align:top;} th{background:#f3f3f3;} .section{margin-top:18px;} .text-box{white-space:pre-wrap;border:1px solid #ddd;border-radius:6px;padding:10px;min-height:72px;}
-    </style></head><body><h1>${U.escapeHtml(title)}</h1><p class="meta">${U.escapeHtml(i18n?.t('ui.arrivalNoticeEditorHint', 'Documento operativo collegato alla pratica madre.'))}</p>
-      <div class="grid">${sections.map(([label, value]) => `<div class="item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value || '—')}</span></div>`).join('')}</div>
-      <div class="section"><h2>${U.escapeHtml(i18n?.t('ui.detail', 'Dettagli'))}</h2><table><thead><tr><th>${U.escapeHtml(i18n?.t('ui.container', 'Container'))}</th><th>${U.escapeHtml(i18n?.t('ui.transportUnitType', 'Tipologia'))}</th><th>${U.escapeHtml(i18n?.t('ui.description', 'Descrizione'))}</th><th>${U.escapeHtml(i18n?.t('ui.packageCount', 'Colli'))}</th><th>${U.escapeHtml(i18n?.t('ui.grossWeight', 'Peso lordo'))}</th><th>${U.escapeHtml(i18n?.t('ui.netWeight', 'Peso netto'))}</th><th>${U.escapeHtml(i18n?.t('ui.volume', 'CBM'))}</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${U.escapeHtml(row.containerCode || '')}</td><td>${U.escapeHtml(row.containerType || '')}</td><td>${U.escapeHtml(row.description || '')}</td><td>${U.escapeHtml(row.packageCount || '')}</td><td>${U.escapeHtml(row.grossWeight || '')}</td><td>${U.escapeHtml(row.netWeight || '')}</td><td>${U.escapeHtml(row.cbm || '')}</td></tr>`).join('') || `<tr><td colspan="7">—</td></tr>`}</tbody></table></div>
-      <div class="section"><h2>${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</h2><div class="text-box">${U.escapeHtml(draft.customerText || draft.internalText || '')}</div></div></body></html>`;
-  }
-
-  function triggerPrint(draft, i18n, toast) {
-    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=800');
-    if (!popup) {
-      toast?.(i18n?.t('ui.popupBlocked', 'Popup bloccato dal browser'), 'warning');
-      return;
-    }
-    popup.document.open();
-    popup.document.write(buildPrintHtml(draft, i18n));
-    popup.document.close();
-    popup.focus();
-    window.setTimeout(() => {
-      popup.print();
-    }, 250);
-  }
-
-  function buildEmailPayload(draft, i18n) {
-    const subject = buildPrintTitle(draft, i18n);
-    const lines = [
-      subject,
-      '',
-      `${i18n?.t('ui.generatedNumber', 'Pratica')}: ${escapeForMail(draft.practiceReference || '—')}`,
-      `${i18n?.t('ui.clientRequired', 'Cliente')}: ${escapeForMail(draft.client || '—')}`,
-      `${i18n?.t('ui.bookingWord', 'Booking')}: ${escapeForMail(draft.bookingReference || '—')}`,
-      `${i18n?.t('ui.policyNumber', 'Polizza')}: ${escapeForMail(draft.policyReference || '—')}`,
-      `${i18n?.t('ui.arrivalNoticeLoadingPort', 'Porto imbarco')}: ${escapeForMail(draft.loadingPort || '—')}`,
-      `${i18n?.t('ui.arrivalNoticeUnloadingPort', 'Porto sbarco')}: ${escapeForMail(draft.unloadingPort || '—')}`,
-      `${i18n?.t('ui.arrivalNoticeEtdEta', 'ETD/ETA')}: ${escapeForMail(draft.etdEta || '—')}`,
-      '',
-      i18n?.t('ui.arrivalNoticeCustomerText', 'Testo cliente') || 'Testo cliente',
-      escapeForMail(draft.customerText || draft.internalText || '')
-    ];
-    return {
-      subject,
-      body: lines.join('\n')
-    };
-  }
-
-  function triggerEmail(draft, i18n, toast) {
-    const payload = buildEmailPayload(draft, i18n);
-    const href = `mailto:?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.body)}`;
-    const opener = window.open(href, '_self');
-    if (!opener) {
-      window.location.href = href;
-    }
-    toast?.(i18n?.t('ui.emailComposerOpened', 'Compositore email aperto'), 'success');
+    return `<div class="${classes.join(' ')}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><input ${baseAttrs} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}"></div>`;
   }
 
   function renderSessionStrip(state, i18n) {
@@ -262,7 +187,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
     const activeId = String(state?.arrivalNoticeWorkspace?.activeSessionId || '').trim();
     if (!sessions.length) return '';
     return `
-      <section class="panel practice-workspace-panel arrival-notice-workspace-panel">
+      <section class="panel practice-workspace-panel arrival-notice-workspace-panel notice-workspace-panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.openMasks', 'Maschere aperte'))}</h3>
@@ -270,20 +195,20 @@ window.KedrixOneArrivalNoticeModule = (() => {
           </div>
           <div class="action-row"><button class="btn secondary" type="button" data-arrival-notice-new-session>${U.escapeHtml(i18n?.t('ui.newMask', 'Nuova maschera'))}</button></div>
         </div>
-        <div class="practice-session-strip">
+        <div class="practice-session-strip notice-session-strip">
           ${sessions.map((session) => {
             const draft = session?.draft || {};
             const title = String(draft.practiceReference || i18n?.t('ui.arrivalNoticeUntitled', 'Nuova notifica arrivo merce') || 'Nuova notifica arrivo merce').trim();
             const meta = [draft.client, draft.bookingReference].filter(Boolean).join(' · ');
             const active = session.id === activeId;
             return `
-              <div class="practice-session-chip-wrap${active ? ' active' : ''}">
-                <button class="practice-session-chip${active ? ' active' : ''}" type="button" data-arrival-notice-session-switch="${U.escapeHtml(session.id)}">
+              <div class="practice-session-chip notice-session-chip${active ? ' active' : ''}">
+                <button class="notice-session-main" type="button" data-arrival-notice-session-switch="${U.escapeHtml(session.id)}">
                   <strong>${U.escapeHtml(title)}</strong>
                   <span>${U.escapeHtml(meta || '—')}</span>
                   ${session.isDirty ? '<em>•</em>' : ''}
                 </button>
-                <button class="practice-session-chip-close" type="button" aria-label="${U.escapeHtml(i18n?.t('ui.closeMask', 'Chiudi maschera'))}" title="${U.escapeHtml(i18n?.t('ui.closeMask', 'Chiudi maschera'))}" data-arrival-notice-session-close="${U.escapeHtml(session.id)}">×</button>
+                <button class="notice-session-close" type="button" data-arrival-notice-session-close="${U.escapeHtml(session.id)}" aria-label="${U.escapeHtml(i18n?.t('ui.closeMask', 'Chiudi maschera'))}">×</button>
               </div>`;
           }).join('')}
         </div>
@@ -329,7 +254,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   function renderLineTable(draft, i18n) {
     const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
     return `
-      <section class="table-panel arrival-notice-lines-panel">
+      <section class="table-panel arrival-notice-lines-panel notice-lines-panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.detail', 'Dettagli'))}</h3>
@@ -337,8 +262,11 @@ window.KedrixOneArrivalNoticeModule = (() => {
           </div>
           <div class="action-row"><button class="btn secondary" type="button" data-arrival-notice-add-line>${U.escapeHtml(i18n?.t('ui.addLine', 'Aggiungi riga'))}</button></div>
         </div>
-        <div class="table-wrap">
-          <table class="table arrival-notice-lines-table">
+        <div class="table-wrap notice-lines-wrap">
+          <table class="table arrival-notice-lines-table notice-lines-table">
+            <colgroup>
+              <col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:8%"><col style="width:6%"><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:7%">
+            </colgroup>
             <thead>
               <tr>
                 <th>${U.escapeHtml(i18n?.t('ui.container', 'Container'))}</th>
@@ -421,6 +349,56 @@ window.KedrixOneArrivalNoticeModule = (() => {
         ${renderField(i18n?.t('ui.arrivalNoticeInternalText', 'Testo interno'), 'internalText', draft.internalText, { type: 'textarea', rows: 12, full: true })}
         ${renderField(i18n?.t('ui.arrivalNoticeCustomerText', 'Testo cliente'), 'customerText', draft.customerText, { type: 'textarea', rows: 12, full: true })}
       </div>`;
+  }
+
+
+  function buildMailtoHref(draft, i18n) {
+    const subject = `${i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce')} ${draft.practiceReference || ''}`.trim();
+    const lines = [
+      `${i18n?.t('ui.generatedNumber', 'Pratica')}: ${draft.practiceReference || '—'}`,
+      `${i18n?.t('ui.clientRequired', 'Cliente')}: ${draft.client || '—'}`,
+      `${i18n?.t('ui.bookingWord', 'Booking')}: ${draft.bookingReference || '—'}`,
+      `${i18n?.t('ui.policyNumber', 'Polizza')}: ${draft.policyReference || '—'}`,
+      `${i18n?.t('ui.arrivalNoticeLoadingPort', 'Porto imbarco')}: ${draft.loadingPort || '—'}`,
+      `${i18n?.t('ui.arrivalNoticeUnloadingPort', 'Porto sbarco')}: ${draft.unloadingPort || '—'}`,
+      '',
+      draft.customerText || draft.internalText || ''
+    ];
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
+  }
+
+  function buildPrintableHtml(draft, i18n) {
+    const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
+    return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${U.escapeHtml(i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce'))}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 8px;font-size:24px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #cfd4dc;padding:8px;font-size:12px;text-align:left;vertical-align:top}.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}.meta div{border:1px solid #d8dde6;padding:10px}.block{margin-top:18px}.block h2{font-size:16px;margin:0 0 8px}</style></head><body><h1>${U.escapeHtml(i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce'))}</h1><div class="meta"><div><strong>${U.escapeHtml(i18n?.t('ui.generatedNumber', 'Pratica'))}</strong><br>${U.escapeHtml(draft.practiceReference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.clientRequired', 'Cliente'))}</strong><br>${U.escapeHtml(draft.client || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.bookingWord', 'Booking'))}</strong><br>${U.escapeHtml(draft.bookingReference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.policyNumber', 'Polizza'))}</strong><br>${U.escapeHtml(draft.policyReference || '—')}</div></div><table><thead><tr><th>Container</th><th>Tipologia</th><th>Descrizione</th><th>Colli</th><th>Peso lordo</th><th>CBM</th></tr></thead><tbody>${rows.map((row)=>`<tr><td>${U.escapeHtml(row.containerCode || '')}</td><td>${U.escapeHtml(row.containerType || '')}</td><td>${U.escapeHtml(row.description || '')}</td><td>${U.escapeHtml(row.packageCount || '')}</td><td>${U.escapeHtml(row.grossWeight || '')}</td><td>${U.escapeHtml(row.cbm || '')}</td></tr>`).join('')}</tbody></table><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.arrivalNoticeCustomerText', 'Testo cliente'))}</h2><div>${U.escapeHtml(draft.customerText || '').replace(/\n/g,'<br>')}</div></div><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.arrivalNoticeInternalText', 'Testo interno'))}</h2><div>${U.escapeHtml(draft.internalText || '').replace(/\n/g,'<br>')}</div></div></body></html>`;
+  }
+
+  function printDraft(draft, i18n) {
+    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=800');
+    if (!popup) return false;
+    popup.document.write(buildPrintableHtml(draft, i18n));
+    popup.document.close();
+    popup.focus();
+    popup.print();
+    return true;
+  }
+
+  async function closeSessionWithGuard(state, sessionId, i18n) {
+    const session = Workspace.findSession(state, sessionId, { createEmptyDraft: () => createEmptyDraft(state) });
+    if (!session) return false;
+    if (session.isDirty && Feedback && typeof Feedback.confirm === 'function') {
+      const confirmed = await Feedback.confirm({
+        title: i18n?.t('ui.closeMask', 'Chiudi maschera'),
+        message: i18n?.t('ui.unsavedChangesMask', 'Ci sono modifiche non salvate in questa maschera. Vuoi chiuderla comunque?'),
+        confirmLabel: i18n?.t('ui.close', 'Chiudi'),
+        cancelLabel: i18n?.t('ui.cancel', 'Annulla'),
+        tone: 'warning'
+      });
+      if (!confirmed) return false;
+    } else if (session.isDirty && !window.confirm(i18n?.t('ui.unsavedChangesMask', 'Ci sono modifiche non salvate in questa maschera. Vuoi chiuderla comunque?'))) {
+      return false;
+    }
+    Workspace.closeSession(state, sessionId, { createEmptyDraft: () => createEmptyDraft(state) });
+    return true;
   }
 
   function renderEditor(state, i18n) {
@@ -551,7 +529,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   }
 
   function bind(context = {}) {
-    const { root, state, save, render, toast, i18n, getSelectedPractice, confirmClose } = context;
+    const { root, state, save, render, toast, i18n, getSelectedPractice } = context;
     if (!root || !state || !Workspace) return;
 
     root.querySelectorAll('[data-arrival-notice-new-session]').forEach((button) => {
@@ -612,19 +590,6 @@ window.KedrixOneArrivalNoticeModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-arrival-notice-session-close]').forEach((button) => {
-      button.addEventListener('click', async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const sessionId = button.dataset.arrivalNoticeSessionClose;
-        const allowClose = typeof confirmClose === 'function' ? await confirmClose(sessionId) : true;
-        if (!allowClose) return;
-        Workspace.closeSession(state, sessionId, { createEmptyDraft: () => createEmptyDraft(state) });
-        save?.();
-        render?.();
-      });
-    });
-
     root.querySelectorAll('[data-arrival-notice-tab]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
@@ -674,11 +639,22 @@ window.KedrixOneArrivalNoticeModule = (() => {
     });
 
 
+    root.querySelectorAll('[data-arrival-notice-session-close]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const closed = await closeSessionWithGuard(state, button.dataset.arrivalNoticeSessionClose, i18n);
+        if (!closed) return;
+        save?.();
+        render?.();
+      });
+    });
+
     root.querySelectorAll('[data-arrival-notice-print]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        triggerPrint(session.draft || createEmptyDraft(state), i18n, toast);
+        printDraft(session.draft || {}, i18n);
       });
     });
 
@@ -686,7 +662,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        triggerEmail(session.draft || createEmptyDraft(state), i18n, toast);
+        window.location.href = buildMailtoHref(session.draft || {}, i18n);
       });
     });
 
