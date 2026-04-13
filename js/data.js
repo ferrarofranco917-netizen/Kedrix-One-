@@ -186,6 +186,7 @@ window.KedrixOneData = (() => {
             'practices/booking-d-imbarco',
             'practices/notifica-arrivo-merce',
             'practices/notifica-partenza-merce',
+            'practices/rimessa-documenti',
             'crm/indicatori'
           ],
           disabledSubmodules: ['practices/buono-consegna-merce-aerea']

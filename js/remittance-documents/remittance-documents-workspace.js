@@ -12,11 +12,10 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
   function defaultLineItem(overrides = {}) {
     return {
       id: `rd-line-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-      documentLabel: '',
+      documentType: '',
       documentReference: '',
       copies: '',
-      deliveryMode: '',
-      notes: '',
+      note: '',
       ...overrides
     };
   }
@@ -28,26 +27,26 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
       practiceReference: '',
       practiceType: '',
       status: 'draft',
+      hawbReference: '',
       client: '',
       sender: '',
-      consignee: '',
+      destination: '',
       reference: '',
       attentionTo: '',
+      documentDate: new Date().toISOString().slice(0, 10),
       loadingPort: '',
       unloadingPort: '',
-      documentDate: new Date().toISOString().slice(0, 10),
       supplierInvoice: '',
+      supplierInvoiceDate: '',
       amount: '',
-      currency: 'EUR',
-      courierMode: '',
+      amountCurrency: 'EUR',
+      courierName: '',
       voyage: '',
       vessel: '',
       deliveryConditions: '',
-      hawbReference: '',
-      operatorName: '',
       internalText: '',
       customerText: '',
-      detailText: '',
+      detailNotes: '',
       sourcePracticeSnapshot: {},
       lineItems: [defaultLineItem()],
       ...draft,
@@ -198,6 +197,20 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     return session;
   }
 
+  function hasSessionUnsavedChanges(state, sessionId, options = {}) {
+    const session = findSession(state, sessionId, options);
+    if (!session) return false;
+    if (!session.isDirty) return false;
+    const currentSignature = signatureOf(session.draft);
+    const savedSignature = String(session.lastSavedDraftSignature || '').trim();
+    if (savedSignature && currentSignature === savedSignature) {
+      session.isDirty = false;
+      touchSession(session);
+      return false;
+    }
+    return true;
+  }
+
   function setSessionTab(state, sessionId, tab, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return null;
@@ -215,12 +228,6 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     return session;
   }
 
-  function hasSessionUnsavedChanges(state, sessionId, options = {}) {
-    const session = findSession(state, sessionId, options);
-    if (!session) return false;
-    return Boolean(session.isDirty);
-  }
-
   function closeSession(state, sessionId, options = {}) {
     const workspace = ensureState(state, options);
     if (!workspace) return null;
@@ -229,17 +236,13 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     const [removed] = workspace.sessions.splice(index, 1);
     if (!workspace.sessions.length) {
       workspace.activeSessionId = '';
-      return removed;
-    }
-    if (workspace.activeSessionId === sessionId) {
-      workspace.activeSessionId = workspace.sessions[Math.max(index - 1, 0)].id;
+    } else if (workspace.activeSessionId === sessionId) {
+      workspace.activeSessionId = workspace.sessions[Math.max(0, index - 1)].id;
     }
     return removed;
   }
 
   return {
-    defaultLineItem,
-    cloneDraft,
     ensureState,
     listSessions,
     getActiveSession,
@@ -251,7 +254,9 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     updateSessionDraft,
     setSessionTab,
     markSessionSaved,
+    closeSession,
     hasSessionUnsavedChanges,
-    closeSession
+    cloneDraft,
+    defaultLineItem
   };
 })();
