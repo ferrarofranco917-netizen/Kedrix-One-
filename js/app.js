@@ -49,6 +49,7 @@
   const BookingEmbarkationModule = window.KedrixOneBookingEmbarkationModule || null;
   const ArrivalNoticeModule = window.KedrixOneArrivalNoticeModule || null;
   const DepartureNoticeModule = window.KedrixOneDepartureNoticeModule || null;
+  const RemittanceDocumentsModule = window.KedrixOneRemittanceDocumentsModule || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -73,6 +74,9 @@
   }
   if (DepartureNoticeModule && typeof DepartureNoticeModule.ensureState === 'function') {
     DepartureNoticeModule.ensureState(state);
+  }
+  if (RemittanceDocumentsModule && typeof RemittanceDocumentsModule.ensureState === 'function') {
+    RemittanceDocumentsModule.ensureState(state);
   }
 
   function ensurePracticeListState() {
@@ -2166,6 +2170,17 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
+    if (route === 'practices/rimessa-documenti') {
+      if (!RemittanceDocumentsModule || typeof RemittanceDocumentsModule.render !== 'function') {
+        main.innerHTML = Templates.submodulePlaceholder(module, routeMeta);
+        return;
+      }
+      RemittanceDocumentsModule.ensureState?.(state);
+      main.innerHTML = RemittanceDocumentsModule.render(state, { i18n: I18N, getSelectedPractice: selectedPractice });
+      bindRemittanceDocumentsEvents();
+      return;
+    }
+
     if (route === 'documents') {
       ensureDocumentPreviewSelection();
       main.innerHTML = Templates.documents(state, module, documentSearchResults());
@@ -2282,6 +2297,19 @@ function renderDocumentPreviewPanel() {
   function bindDepartureNoticeEvents() {
     if (!DepartureNoticeModule || typeof DepartureNoticeModule.bind !== 'function') return;
     DepartureNoticeModule.bind({
+      root: main,
+      state,
+      save,
+      render,
+      toast,
+      i18n: I18N,
+      getSelectedPractice: selectedPractice
+    });
+  }
+
+  function bindRemittanceDocumentsEvents() {
+    if (!RemittanceDocumentsModule || typeof RemittanceDocumentsModule.bind !== 'function') return;
+    RemittanceDocumentsModule.bind({
       root: main,
       state,
       save,
