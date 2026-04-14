@@ -2307,6 +2307,7 @@ function renderDocumentPreviewPanel() {
     });
   }
 
+
   function bindRemittanceDocumentsEvents() {
     if (!RemittanceDocumentsModule || typeof RemittanceDocumentsModule.bind !== 'function') return;
     RemittanceDocumentsModule.bind({

@@ -13,9 +13,9 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     return {
       id: `rd-line-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
       documentType: '',
-      documentReference: '',
+      reference: '',
       copies: '',
-      note: '',
+      notes: '',
       ...overrides
     };
   }
@@ -26,7 +26,6 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
       practiceId: '',
       practiceReference: '',
       practiceType: '',
-      hawbReference: '',
       status: 'draft',
       client: '',
       sender: '',
@@ -34,19 +33,19 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
       reference: '',
       attentionTo: '',
       documentDate: new Date().toISOString().slice(0, 10),
+      hawbReference: '',
       loadingPort: '',
       unloadingPort: '',
       supplierInvoice: '',
       amount: '',
-      amountCurrency: 'EUR',
-      courierMode: '',
+      currency: 'EUR',
+      courierMode: 'NO',
       voyage: '',
       vessel: '',
       deliveryConditions: '',
+      operatorName: '',
       internalText: '',
       customerText: '',
-      operatorName: '',
-      tripType: 'MARE',
       sourcePracticeSnapshot: {},
       lineItems: [defaultLineItem()],
       ...draft,
@@ -197,14 +196,6 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     return session;
   }
 
-  function setSessionTab(state, sessionId, tab, options = {}) {
-    const session = findSession(state, sessionId, options);
-    if (!session) return null;
-    session.uiState = { ...(session.uiState || {}), tab: String(tab || 'general').trim() || 'general' };
-    touchSession(session);
-    return session;
-  }
-
   function hasSessionUnsavedChanges(state, sessionId, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return false;
@@ -219,27 +210,32 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     return true;
   }
 
+  function setSessionTab(state, sessionId, tab, options = {}) {
+    const session = findSession(state, sessionId, options);
+    if (!session) return null;
+    session.uiState = { ...(session.uiState || {}), tab: String(tab || 'general').trim() || 'general' };
+    touchSession(session);
+    return session;
+  }
+
   function markSessionSaved(state, sessionId, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return null;
-    session.isDirty = false;
     session.lastSavedDraftSignature = signatureOf(session.draft);
+    session.isDirty = false;
     touchSession(session);
     return session;
   }
 
   function closeSession(state, sessionId, options = {}) {
     const workspace = ensureState(state, options);
-    if (!workspace) return null;
-    const index = workspace.sessions.findIndex((session) => session.id === sessionId);
-    if (index === -1) return null;
-    const [removed] = workspace.sessions.splice(index, 1);
-    if (!workspace.sessions.length) {
-      workspace.activeSessionId = '';
-    } else if (workspace.activeSessionId === sessionId) {
-      workspace.activeSessionId = workspace.sessions[Math.max(0, index - 1)].id;
+    if (!workspace) return false;
+    const before = workspace.sessions.length;
+    workspace.sessions = workspace.sessions.filter((session) => session.id !== sessionId);
+    if (workspace.activeSessionId === sessionId) {
+      workspace.activeSessionId = workspace.sessions[0]?.id || '';
     }
-    return removed;
+    return workspace.sessions.length !== before;
   }
 
   return {
@@ -254,8 +250,8 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     switchSession,
     setSessionField,
     updateSessionDraft,
-    setSessionTab,
     hasSessionUnsavedChanges,
+    setSessionTab,
     markSessionSaved,
     closeSession
   };

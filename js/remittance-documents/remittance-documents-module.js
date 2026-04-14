@@ -22,20 +22,12 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
     return String(user?.name || '').trim();
   }
 
-  function inferTripType(practice) {
-    const type = String(practice?.practiceType || '').toLowerCase();
-    if (type.includes('air')) return 'AEREO';
-    if (type.includes('road') || type.includes('terra')) return 'TERRA';
-    return 'MARE';
-  }
-
   function createEmptyDraft(state, overrides = {}) {
     return Workspace.cloneDraft({
       editingRecordId: '',
       practiceId: '',
       practiceReference: '',
       practiceType: '',
-      hawbReference: '',
       status: 'draft',
       client: '',
       sender: '',
@@ -43,19 +35,19 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       reference: '',
       attentionTo: '',
       documentDate: today(),
+      hawbReference: '',
       loadingPort: '',
       unloadingPort: '',
       supplierInvoice: '',
       amount: '',
-      amountCurrency: 'EUR',
-      courierMode: '',
+      currency: 'EUR',
+      courierMode: 'NO',
       voyage: '',
       vessel: '',
       deliveryConditions: '',
+      operatorName: currentOperatorName(state),
       internalText: '',
       customerText: '',
-      operatorName: currentOperatorName(state),
-      tripType: 'MARE',
       sourcePracticeSnapshot: {},
       lineItems: [Workspace.defaultLineItem()],
       ...overrides
@@ -64,53 +56,45 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
 
   function buildDraftFromPractice(state, practice) {
     const dynamic = practice?.dynamicData || {};
-    const booking = String(practice?.booking || dynamic.booking || '').trim();
-    const policyReference = String(dynamic.policyNumber || dynamic.policyReference || '').trim();
     return createEmptyDraft(state, {
       practiceId: String(practice?.id || '').trim(),
       practiceReference: String(practice?.reference || '').trim(),
       practiceType: String(practice?.practiceTypeLabel || practice?.practiceType || '').trim(),
-      hawbReference: String(dynamic.hawb || dynamic.awb || dynamic.hawbReference || '').trim(),
       status: String(practice?.status || 'draft').trim() || 'draft',
       client: String(practice?.clientName || practice?.client || '').trim(),
       sender: String(dynamic.senderParty || dynamic.exporter || dynamic.shipper || '').trim(),
       consignee: String(dynamic.consignee || dynamic.receiverParty || '').trim(),
-      reference: String(dynamic.mainReference || practice?.reference || booking || '').trim(),
+      reference: String(dynamic.mainReference || practice?.reference || '').trim(),
       attentionTo: String(dynamic.attentionTo || '').trim(),
       documentDate: String(practice?.practiceDate || today()).trim() || today(),
+      hawbReference: String(dynamic.hawbReference || dynamic.hawb || dynamic.hawbNumber || dynamic.houseAwb || dynamic.policyNumber || '').trim(),
       loadingPort: String(dynamic.loadingPort || dynamic.originPort || dynamic.originNode || '').trim(),
       unloadingPort: String(dynamic.unloadingPort || dynamic.destinationPort || dynamic.destinationNode || '').trim(),
       supplierInvoice: String(dynamic.foreignInvoice || dynamic.supplierInvoice || '').trim(),
       amount: String(dynamic.invoiceAmount || dynamic.amount || '').trim(),
-      amountCurrency: String(dynamic.invoiceCurrency || dynamic.amountCurrency || 'EUR').trim() || 'EUR',
-      courierMode: String(dynamic.courierMode || dynamic.deliveryMethod || '').trim(),
+      currency: String(dynamic.invoiceCurrency || dynamic.currency || 'EUR').trim() || 'EUR',
+      courierMode: String(dynamic.courierMode || 'NO').trim() || 'NO',
       voyage: String(dynamic.voyage || '').trim(),
       vessel: String(dynamic.vessel || '').trim(),
       deliveryConditions: String(dynamic.deliveryConditions || dynamic.incoterm || '').trim(),
       operatorName: currentOperatorName(state),
-      tripType: inferTripType(practice),
       sourcePracticeSnapshot: {
         id: String(practice?.id || '').trim(),
         reference: String(practice?.reference || '').trim(),
         type: String(practice?.practiceTypeLabel || practice?.practiceType || '').trim(),
-        status: String(practice?.status || '').trim(),
-        bookingReference: booking,
-        policyReference
+        status: String(practice?.status || '').trim()
       },
       lineItems: [Workspace.defaultLineItem({
-        documentType: policyReference ? 'Polizza / BL / AWB' : 'Documento operativo',
-        documentReference: policyReference || booking || String(practice?.reference || '').trim(),
-        copies: '1',
-        note: String(dynamic.goodsDescription || practice?.goodsDescription || '').trim()
+        documentType: 'Fattura',
+        reference: String(dynamic.foreignInvoice || dynamic.supplierInvoice || '').trim(),
+        copies: String(dynamic.copies || '').trim(),
+        notes: String(dynamic.goodsDescription || '').trim()
       })]
     });
   }
 
-  function eligiblePractices(state) {
-    return (state?.practices || []).filter((practice) => {
-      const type = String(practice?.practiceType || '').toLowerCase();
-      return type.includes('sea') || type.includes('air');
-    });
+  function practiceCandidates(state) {
+    return (state?.practices || []).slice().sort((a, b) => String(b?.practiceDate || '').localeCompare(String(a?.practiceDate || '')));
   }
 
   function buildKpis(state) {
@@ -124,16 +108,31 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
     };
   }
 
+  function fieldSize(name, options = {}) {
+    if (options.full || options.type === 'textarea') return 'full';
+    const key = String(name || '').trim();
+    const xs = new Set(['amount', 'currency', 'courierMode']);
+    const sm = new Set(['documentDate', 'operatorName', 'hawbReference']);
+    const md = new Set(['practiceReference', 'reference', 'attentionTo', 'loadingPort', 'unloadingPort', 'supplierInvoice', 'voyage', 'vessel']);
+    const lg = new Set(['client', 'sender', 'consignee', 'deliveryConditions']);
+    if (xs.has(key)) return 'xs';
+    if (sm.has(key)) return 'sm';
+    if (md.has(key)) return 'md';
+    if (lg.has(key)) return 'lg';
+    return 'md';
+  }
+
   function renderField(label, name, value, options = {}) {
     const type = options.type || 'text';
     const rows = Number(options.rows || 4);
     const items = Array.isArray(options.items) ? options.items : [];
     const disabled = options.disabled ? ' disabled' : '';
     const placeholder = U.escapeHtml(options.placeholder || '');
-    const span = Number(options.span || 2);
-    const classes = ['field', 'remittance-field', `remittance-field-${String(name || '').trim()}`, `remittance-col-${span}`];
-    if (options.full) classes.push('full');
-    const baseAttrs = `id="rd-${U.escapeHtml(name)}" data-remittance-documents-field="${U.escapeHtml(name)}"${disabled}`;
+    const size = fieldSize(name, options);
+    const span = Number(options.span || 1);
+    const classes = ['field', 'notice-field', `notice-size-${size}`, `notice-field-${String(name || '').trim()}`, `notice-col-${Number.isFinite(span) ? span : 1}`];
+    if (options.full || size === 'full') classes.push('full');
+    const baseAttrs = `id="rd-${U.escapeHtml(name)}" data-remittance-field="${U.escapeHtml(name)}"${disabled}`;
     if (type === 'textarea') {
       return `<div class="${classes.join(' ')}"><label for="rd-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><textarea ${baseAttrs} rows="${rows}" placeholder="${placeholder}">${U.escapeHtml(value || '')}</textarea></div>`;
     }
@@ -152,54 +151,47 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
     const activeId = String(state?.remittanceDocumentsWorkspace?.activeSessionId || '').trim();
     if (!sessions.length) return '';
     return `
-      <section class="panel practice-workspace-panel remittance-documents-workspace-panel remittance-module-panel">
+      <section class="panel practice-workspace-panel remittance-documents-workspace-panel notice-workspace-panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.openMasks', 'Maschere aperte'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsMasksHint', 'Più rimesse documenti possono restare aperte contemporaneamente.'))}</p>
+            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsWorkspaceHint', 'Ogni rimessa documenti resta aperta nella sua maschera interna Kedrix.'))}</p>
           </div>
-          <div class="action-row"><button class="btn secondary" type="button" data-remittance-documents-new-session>${U.escapeHtml(i18n?.t('ui.newMask', 'Nuova maschera'))}</button></div>
         </div>
-        <div class="practice-session-strip notice-session-strip">
+        <div class="notice-session-strip">
           ${sessions.map((session) => {
-            const draft = session?.draft || {};
-            const title = String(draft.practiceReference || i18n?.t('practices/rimessa-documenti', 'Rimessa documenti') || 'Rimessa documenti').trim();
-            const meta = [draft.client, draft.hawbReference || draft.reference].filter(Boolean).join(' · ');
-            const active = session.id === activeId;
-            return `
-              <div class="practice-session-chip notice-session-chip${active ? ' active' : ''}">
-                <button class="notice-session-main" type="button" data-remittance-documents-session-switch="${U.escapeHtml(session.id)}">
-                  <strong>${U.escapeHtml(title)}</strong>
-                  <span>${U.escapeHtml(meta || '—')}</span>
-                  ${session.isDirty ? '<em>•</em>' : ''}
-                </button>
-                <button class="notice-session-close" type="button" data-remittance-documents-session-close="${U.escapeHtml(session.id)}" aria-label="${U.escapeHtml(i18n?.t('ui.closeMask', 'Chiudi maschera'))}">×</button>
-              </div>`;
+            const draft = session.draft || {};
+            const isActive = session.id === activeId;
+            return `<div class="notice-session-chip${isActive ? ' active' : ''}">
+              <button class="notice-session-main" type="button" data-remittance-session-switch="${U.escapeHtml(session.id)}">
+                <strong>${U.escapeHtml(draft.practiceReference || i18n?.t('ui.newMask', 'Nuova maschera'))}</strong>
+                <span>${U.escapeHtml(draft.client || '—')}</span>
+                <em>${U.escapeHtml(draft.reference || draft.hawbReference || '—')}</em>
+              </button>
+              <button class="notice-session-close" type="button" data-remittance-session-close="${U.escapeHtml(session.id)}" aria-label="${U.escapeHtml(i18n?.t('ui.closeMask', 'Chiudi maschera'))}">×</button>
+            </div>`;
           }).join('')}
         </div>
       </section>`;
   }
 
   function renderLauncher(state, i18n, selectedPractice) {
-    const available = eligiblePractices(state);
-    const activePractice = selectedPractice || null;
-    const activeAir = activePractice && String(activePractice.practiceType || '').toLowerCase().includes('air') ? activePractice : null;
+    const available = practiceCandidates(state);
     return `
-      <section class="panel remittance-documents-launcher-panel remittance-module-panel">
+      <section class="panel remittance-documents-launcher-panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsLauncherTitle', 'Apri o crea rimessa documenti'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsLauncherHint', 'Usa la pratica attiva, un HAWB attivo oppure scegli una pratica collegata al flusso documentale.'))}</p>
+            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsLauncherHint', 'Apri il documento dalla pratica attiva o scegli una pratica dall’elenco operativo.'))}</p>
           </div>
           <div class="action-row">
-            ${activePractice ? `<button class="btn" type="button" data-remittance-documents-open-active>${U.escapeHtml(i18n?.t('ui.choosePractice', 'Scegli pratica'))}</button>` : ''}
-            ${activeAir ? `<button class="btn secondary" type="button" data-remittance-documents-open-hawb>${U.escapeHtml(i18n?.t('ui.chooseHawb', 'Scegli HAWB'))}</button>` : ''}
-            <button class="btn secondary" type="button" data-remittance-documents-new-session>${U.escapeHtml(i18n?.t('ui.newBlankDocument', 'Nuovo documento vuoto'))}</button>
+            ${selectedPractice ? `<button class="btn" type="button" data-remittance-open-active>${U.escapeHtml(i18n?.t('ui.useCurrentPractice', 'Usa pratica attiva'))}</button>` : ''}
+            <button class="btn secondary" type="button" data-remittance-new-session>${U.escapeHtml(i18n?.t('ui.newBlankDocument', 'Nuovo documento vuoto'))}</button>
           </div>
         </div>
         <div class="form-grid three remittance-documents-practice-grid">
           ${available.slice(0, 18).map((practice) => `
-            <button class="stack-item remittance-documents-practice-chip" type="button" data-remittance-documents-open-practice="${U.escapeHtml(practice.id)}">
+            <button class="stack-item remittance-documents-practice-chip" type="button" data-remittance-open-practice="${U.escapeHtml(practice.id)}">
               <strong>${U.escapeHtml(practice.reference || '—')}</strong>
               <span>${U.escapeHtml(practice.clientName || practice.client || '')}</span>
               <span>${U.escapeHtml(practice.practiceTypeLabel || practice.practiceType || '')}</span>
@@ -213,55 +205,27 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       [i18n?.t('ui.generatedNumber', 'Numero pratica'), draft.practiceReference || '—'],
       [i18n?.t('ui.clientRequired', 'Cliente'), draft.client || '—'],
       [i18n?.t('ui.reference', 'Riferimento'), draft.reference || '—'],
-      [i18n?.t('ui.date', 'Data'), draft.documentDate || '—']
+      [i18n?.t('ui.hawb', 'HAWB'), draft.hawbReference || '—']
     ];
     return `<div class="tag-grid remittance-documents-summary-pills">${items.map(([label, value]) => `<div class="stack-item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value)}</span></div>`).join('')}</div>`;
   }
 
-  function renderGeneralTab(draft, i18n) {
-    const fields = [
-      { label: i18n?.t('ui.generatedNumber', 'Numero pratica'), name: 'practiceReference', value: draft.practiceReference, options: { span: 2, disabled: true } },
-      { label: i18n?.t('ui.clientRequired', 'Cliente'), name: 'client', value: draft.client, options: { span: 4 } },
-      { label: i18n?.t('ui.sender', 'Mittente'), name: 'sender', value: draft.sender, options: { span: 3 } },
-      { label: i18n?.t('ui.consignee', 'Destinatario'), name: 'consignee', value: draft.consignee, options: { span: 3 } },
-      { label: i18n?.t('ui.reference', 'Riferimento'), name: 'reference', value: draft.reference, options: { span: 3 } },
-      { label: i18n?.t('ui.remittanceDocumentsAttentionTo', 'All’attenzione di'), name: 'attentionTo', value: draft.attentionTo, options: { span: 3 } },
-      { label: i18n?.t('ui.date', 'Data'), name: 'documentDate', value: draft.documentDate, options: { type: 'date', span: 2 } },
-      { label: i18n?.t('ui.hawb', 'HAWB'), name: 'hawbReference', value: draft.hawbReference, options: { span: 2 } },
-      { label: i18n?.t('ui.amount', 'Importo'), name: 'amount', value: draft.amount, options: { span: 1 } },
-      { label: i18n?.t('ui.currency', 'Valuta'), name: 'amountCurrency', value: draft.amountCurrency, options: { type: 'select', span: 1, items: [{ value: 'EUR', label: 'EUR' }, { value: 'USD', label: 'USD' }, { value: 'GBP', label: 'GBP' }] } },
-      { label: i18n?.t('ui.remittanceDocumentsLoading', 'Imbarco'), name: 'loadingPort', value: draft.loadingPort, options: { span: 3 } },
-      { label: i18n?.t('ui.remittanceDocumentsUnloading', 'Sbarco'), name: 'unloadingPort', value: draft.unloadingPort, options: { span: 3 } },
-      { label: i18n?.t('ui.remittanceDocumentsSupplierInvoice', 'Fattura Fornitore'), name: 'supplierInvoice', value: draft.supplierInvoice, options: { span: 2 } },
-      { label: i18n?.t('ui.remittanceDocumentsCourierMode', 'A mezzo corriere'), name: 'courierMode', value: draft.courierMode, options: { span: 2 } },
-      { label: i18n?.t('ui.voyage', 'Viaggio'), name: 'voyage', value: draft.voyage, options: { span: 2 } },
-      { label: i18n?.t('ui.vessel', 'Nave'), name: 'vessel', value: draft.vessel, options: { span: 2 } },
-      { label: i18n?.t('ui.deliveryConditions', 'Condizioni di consegna'), name: 'deliveryConditions', value: draft.deliveryConditions, options: { span: 4 } }
-    ];
-    return `${renderSummaryPills(draft, i18n)}<div class="remittance-general-grid">${fields.map((field) => renderField(field.label, field.name, field.value, field.options || {})).join('')}</div>`;
-  }
-
-  function renderTextsTab(draft, i18n) {
-    return `
-      <div class="form-grid two remittance-documents-form-grid">
-        ${renderField(i18n?.t('ui.remittanceDocumentsInternalText', 'Testo interno'), 'internalText', draft.internalText, { type: 'textarea', rows: 10, full: true, span: 6 })}
-        ${renderField(i18n?.t('ui.remittanceDocumentsCustomerText', 'Testo cliente'), 'customerText', draft.customerText, { type: 'textarea', rows: 10, full: true, span: 6 })}
-      </div>`;
-  }
-
-  function renderDetailTab(draft, i18n) {
+  function renderDetailTable(draft, i18n) {
     const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
     return `
       <section class="table-panel remittance-documents-lines-panel notice-lines-panel">
         <div class="panel-head">
           <div>
-            <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.details', 'Dettaglio'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsDetailHint', 'Elenca i documenti inclusi nella rimessa con riferimento, copie e note operative.'))}</p>
+            <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.detail', 'Dettaglio'))}</h3>
+            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsDetailHint', 'Elenco documenti, riferimenti, copie e note di rimessa.'))}</p>
           </div>
-          <div class="action-row"><button class="btn secondary" type="button" data-remittance-documents-add-line>${U.escapeHtml(i18n?.t('ui.addLine', 'Aggiungi riga'))}</button></div>
+          <div class="action-row"><button class="btn secondary" type="button" data-remittance-add-line>${U.escapeHtml(i18n?.t('ui.addLine', 'Aggiungi riga'))}</button></div>
         </div>
         <div class="table-wrap notice-lines-wrap">
-          <table class="table remittance-documents-lines-table notice-lines-table">
+          <table class="table notice-lines-table remittance-lines-table">
+            <colgroup>
+              <col style="width:22%"><col style="width:28%"><col style="width:10%"><col style="width:30%"><col style="width:10%">
+            </colgroup>
             <thead>
               <tr>
                 <th>${U.escapeHtml(i18n?.t('ui.documentType', 'Tipo documento'))}</th>
@@ -274,16 +238,54 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
             <tbody>
               ${rows.map((row, index) => `
                 <tr>
-                  <td><input type="text" value="${U.escapeHtml(row.documentType || '')}" data-remittance-documents-line-index="${index}" data-remittance-documents-line-field="documentType"></td>
-                  <td><input type="text" value="${U.escapeHtml(row.documentReference || '')}" data-remittance-documents-line-index="${index}" data-remittance-documents-line-field="documentReference"></td>
-                  <td><input type="text" value="${U.escapeHtml(row.copies || '')}" data-remittance-documents-line-index="${index}" data-remittance-documents-line-field="copies"></td>
-                  <td><input type="text" value="${U.escapeHtml(row.note || '')}" data-remittance-documents-line-index="${index}" data-remittance-documents-line-field="note"></td>
-                  <td><button class="btn secondary" type="button" data-remittance-documents-remove-line="${index}">${U.escapeHtml(i18n?.t('ui.remove', 'Rimuovi'))}</button></td>
+                  <td><input type="text" value="${U.escapeHtml(row.documentType || '')}" data-remittance-line-index="${index}" data-remittance-line-field="documentType"></td>
+                  <td><input type="text" value="${U.escapeHtml(row.reference || '')}" data-remittance-line-index="${index}" data-remittance-line-field="reference"></td>
+                  <td><input type="text" value="${U.escapeHtml(row.copies || '')}" data-remittance-line-index="${index}" data-remittance-line-field="copies"></td>
+                  <td><input type="text" value="${U.escapeHtml(row.notes || '')}" data-remittance-line-index="${index}" data-remittance-line-field="notes"></td>
+                  <td><button class="btn secondary" type="button" data-remittance-remove-line="${index}">${U.escapeHtml(i18n?.t('ui.remove', 'Rimuovi'))}</button></td>
                 </tr>`).join('')}
             </tbody>
           </table>
         </div>
       </section>`;
+  }
+
+  function renderGeneralFieldGrid(fields) {
+    return `<div class="notice-general-grid">${fields.map((field) => renderField(field.label, field.name, field.value, { ...(field.options || {}), span: field.span || 1 })).join('')}</div>`;
+  }
+
+  function renderGeneralTab(draft, i18n) {
+    const fields = [
+      { label: i18n?.t('ui.generatedNumber', 'Pratica'), name: 'practiceReference', value: draft.practiceReference, options: { disabled: true }, span: 1 },
+      { label: i18n?.t('ui.hawb', 'HAWB'), name: 'hawbReference', value: draft.hawbReference, span: 1 },
+      { label: i18n?.t('ui.clientRequired', 'Cliente'), name: 'client', value: draft.client, span: 2 },
+      { label: i18n?.t('ui.sender', 'Mittente'), name: 'sender', value: draft.sender, span: 1 },
+      { label: i18n?.t('ui.consignee', 'Destinatario'), name: 'consignee', value: draft.consignee, span: 1 },
+      { label: i18n?.t('ui.reference', 'Riferimento'), name: 'reference', value: draft.reference, span: 1 },
+      { label: i18n?.t('ui.remittanceDocumentsAttentionTo', 'All’attenzione di'), name: 'attentionTo', value: draft.attentionTo, span: 1 },
+      { label: i18n?.t('ui.date', 'Data'), name: 'documentDate', value: draft.documentDate, options: { type: 'date' }, span: 1 },
+      { label: i18n?.t('ui.remittanceDocumentsLoadingPort', 'Imbarco'), name: 'loadingPort', value: draft.loadingPort, span: 1 },
+      { label: i18n?.t('ui.remittanceDocumentsUnloadingPort', 'Sbarco'), name: 'unloadingPort', value: draft.unloadingPort, span: 1 },
+      { label: i18n?.t('ui.remittanceDocumentsSupplierInvoice', 'Fattura fornitore'), name: 'supplierInvoice', value: draft.supplierInvoice, span: 1 },
+      { label: i18n?.t('ui.amount', 'Importo'), name: 'amount', value: draft.amount, span: 1 },
+      { label: i18n?.t('ui.currency', 'Valuta'), name: 'currency', value: draft.currency, options: { type: 'select', items: [{ value: 'EUR', label: 'EUR' }, { value: 'USD', label: 'USD' }, { value: 'GBP', label: 'GBP' }, { value: 'CHF', label: 'CHF' }] }, span: 1 },
+      { label: i18n?.t('ui.remittanceDocumentsCourierMode', 'A mezzo corriere'), name: 'courierMode', value: draft.courierMode, options: { type: 'select', items: [{ value: 'NO', label: 'NO' }, { value: 'SI', label: 'SI' }] }, span: 1 },
+      { label: i18n?.t('ui.voyage', 'Viaggio'), name: 'voyage', value: draft.voyage, span: 1 },
+      { label: i18n?.t('ui.vessel', 'Nave'), name: 'vessel', value: draft.vessel, span: 1 },
+      { label: i18n?.t('ui.deliveryConditions', 'Condizioni di consegna'), name: 'deliveryConditions', value: draft.deliveryConditions, span: 2 },
+      { label: i18n?.t('ui.operator', 'Operatore'), name: 'operatorName', value: draft.operatorName, span: 1 }
+    ];
+    return `
+      ${renderSummaryPills(draft, i18n)}
+      ${renderGeneralFieldGrid(fields)}`;
+  }
+
+  function renderTextsTab(draft, i18n) {
+    return `
+      <div class="form-grid two remittance-documents-form-grid">
+        ${renderField(i18n?.t('ui.remittanceDocumentsInternalText', 'Testo interno'), 'internalText', draft.internalText, { type: 'textarea', rows: 8, full: true })}
+        ${renderField(i18n?.t('ui.remittanceDocumentsCustomerText', 'Testo cliente'), 'customerText', draft.customerText, { type: 'textarea', rows: 8, full: true })}
+      </div>`;
   }
 
   function buildMailtoHref(draft, i18n) {
@@ -292,9 +294,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       `${i18n?.t('ui.generatedNumber', 'Pratica')}: ${draft.practiceReference || '—'}`,
       `${i18n?.t('ui.clientRequired', 'Cliente')}: ${draft.client || '—'}`,
       `${i18n?.t('ui.reference', 'Riferimento')}: ${draft.reference || '—'}`,
-      `${i18n?.t('ui.date', 'Data')}: ${draft.documentDate || '—'}`,
-      `${i18n?.t('ui.remittanceDocumentsLoading', 'Imbarco')}: ${draft.loadingPort || '—'}`,
-      `${i18n?.t('ui.remittanceDocumentsUnloading', 'Sbarco')}: ${draft.unloadingPort || '—'}`,
+      `${i18n?.t('ui.hawb', 'HAWB')}: ${draft.hawbReference || '—'}`,
       '',
       draft.customerText || draft.internalText || ''
     ];
@@ -303,7 +303,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
 
   function buildPrintableHtml(draft, i18n) {
     const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
-    return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${U.escapeHtml(i18n?.t('practices/rimessa-documenti', 'Rimessa documenti'))}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 8px;font-size:24px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #cfd4dc;padding:8px;font-size:12px;text-align:left;vertical-align:top}.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}.meta div{border:1px solid #d8dde6;padding:10px}.block{margin-top:18px}.block h2{font-size:16px;margin:0 0 8px}</style></head><body><h1>${U.escapeHtml(i18n?.t('practices/rimessa-documenti', 'Rimessa documenti'))}</h1><div class="meta"><div><strong>${U.escapeHtml(i18n?.t('ui.generatedNumber', 'Pratica'))}</strong><br>${U.escapeHtml(draft.practiceReference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.clientRequired', 'Cliente'))}</strong><br>${U.escapeHtml(draft.client || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.reference', 'Riferimento'))}</strong><br>${U.escapeHtml(draft.reference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.date', 'Data'))}</strong><br>${U.escapeHtml(draft.documentDate || '—')}</div></div><table><thead><tr><th>${U.escapeHtml(i18n?.t('ui.documentType', 'Tipo documento'))}</th><th>${U.escapeHtml(i18n?.t('ui.reference', 'Riferimento'))}</th><th>${U.escapeHtml(i18n?.t('ui.copies', 'Copie'))}</th><th>${U.escapeHtml(i18n?.t('ui.notes', 'Note'))}</th></tr></thead><tbody>${rows.map((row)=>`<tr><td>${U.escapeHtml(row.documentType || '')}</td><td>${U.escapeHtml(row.documentReference || '')}</td><td>${U.escapeHtml(row.copies || '')}</td><td>${U.escapeHtml(row.note || '')}</td></tr>`).join('')}</tbody></table><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.remittanceDocumentsCustomerText', 'Testo cliente'))}</h2><div>${U.escapeHtml(draft.customerText || '').replace(/\n/g,'<br>')}</div></div><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.remittanceDocumentsInternalText', 'Testo interno'))}</h2><div>${U.escapeHtml(draft.internalText || '').replace(/\n/g,'<br>')}</div></div></body></html>`;
+    return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${U.escapeHtml(i18n?.t('practices/rimessa-documenti', 'Rimessa documenti'))}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 8px;font-size:24px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #cfd4dc;padding:8px;font-size:12px;text-align:left;vertical-align:top}.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}.meta div{border:1px solid #d8dde6;padding:10px}.block{margin-top:18px}.block h2{font-size:16px;margin:0 0 8px}</style></head><body><h1>${U.escapeHtml(i18n?.t('practices/rimessa-documenti', 'Rimessa documenti'))}</h1><div class="meta"><div><strong>${U.escapeHtml(i18n?.t('ui.generatedNumber', 'Pratica'))}</strong><br>${U.escapeHtml(draft.practiceReference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.clientRequired', 'Cliente'))}</strong><br>${U.escapeHtml(draft.client || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.reference', 'Riferimento'))}</strong><br>${U.escapeHtml(draft.reference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.hawb', 'HAWB'))}</strong><br>${U.escapeHtml(draft.hawbReference || '—')}</div></div><table><thead><tr><th>${U.escapeHtml(i18n?.t('ui.documentType', 'Tipo documento'))}</th><th>${U.escapeHtml(i18n?.t('ui.reference', 'Riferimento'))}</th><th>${U.escapeHtml(i18n?.t('ui.copies', 'Copie'))}</th><th>${U.escapeHtml(i18n?.t('ui.notes', 'Note'))}</th></tr></thead><tbody>${rows.map((row)=>`<tr><td>${U.escapeHtml(row.documentType || '')}</td><td>${U.escapeHtml(row.reference || '')}</td><td>${U.escapeHtml(row.copies || '')}</td><td>${U.escapeHtml(row.notes || '')}</td></tr>`).join('')}</tbody></table><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.remittanceDocumentsCustomerText', 'Testo cliente'))}</h2><div>${U.escapeHtml(draft.customerText || '').replace(/\n/g,'<br>')}</div></div><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.remittanceDocumentsInternalText', 'Testo interno'))}</h2><div>${U.escapeHtml(draft.internalText || '').replace(/\n/g,'<br>')}</div></div></body></html>`;
   }
 
   function printDraft(draft, i18n) {
@@ -341,70 +341,72 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
     const draft = session.draft || createEmptyDraft(state);
     const activeTab = String(session?.uiState?.tab || 'general').trim() || 'general';
     return `
-      <section class="panel remittance-documents-editor-panel remittance-module-panel">
+      <section class="panel remittance-documents-editor-panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('practices/rimessa-documenti', 'Rimessa documenti'))}</h3>
-            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsEditorHint', 'Documento operativo per la rimessa documentale collegata alla pratica madre, con tab Generale, Testi e Dettaglio.'))}</p>
+            <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsEditorHint', 'Documento operativo collegato alla pratica madre, con dati generali, testi e dettaglio rimessa pronti per stampa o invio email.'))}</p>
           </div>
           <div class="action-row">
-            <button class="btn secondary" type="button" data-remittance-documents-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
-            <button class="btn secondary" type="button" data-remittance-documents-email>${U.escapeHtml(i18n?.t('ui.sendEmail', 'Invia email'))}</button>
-            <button class="btn secondary" type="button" data-remittance-documents-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
-            <button class="btn" type="button" data-remittance-documents-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
+            <button class="btn secondary" type="button" data-remittance-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
+            <button class="btn secondary" type="button" data-remittance-email>${U.escapeHtml(i18n?.t('ui.sendEmail', 'Invia email'))}</button>
+            <button class="btn secondary" type="button" data-remittance-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
+            <button class="btn" type="button" data-remittance-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
         </div>
         <div class="tab-row remittance-documents-tabs">
-          <button class="tab-chip${activeTab === 'general' ? ' active' : ''}" type="button" data-remittance-documents-tab="general">${U.escapeHtml(i18n?.t('ui.general', 'Generale'))}</button>
-          <button class="tab-chip${activeTab === 'texts' ? ' active' : ''}" type="button" data-remittance-documents-tab="texts">${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</button>
-          <button class="tab-chip${activeTab === 'detail' ? ' active' : ''}" type="button" data-remittance-documents-tab="detail">${U.escapeHtml(i18n?.t('ui.details', 'Dettaglio'))}</button>
+          <button class="tab-chip${activeTab === 'general' ? ' active' : ''}" type="button" data-remittance-tab="general">${U.escapeHtml(i18n?.t('ui.general', 'Generale'))}</button>
+          <button class="tab-chip${activeTab === 'texts' ? ' active' : ''}" type="button" data-remittance-tab="texts">${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</button>
+          <button class="tab-chip${activeTab === 'detail' ? ' active' : ''}" type="button" data-remittance-tab="detail">${U.escapeHtml(i18n?.t('ui.detail', 'Dettaglio'))}</button>
         </div>
-        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : activeTab === 'detail' ? renderDetailTab(draft, i18n) : renderGeneralTab(draft, i18n)}
+        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : activeTab === 'detail' ? renderDetailTable(draft, i18n) : renderGeneralTab(draft, i18n)}
       </section>`;
   }
 
   function renderSavedRecords(state, i18n) {
     const records = Array.isArray(state?.remittanceDocumentRecords) ? state.remittanceDocumentRecords : [];
     return `
-      <section class="panel remittance-documents-records-panel remittance-module-panel">
+      <section class="panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.savedDocuments', 'Documenti salvati'))}</h3>
             <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsSavedHint', 'Riapri rapidamente le rimesse documenti già generate.'))}</p>
           </div>
         </div>
-        ${records.length ? `<div class="three-col remittance-documents-records-grid">${records.map((record) => `
-          <button class="module-card remittance-documents-record-card" type="button" data-remittance-documents-open-record="${U.escapeHtml(record.id)}">
-            <strong>${U.escapeHtml(record.practiceReference || '—')}</strong>
-            <span>${U.escapeHtml(record.client || '—')}</span>
-            <span>${U.escapeHtml(record.reference || record.hawbReference || '—')}</span>
-          </button>`).join('')}</div>` : `<div class="empty-state"><strong>${U.escapeHtml(i18n?.t('ui.noSavedDocuments', 'Nessun documento salvato'))}</strong><span>${U.escapeHtml(i18n?.t('ui.remittanceDocumentsSavedEmpty', 'Salva una rimessa documenti per ritrovarla qui.'))}</span></div>`}
+        <div class="module-card-grid remittance-documents-records-grid">
+          ${records.length ? records.slice().sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))).map((record) => `
+            <button class="module-card remittance-documents-record-card" type="button" data-remittance-open-record="${U.escapeHtml(record.id)}">
+              <div><strong>${U.escapeHtml(record.practiceReference || '—')}</strong><div class="module-card-meta">${U.escapeHtml(record.client || '—')}</div></div>
+              <div class="module-card-meta">${U.escapeHtml(record.reference || '—')}</div>
+              <div class="module-card-meta">${U.escapeHtml(record.hawbReference || '—')}</div>
+            </button>`).join('') : `<div class="empty-text">${U.escapeHtml(i18n?.t('ui.noSavedDocuments', 'Nessun documento salvato.'))}</div>`}
+        </div>
       </section>`;
   }
 
-  function render(state, context = {}) {
-    const i18n = context.i18n || { t: (key, fallback) => fallback || key };
-    const getSelectedPractice = typeof context.getSelectedPractice === 'function' ? context.getSelectedPractice : () => null;
+  function render(state, options = {}) {
+    const { i18n } = options;
     ensureState(state);
     const kpis = buildKpis(state);
-    const selectedPractice = getSelectedPractice();
+    const selectedPractice = typeof options.getSelectedPractice === 'function' ? options.getSelectedPractice() : null;
     return `
-      <div class="remittance-documents-module notice-module">
-      <section class="hero remittance-documents-hero">
+      <div class="notice-module remittance-module">
+      <section class="hero">
         <div class="hero-meta">${U.escapeHtml(i18n?.t('ui.remittanceDocumentsEyebrow', 'PRATICHE · RIMESSA DOCUMENTI'))}</div>
         <h2>${U.escapeHtml(i18n?.t('practices/rimessa-documenti', 'Rimessa documenti'))}</h2>
-        <p>${U.escapeHtml(i18n?.t('ui.remittanceDocumentsHeroHint', 'Sottomodulo operativo per la trasmissione e rimessa dei documenti collegati alla pratica madre.'))}</p>
+        <p>${U.escapeHtml(i18n?.t('ui.remittanceDocumentsIntro', 'Sottomodulo operativo dedicato alla rimessa documenti collegata alla pratica madre.'))}</p>
       </section>
-      <section class="three-col remittance-documents-kpi-row">
-        <div class="panel"><div class="summary-box"><span>${U.escapeHtml(i18n?.t('ui.savedDocuments', 'Documenti salvati'))}</span><div class="summary-value">${U.escapeHtml(String(kpis.records))}</div></div></div>
-        <div class="panel"><div class="summary-box"><span>${U.escapeHtml(i18n?.t('ui.openMasks', 'Maschere aperte'))}</span><div class="summary-value">${U.escapeHtml(String(kpis.openMasks))}</div></div></div>
-        <div class="panel"><div class="summary-box"><span>${U.escapeHtml(i18n?.t('ui.linkedPractices', 'Pratiche collegate'))}</span><div class="summary-value">${U.escapeHtml(String(kpis.linkedPractices))}</div></div></div>
+      <section class="three-col">
+        <div class="stack-item"><span>${U.escapeHtml(i18n?.t('ui.savedDocuments', 'Documenti salvati'))}</span><div class="summary-value">${U.escapeHtml(String(kpis.records))}</div></div>
+        <div class="stack-item"><span>${U.escapeHtml(i18n?.t('ui.openMasks', 'Maschere aperte'))}</span><div class="summary-value">${U.escapeHtml(String(kpis.openMasks))}</div></div>
+        <div class="stack-item"><span>${U.escapeHtml(i18n?.t('ui.linkedPractices', 'Pratiche collegate'))}</span><div class="summary-value">${U.escapeHtml(String(kpis.linkedPractices))}</div></div>
       </section>
       ${renderLauncher(state, i18n, selectedPractice)}
       ${renderSessionStrip(state, i18n)}
       ${renderEditor(state, i18n)}
       ${renderSavedRecords(state, i18n)}
-      </div>`;
+      </div>
+    `;
   }
 
   function upsertRecord(state, session) {
@@ -467,7 +469,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
     const { root, state, save, render, toast, i18n, getSelectedPractice } = context;
     if (!root || !state || !Workspace) return;
 
-    root.querySelectorAll('[data-remittance-documents-new-session]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-new-session]').forEach((button) => {
       button.addEventListener('click', () => {
         ensureState(state);
         Workspace.openDraftSession(state, { createEmptyDraft: () => createEmptyDraft(state), draft: createEmptyDraft(state), source: 'manual', isDirty: true });
@@ -476,7 +478,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-open-active]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-open-active]').forEach((button) => {
       button.addEventListener('click', () => {
         const practice = typeof getSelectedPractice === 'function' ? getSelectedPractice() : null;
         if (!practice) return;
@@ -491,26 +493,9 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-open-hawb]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-open-practice]').forEach((button) => {
       button.addEventListener('click', () => {
-        const practice = typeof getSelectedPractice === 'function' ? getSelectedPractice() : null;
-        if (!practice) return;
-        const draft = buildDraftFromPractice(state, practice);
-        draft.hawbReference = draft.hawbReference || draft.reference;
-        Workspace.openDraftSession(state, {
-          createEmptyDraft: () => createEmptyDraft(state),
-          draft,
-          source: 'hawb',
-          isDirty: true
-        });
-        save?.();
-        render?.();
-      });
-    });
-
-    root.querySelectorAll('[data-remittance-documents-open-practice]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const practiceId = button.dataset.remittanceDocumentsOpenPractice;
+        const practiceId = button.dataset.remittanceOpenPractice;
         const practice = (state.practices || []).find((entry) => String(entry?.id || '').trim() === String(practiceId || '').trim()) || null;
         if (!practice) return;
         Workspace.openDraftSession(state, {
@@ -524,9 +509,9 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-open-record]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-open-record]').forEach((button) => {
       button.addEventListener('click', () => {
-        const record = findRecord(state, button.dataset.remittanceDocumentsOpenRecord);
+        const record = findRecord(state, button.dataset.remittanceOpenRecord);
         if (!record) return;
         Workspace.openRecordSession(state, record, { createEmptyDraft: () => createEmptyDraft(state) });
         save?.();
@@ -534,45 +519,45 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-session-switch]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-session-switch]').forEach((button) => {
       button.addEventListener('click', () => {
-        Workspace.switchSession(state, button.dataset.remittanceDocumentsSessionSwitch, { createEmptyDraft: () => createEmptyDraft(state) });
+        Workspace.switchSession(state, button.dataset.remittanceSessionSwitch, { createEmptyDraft: () => createEmptyDraft(state) });
         save?.();
         render?.();
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-tab]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-tab]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        Workspace.setSessionTab(state, session.id, button.dataset.remittanceDocumentsTab, { createEmptyDraft: () => createEmptyDraft(state) });
+        Workspace.setSessionTab(state, session.id, button.dataset.remittanceTab, { createEmptyDraft: () => createEmptyDraft(state) });
         save?.();
         render?.();
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-field]').forEach((field) => {
+    root.querySelectorAll('[data-remittance-field]').forEach((field) => {
       const handler = () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        Workspace.setSessionField(state, session.id, field.dataset.remittanceDocumentsField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
+        Workspace.setSessionField(state, session.id, field.dataset.remittanceField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
         save?.();
       };
       field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', handler);
     });
 
-    root.querySelectorAll('[data-remittance-documents-line-field]').forEach((field) => {
+    root.querySelectorAll('[data-remittance-line-field]').forEach((field) => {
       const handler = () => {
-        const index = Number(field.dataset.remittanceDocumentsLineIndex || -1);
+        const index = Number(field.dataset.remittanceLineIndex || -1);
         if (index < 0) return;
-        updateActiveLineItem(state, index, field.dataset.remittanceDocumentsLineField, field.value);
+        updateActiveLineItem(state, index, field.dataset.remittanceLineField, field.value);
         save?.();
       };
       field.addEventListener('input', handler);
     });
 
-    root.querySelectorAll('[data-remittance-documents-add-line]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-add-line]').forEach((button) => {
       button.addEventListener('click', () => {
         addLineItem(state);
         save?.();
@@ -580,9 +565,9 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-remove-line]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-remove-line]').forEach((button) => {
       button.addEventListener('click', () => {
-        const index = Number(button.dataset.remittanceDocumentsRemoveLine || -1);
+        const index = Number(button.dataset.remittanceRemoveLine || -1);
         if (index < 0) return;
         removeLineItem(state, index);
         save?.();
@@ -590,18 +575,18 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-session-close]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-session-close]').forEach((button) => {
       button.addEventListener('click', async (event) => {
         event.preventDefault();
         event.stopPropagation();
-        const closed = await closeSessionWithGuard(state, button.dataset.remittanceDocumentsSessionClose, i18n);
+        const closed = await closeSessionWithGuard(state, button.dataset.remittanceSessionClose, i18n);
         if (!closed) return;
         save?.();
         render?.();
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-print]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-print]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
@@ -609,7 +594,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-email]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-email]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
@@ -617,7 +602,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-save-continue]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-save-continue]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
@@ -628,7 +613,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-documents-save-close]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-save-close]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
