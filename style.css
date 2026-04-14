@@ -4277,12 +4277,6 @@ body.dialog-open {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.remittance-practice-grid,
-.remittance-summary-pills,
-.remittance-records-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .notice-general-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -4313,12 +4307,6 @@ body.dialog-open {
   align-items: start;
 }
 
-.remittance-form-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 12px;
-  align-items: start;
-}
-
 .notice-size-xs,
 .notice-size-sm,
 .notice-size-md,
@@ -4326,8 +4314,7 @@ body.dialog-open {
 .notice-size-xl { grid-column: span 1; }
 
 .arrival-notice-form-grid .notice-field textarea,
-.departure-notice-form-grid .notice-field textarea,
-.remittance-form-grid .notice-field textarea {
+.departure-notice-form-grid .notice-field textarea {
   min-height: 112px;
 }
 
@@ -4459,11 +4446,8 @@ body.dialog-open {
 
 .arrival-notice-editor-panel,
 .departure-notice-editor-panel,
-.remittance-editor-panel,
 .arrival-notice-workspace-panel,
-.departure-notice-workspace-panel,
-.remittance-workspace-panel,
-.remittance-launcher-panel {
+.departure-notice-workspace-panel {
   overflow: hidden;
 }
 
@@ -4501,49 +4485,6 @@ body.dialog-open {
   grid-column: span 1;
 }
 
-
-.notice-general-grid .notice-field-hawbReference,
-.notice-general-grid .notice-field-client,
-.notice-general-grid .notice-field-sender,
-.notice-general-grid .notice-field-destination,
-.notice-general-grid .notice-field-reference,
-.notice-general-grid .notice-field-attentionTo,
-.notice-general-grid .notice-field-loadingPort,
-.notice-general-grid .notice-field-unloadingPort,
-.notice-general-grid .notice-field-supplierInvoice,
-.notice-general-grid .notice-field-courierName,
-.notice-general-grid .notice-field-voyage,
-.notice-general-grid .notice-field-vessel,
-.notice-general-grid .notice-field-deliveryConditions,
-.notice-general-grid .notice-field-supplierInvoiceDate,
-.notice-general-grid .notice-field-amountCurrency {
-  grid-column: span 1;
-}
-
-.notice-general-grid .notice-field-client,
-.notice-general-grid .notice-field-sender,
-.notice-general-grid .notice-field-destination,
-.notice-general-grid .notice-field-deliveryConditions,
-.notice-general-grid .notice-field-reference {
-  grid-column: span 2;
-}
-
-.remittance-lines-table {
-  width: 100%;
-  min-width: 0;
-  table-layout: fixed;
-}
-
-.remittance-lines-table th,
-.remittance-lines-table td {
-  white-space: normal;
-}
-
-.remittance-lines-table input {
-  width: 100%;
-  min-width: 0;
-}
-
 @media (max-width: 1680px) {
   .notice-general-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4562,10 +4503,7 @@ body.dialog-open {
   .arrival-notice-records-grid,
   .departure-notice-practice-grid,
   .departure-notice-summary-pills,
-  .departure-notice-records-grid,
-  .remittance-practice-grid,
-  .remittance-summary-pills,
-  .remittance-records-grid {
+  .departure-notice-records-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -4587,17 +4525,13 @@ body.dialog-open {
   .arrival-notice-records-grid,
   .departure-notice-practice-grid,
   .departure-notice-summary-pills,
-  .departure-notice-records-grid,
-  .remittance-practice-grid,
-  .remittance-summary-pills,
-  .remittance-records-grid {
+  .departure-notice-records-grid {
     grid-template-columns: 1fr;
   }
 
   .notice-general-grid,
   .arrival-notice-form-grid,
-  .departure-notice-form-grid,
-  .remittance-form-grid {
+  .departure-notice-form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -4640,3 +4574,142 @@ body.dialog-open {
   }
 }
 
+
+
+.remittance-module-panel,
+.remittance-documents-launcher-panel,
+.remittance-documents-editor-panel,
+.remittance-documents-workspace-panel {
+  display: grid;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.remittance-documents-practice-grid,
+.remittance-documents-summary-pills,
+.remittance-documents-records-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.remittance-general-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px 10px;
+  align-items: start;
+}
+
+.remittance-field {
+  min-width: 0;
+  gap: 4px;
+}
+
+.remittance-col-1 { grid-column: span 1; }
+.remittance-col-2 { grid-column: span 2; }
+.remittance-col-3 { grid-column: span 3; }
+.remittance-col-4 { grid-column: span 4; }
+.remittance-col-5 { grid-column: span 5; }
+.remittance-col-6 { grid-column: span 6; }
+.remittance-col-12,
+.remittance-field.full { grid-column: 1 / -1; }
+
+.remittance-documents-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: start;
+}
+
+.remittance-documents-form-grid .remittance-field textarea {
+  min-height: 120px;
+}
+
+.remittance-documents-lines-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.remittance-documents-lines-table th,
+.remittance-documents-lines-table td {
+  white-space: normal;
+  vertical-align: top;
+  padding: 6px 4px;
+}
+
+.remittance-documents-lines-table input {
+  width: 100%;
+  min-width: 0;
+}
+
+.remittance-documents-lines-table td:last-child,
+.remittance-documents-lines-table th:last-child {
+  width: 74px;
+}
+
+.remittance-general-grid .remittance-field-practiceReference { grid-column: span 2; }
+.remittance-general-grid .remittance-field-client { grid-column: span 4; }
+.remittance-general-grid .remittance-field-sender,
+.remittance-general-grid .remittance-field-consignee,
+.remittance-general-grid .remittance-field-reference,
+.remittance-general-grid .remittance-field-attentionTo,
+.remittance-general-grid .remittance-field-loadingPort,
+.remittance-general-grid .remittance-field-unloadingPort,
+.remittance-general-grid .remittance-field-deliveryConditions { grid-column: span 3; }
+.remittance-general-grid .remittance-field-documentDate,
+.remittance-general-grid .remittance-field-hawbReference,
+.remittance-general-grid .remittance-field-voyage,
+.remittance-general-grid .remittance-field-vessel,
+.remittance-general-grid .remittance-field-courierMode,
+.remittance-general-grid .remittance-field-supplierInvoice { grid-column: span 2; }
+.remittance-general-grid .remittance-field-amount,
+.remittance-general-grid .remittance-field-amountCurrency { grid-column: span 1; }
+
+@media (max-width: 1480px) {
+  .remittance-general-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+  .remittance-general-grid .remittance-field-deliveryConditions {
+    grid-column: span 4;
+  }
+}
+
+@media (max-width: 1180px) {
+  .remittance-documents-practice-grid,
+  .remittance-documents-summary-pills,
+  .remittance-documents-records-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .remittance-general-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .remittance-general-grid .remittance-field-practiceReference,
+  .remittance-general-grid .remittance-field-client,
+  .remittance-general-grid .remittance-field-sender,
+  .remittance-general-grid .remittance-field-consignee,
+  .remittance-general-grid .remittance-field-reference,
+  .remittance-general-grid .remittance-field-attentionTo,
+  .remittance-general-grid .remittance-field-loadingPort,
+  .remittance-general-grid .remittance-field-unloadingPort,
+  .remittance-general-grid .remittance-field-deliveryConditions {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .remittance-documents-practice-grid,
+  .remittance-documents-summary-pills,
+  .remittance-documents-records-grid,
+  .remittance-general-grid,
+  .remittance-documents-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .remittance-general-grid .remittance-field,
+  .remittance-col-1,
+  .remittance-col-2,
+  .remittance-col-3,
+  .remittance-col-4,
+  .remittance-col-5,
+  .remittance-col-6,
+  .remittance-col-12 {
+    grid-column: 1 / -1;
+  }
+}

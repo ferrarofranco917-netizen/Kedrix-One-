@@ -26,27 +26,27 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
       practiceId: '',
       practiceReference: '',
       practiceType: '',
-      status: 'draft',
       hawbReference: '',
+      status: 'draft',
       client: '',
       sender: '',
-      destination: '',
+      consignee: '',
       reference: '',
       attentionTo: '',
       documentDate: new Date().toISOString().slice(0, 10),
       loadingPort: '',
       unloadingPort: '',
       supplierInvoice: '',
-      supplierInvoiceDate: '',
       amount: '',
       amountCurrency: 'EUR',
-      courierName: '',
+      courierMode: '',
       voyage: '',
       vessel: '',
       deliveryConditions: '',
       internalText: '',
       customerText: '',
-      detailNotes: '',
+      operatorName: '',
+      tripType: 'MARE',
       sourcePracticeSnapshot: {},
       lineItems: [defaultLineItem()],
       ...draft,
@@ -197,6 +197,14 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     return session;
   }
 
+  function setSessionTab(state, sessionId, tab, options = {}) {
+    const session = findSession(state, sessionId, options);
+    if (!session) return null;
+    session.uiState = { ...(session.uiState || {}), tab: String(tab || 'general').trim() || 'general' };
+    touchSession(session);
+    return session;
+  }
+
   function hasSessionUnsavedChanges(state, sessionId, options = {}) {
     const session = findSession(state, sessionId, options);
     if (!session) return false;
@@ -209,14 +217,6 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
       return false;
     }
     return true;
-  }
-
-  function setSessionTab(state, sessionId, tab, options = {}) {
-    const session = findSession(state, sessionId, options);
-    if (!session) return null;
-    session.uiState = { ...(session.uiState || {}), tab: String(tab || 'general').trim() || 'general' };
-    touchSession(session);
-    return session;
   }
 
   function markSessionSaved(state, sessionId, options = {}) {
@@ -243,6 +243,8 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
   }
 
   return {
+    defaultLineItem,
+    cloneDraft,
     ensureState,
     listSessions,
     getActiveSession,
@@ -253,10 +255,8 @@ window.KedrixOneRemittanceDocumentsWorkspace = (() => {
     setSessionField,
     updateSessionDraft,
     setSessionTab,
-    markSessionSaved,
-    closeSession,
     hasSessionUnsavedChanges,
-    cloneDraft,
-    defaultLineItem
+    markSessionSaved,
+    closeSession
   };
 })();
