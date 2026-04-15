@@ -4041,12 +4041,102 @@ body.dialog-open {
   min-width: 0;
 }
 
-.customs-instructions-summary-pills {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.customs-instructions-general-layout {
+  display: grid;
+  gap: 12px;
 }
 
-.customs-instructions-form-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.customs-instructions-section {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+  overflow: hidden;
+}
+
+.customs-instructions-section-head {
+  display: grid;
+  gap: 3px;
+}
+
+.customs-instructions-section-head h4 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.customs-instructions-section-head p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.customs-instructions-practice-meta {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.customs-instructions-general-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px 10px;
+  align-items: start;
+}
+
+.customs-instructions-general-grid .field,
+.customs-instructions-general-grid .density-field {
+  min-width: 0;
+  gap: 4px;
+  grid-column: span 1;
+}
+
+.customs-instructions-general-grid .customs-col-2 {
+  grid-column: span 2;
+}
+
+.customs-instructions-general-grid .customs-col-3 {
+  grid-column: span 3;
+}
+
+.customs-instructions-general-grid .full {
+  grid-column: 1 / -1;
+}
+
+.customs-instructions-section-compact .customs-instructions-general-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.customs-instructions-values-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.customs-instructions-values-grid .customs-instructions-currency-field {
+  grid-column: span 1;
+}
+
+.customs-instructions-values-grid .customs-col-2 {
+  grid-column: span 2;
+}
+
+.customs-instructions-notes-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.customs-instructions-notes-grid .full {
+  grid-column: span 1;
+}
+
+.customs-instructions-notes-grid textarea {
+  min-height: 104px;
+}
+
+.customs-instructions-linked-practice .stack-item {
+  min-width: 0;
+}
+
+.customs-instructions-summary-pills {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .customs-lines-stack {
@@ -4111,13 +4201,44 @@ body.dialog-open {
   .customs-instructions-practice-search {
     grid-template-columns: 1fr;
   }
+
+  .customs-instructions-practice-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .customs-instructions-general-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .customs-instructions-general-grid .customs-col-2,
+  .customs-instructions-general-grid .customs-col-3 {
+    grid-column: span 3;
+  }
+
+  .customs-instructions-values-grid,
+  .customs-instructions-section-compact .customs-instructions-general-grid,
+  .customs-instructions-notes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 980px) {
   .customs-instructions-summary-pills,
-  .customs-instructions-form-grid,
+  .customs-instructions-practice-meta,
+  .customs-instructions-general-grid,
+  .customs-instructions-values-grid,
+  .customs-instructions-section-compact .customs-instructions-general-grid,
+  .customs-instructions-notes-grid,
   .customs-line-grid {
     grid-template-columns: 1fr;
+  }
+
+  .customs-instructions-general-grid .field,
+  .customs-instructions-general-grid .density-field,
+  .customs-instructions-general-grid .customs-col-2,
+  .customs-instructions-general-grid .customs-col-3,
+  .customs-instructions-notes-grid .full {
+    grid-column: 1 / -1;
   }
 }
 
