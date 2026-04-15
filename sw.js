@@ -1,6 +1,6 @@
 // AQ2R33 cache neutralization for audit phase
-const STATIC_CACHE = 'kedrix-one-stepaq49-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq49-runtime-v1';
+const STATIC_CACHE = 'kedrix-one-stepaq50-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq50-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',
