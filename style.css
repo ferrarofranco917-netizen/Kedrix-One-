@@ -4041,102 +4041,12 @@ body.dialog-open {
   min-width: 0;
 }
 
-.customs-instructions-general-layout {
-  display: grid;
-  gap: 12px;
-}
-
-.customs-instructions-section {
-  display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 14px;
-  background: rgba(255,255,255,0.02);
-  overflow: hidden;
-}
-
-.customs-instructions-section-head {
-  display: grid;
-  gap: 3px;
-}
-
-.customs-instructions-section-head h4 {
-  margin: 0;
-  font-size: 13px;
-  letter-spacing: 0.01em;
-}
-
-.customs-instructions-section-head p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text2);
-}
-
-.customs-instructions-practice-meta {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.customs-instructions-general-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px 10px;
-  align-items: start;
-}
-
-.customs-instructions-general-grid .field,
-.customs-instructions-general-grid .density-field {
-  min-width: 0;
-  gap: 4px;
-  grid-column: span 1;
-}
-
-.customs-instructions-general-grid .customs-col-2 {
-  grid-column: span 2;
-}
-
-.customs-instructions-general-grid .customs-col-3 {
-  grid-column: span 3;
-}
-
-.customs-instructions-general-grid .full {
-  grid-column: 1 / -1;
-}
-
-.customs-instructions-section-compact .customs-instructions-general-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.customs-instructions-values-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.customs-instructions-values-grid .customs-instructions-currency-field {
-  grid-column: span 1;
-}
-
-.customs-instructions-values-grid .customs-col-2 {
-  grid-column: span 2;
-}
-
-.customs-instructions-notes-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.customs-instructions-notes-grid .full {
-  grid-column: span 1;
-}
-
-.customs-instructions-notes-grid textarea {
-  min-height: 104px;
-}
-
-.customs-instructions-linked-practice .stack-item {
-  min-width: 0;
-}
-
 .customs-instructions-summary-pills {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customs-instructions-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .customs-lines-stack {
@@ -4201,44 +4111,13 @@ body.dialog-open {
   .customs-instructions-practice-search {
     grid-template-columns: 1fr;
   }
-
-  .customs-instructions-practice-meta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .customs-instructions-general-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .customs-instructions-general-grid .customs-col-2,
-  .customs-instructions-general-grid .customs-col-3 {
-    grid-column: span 3;
-  }
-
-  .customs-instructions-values-grid,
-  .customs-instructions-section-compact .customs-instructions-general-grid,
-  .customs-instructions-notes-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 980px) {
   .customs-instructions-summary-pills,
-  .customs-instructions-practice-meta,
-  .customs-instructions-general-grid,
-  .customs-instructions-values-grid,
-  .customs-instructions-section-compact .customs-instructions-general-grid,
-  .customs-instructions-notes-grid,
+  .customs-instructions-form-grid,
   .customs-line-grid {
     grid-template-columns: 1fr;
-  }
-
-  .customs-instructions-general-grid .field,
-  .customs-instructions-general-grid .density-field,
-  .customs-instructions-general-grid .customs-col-2,
-  .customs-instructions-general-grid .customs-col-3,
-  .customs-instructions-notes-grid .full {
-    grid-column: 1 / -1;
   }
 }
 
@@ -4894,4 +4773,317 @@ body.dialog-open {
   .remittance-documents-general-grid .notice-field-deliveryConditions {
     grid-column: 1 / -1;
   }
+}
+
+/* STEPAQ52 · Quotations workspace foundation */
+.quotations-module {
+  display: grid;
+  gap: 18px;
+}
+
+.quotations-shell {
+  display: grid;
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.quotations-filter-rail,
+.quotations-list-panel,
+.quotations-session-panel,
+.quotations-editor-panel {
+  min-width: 0;
+}
+
+.quotations-filter-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.quotations-launch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quotations-filter-footnote {
+  font-size: 12px;
+  color: var(--muted, #8fa0b3);
+}
+
+.quotations-profile-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-pill.active {
+  border-color: rgba(80, 176, 255, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(80, 176, 255, 0.28);
+  color: #eff7ff;
+}
+
+.quotations-table-wrap,
+.quotations-lines-wrap,
+.quotations-documents-table-wrap {
+  overflow-x: auto;
+}
+
+.quotations-table,
+.quotations-lines-table,
+.quotations-documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.quotations-table th,
+.quotations-table td,
+.quotations-lines-table th,
+.quotations-lines-table td,
+.quotations-documents-table th,
+.quotations-documents-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: middle;
+  text-align: left;
+  font-size: 12px;
+}
+
+.quotations-table th,
+.quotations-lines-table th,
+.quotations-documents-table th {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted, #91a1b2);
+  font-weight: 700;
+}
+
+.quotations-row-actions {
+  gap: 6px;
+}
+
+.quotation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.quotation-profile-generic { background: rgba(145, 161, 178, 0.18); }
+.quotation-profile-sea { background: rgba(64, 140, 255, 0.16); }
+.quotation-profile-air { background: rgba(0, 198, 255, 0.16); }
+.quotation-profile-rail { background: rgba(163, 113, 247, 0.16); }
+.quotation-profile-road { background: rgba(38, 203, 124, 0.16); }
+.quotation-profile-agency { background: rgba(255, 155, 64, 0.16); }
+.quotation-profile-warehouse { background: rgba(255, 215, 64, 0.16); }
+
+.quotation-status-draft { background: rgba(145, 161, 178, 0.18); }
+.quotation-status-active { background: rgba(38, 203, 124, 0.18); }
+.quotation-status-expired { background: rgba(255, 155, 64, 0.18); }
+.quotation-status-archived { background: rgba(110, 120, 138, 0.22); }
+
+.quotation-session-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quotation-session-chip {
+  display: flex;
+  align-items: stretch;
+  min-width: 260px;
+  max-width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.quotation-session-chip.active {
+  border-color: rgba(80, 176, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(80, 176, 255, 0.22);
+}
+
+.quotation-session-main,
+.quotation-session-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.quotation-session-main {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quotation-session-main span,
+.quotation-session-main em {
+  font-size: 12px;
+  color: var(--muted, #91a1b2);
+  font-style: normal;
+}
+
+.quotation-session-close {
+  width: 42px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.quotations-tabs {
+  margin-top: 6px;
+}
+
+.quotations-editor-body {
+  display: grid;
+  gap: 14px;
+}
+
+.compact-head .panel-title {
+  font-size: 15px;
+}
+
+.compact-head .panel-subtitle {
+  font-size: 12px;
+}
+
+.quotations-linked-practice-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quotations-linked-practice-card > div,
+.quotations-summary-pills .stack-item,
+.quotations-totals-bar .stack-item {
+  min-width: 0;
+}
+
+.quotations-linked-practice-card > div {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.quotations-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.quotation-field.quote-col-1 { grid-column: span 1; }
+.quotation-field.quote-col-2 { grid-column: span 2; }
+.quotation-field.quote-col-3 { grid-column: span 3; }
+.quotation-field.quote-col-4 { grid-column: 1 / -1; }
+
+.quotations-lines-table input,
+.quotations-lines-table select,
+.quotations-doc-upload-row input,
+.quotations-doc-upload-row select {
+  width: 100%;
+}
+
+.quotations-lines-table input,
+.quotations-lines-table select {
+  min-width: 0;
+  padding: 7px 8px;
+}
+
+.quotations-lines-table th:nth-child(1) { width: 84px; }
+.quotations-lines-table th:nth-child(2) { width: 220px; }
+.quotations-lines-table th:nth-child(3) { width: 120px; }
+.quotations-lines-table th:nth-child(4) { width: 72px; }
+.quotations-lines-table th:nth-child(5) { width: 72px; }
+.quotations-lines-table th:nth-child(6) { width: 160px; }
+.quotations-lines-table th:nth-child(7),
+.quotations-lines-table th:nth-child(8) { width: 96px; }
+.quotations-lines-table th:nth-child(9),
+.quotations-lines-table th:nth-child(10) { width: 78px; }
+.quotations-lines-table th:nth-child(12) { width: 54px; }
+
+.quotations-totals-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.quotations-doc-upload-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.quotations-doc-upload-action {
+  align-items: end;
+}
+
+.quotations-kpis .summary-value,
+.quotations-totals-bar .summary-value {
+  font-size: 22px;
+}
+
+.quotations-list-panel .panel-head,
+.quotations-editor-panel .panel-head,
+.quotations-session-panel .panel-head,
+.quotations-filter-rail .panel-head {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 1200px) {
+  .quotations-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .quotations-form-grid,
+  .quotations-doc-upload-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quotation-field.quote-col-1,
+  .quotation-field.quote-col-2,
+  .quotation-field.quote-col-3 { grid-column: span 1; }
+  .quotation-field.quote-col-4 { grid-column: 1 / -1; }
+}
+
+@media (max-width: 820px) {
+  .quotations-linked-practice-card,
+  .quotations-totals-bar,
+  .quotations-form-grid,
+  .quotations-doc-upload-row {
+    grid-template-columns: 1fr;
+  }
+
+  .quotation-field.quote-col-1,
+  .quotation-field.quote-col-2,
+  .quotation-field.quote-col-3,
+  .quotation-field.quote-col-4 {
+    grid-column: 1 / -1;
+  }
+
+  .quotation-session-chip {
+    min-width: 100%;
+  }
+}
+
+.btn.small {
+  padding: 6px 10px;
+  min-height: 0;
+  font-size: 11px;
+  border-radius: 10px;
 }

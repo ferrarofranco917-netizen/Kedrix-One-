@@ -50,6 +50,7 @@
   const ArrivalNoticeModule = window.KedrixOneArrivalNoticeModule || null;
   const DepartureNoticeModule = window.KedrixOneDepartureNoticeModule || null;
   const RemittanceDocumentsModule = window.KedrixOneRemittanceDocumentsModule || null;
+  const QuotationsModule = window.KedrixOneQuotationsModule || null;
 
   function getMasterDataQuickAdd() {
     return window.KedrixOneMasterDataQuickAdd;
@@ -77,6 +78,9 @@
   }
   if (RemittanceDocumentsModule && typeof RemittanceDocumentsModule.ensureState === 'function') {
     RemittanceDocumentsModule.ensureState(state);
+  }
+  if (QuotationsModule && typeof QuotationsModule.ensureState === 'function') {
+    QuotationsModule.ensureState(state);
   }
 
   function ensurePracticeListState() {
@@ -2181,6 +2185,17 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
+    if (route === 'quotations') {
+      if (!QuotationsModule || typeof QuotationsModule.render !== 'function') {
+        main.innerHTML = Templates.moduleOverview(module, state);
+        return;
+      }
+      QuotationsModule.ensureState?.(state);
+      main.innerHTML = QuotationsModule.render(state, { i18n: I18N, getSelectedPractice: selectedPractice });
+      bindQuotationsEvents();
+      return;
+    }
+
     if (route === 'documents') {
       ensureDocumentPreviewSelection();
       main.innerHTML = Templates.documents(state, module, documentSearchResults());
@@ -2310,6 +2325,19 @@ function renderDocumentPreviewPanel() {
   function bindRemittanceDocumentsEvents() {
     if (!RemittanceDocumentsModule || typeof RemittanceDocumentsModule.bind !== 'function') return;
     RemittanceDocumentsModule.bind({
+      root: main,
+      state,
+      save,
+      render,
+      toast,
+      i18n: I18N,
+      getSelectedPractice: selectedPractice
+    });
+  }
+
+  function bindQuotationsEvents() {
+    if (!QuotationsModule || typeof QuotationsModule.bind !== 'function') return;
+    QuotationsModule.bind({
       root: main,
       state,
       save,

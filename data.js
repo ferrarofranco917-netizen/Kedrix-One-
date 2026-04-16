@@ -89,6 +89,18 @@ window.KedrixOneData = (() => {
         sessions: []
       },
       remittanceDocumentRecords: [],
+      quotationsWorkspace: {
+        activeSessionId: '',
+        sessions: []
+      },
+      quotationRecords: [],
+      quotationsModule: {
+        quickFilter: '',
+        statusFilter: 'all',
+        profileFilter: 'all',
+        clientFilter: '',
+        validOn: ''
+      },
       practiceDuplicateSource: null,
       masterDataModule: {
         activeEntity: 'client',
@@ -186,7 +198,6 @@ window.KedrixOneData = (() => {
             'practices/booking-d-imbarco',
             'practices/notifica-arrivo-merce',
             'practices/notifica-partenza-merce',
-            'practices/rimessa-documenti',
             'crm/indicatori'
           ],
           disabledSubmodules: ['practices/buono-consegna-merce-aerea']

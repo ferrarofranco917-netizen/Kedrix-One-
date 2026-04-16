@@ -89,6 +89,18 @@ window.KedrixOneData = (() => {
         sessions: []
       },
       remittanceDocumentRecords: [],
+      quotationsWorkspace: {
+        activeSessionId: '',
+        sessions: []
+      },
+      quotationRecords: [],
+      quotationsModule: {
+        quickFilter: '',
+        statusFilter: 'all',
+        profileFilter: 'all',
+        clientFilter: '',
+        validOn: ''
+      },
       practiceDuplicateSource: null,
       masterDataModule: {
         activeEntity: 'client',
