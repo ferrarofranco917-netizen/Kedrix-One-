@@ -50,6 +50,7 @@
   const ArrivalNoticeModule = window.KedrixOneArrivalNoticeModule || null;
   const DepartureNoticeModule = window.KedrixOneDepartureNoticeModule || null;
   const RemittanceDocumentsModule = window.KedrixOneRemittanceDocumentsModule || null;
+  const DocumentDispatchCenter = window.KedrixOneDocumentDispatchCenter || null;
   const QuotationsModule = window.KedrixOneQuotationsModule || null;
 
   function getMasterDataQuickAdd() {
@@ -2067,6 +2068,18 @@ function renderDocumentPreviewPanel() {
         render,
         toast,
         i18n: I18N
+      });
+    }
+
+    if (DocumentDispatchCenter && typeof DocumentDispatchCenter.bind === 'function') {
+      DocumentDispatchCenter.ensureState?.(state);
+      DocumentDispatchCenter.bind({
+        state,
+        root: main,
+        save,
+        render,
+        toast,
+        navigate
       });
     }
   }

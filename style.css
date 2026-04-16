@@ -5168,3 +5168,110 @@ body.dialog-open {
     align-items: stretch;
   }
 }
+
+
+.document-dispatch-panel {
+  margin-top: 18px;
+}
+
+.dispatch-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dispatch-filter-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 240px));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.dispatch-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.25fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.dispatch-list {
+  display: grid;
+  gap: 12px;
+  max-height: 720px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.dispatch-entry-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(123, 201, 255, 0.18);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(18, 33, 52, 0.9), rgba(13, 24, 39, 0.96));
+  color: inherit;
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.dispatch-entry-card.active {
+  border-color: rgba(104, 217, 255, 0.58);
+  box-shadow: 0 0 0 1px rgba(104, 217, 255, 0.25) inset;
+}
+
+.dispatch-entry-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.dispatch-entry-meta,
+.dispatch-entry-subject,
+.dispatch-entry-time {
+  font-size: 12px;
+  color: rgba(225, 235, 247, 0.74);
+}
+
+.dispatch-detail {
+  border: 1px solid rgba(123, 201, 255, 0.12);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(11, 19, 31, 0.45);
+}
+
+.dispatch-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.dispatch-edit-grid .field.full {
+  grid-column: 1 / -1;
+}
+
+.dispatch-action-row {
+  margin-top: 14px;
+}
+
+.badge.neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(235, 243, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.badge.success {
+  background: rgba(42, 183, 121, 0.16);
+  color: rgba(152, 255, 215, 0.96);
+  border: 1px solid rgba(42, 183, 121, 0.34);
+}
+
+@media (max-width: 1080px) {
+  .dispatch-kpi-grid,
+  .dispatch-filter-row,
+  .dispatch-layout,
+  .dispatch-edit-grid {
+    grid-template-columns: 1fr;
+  }
+}

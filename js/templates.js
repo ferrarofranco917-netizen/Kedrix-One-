@@ -22,6 +22,7 @@ window.KedrixOneTemplates = (() => {
   const PracticeVerification = window.KedrixOnePracticeVerification;
   const DocumentEngine = window.KedrixOneDocumentEngine;
   const DocumentCompleteness = window.KedrixOneDocumentCompleteness || null;
+  const DocumentDispatchCenter = window.KedrixOneDocumentDispatchCenter || null;
   const DocumentCategories = window.KedrixOneDocumentCategories;
   const PracticeListAnalytics = window.KedrixOnePracticeListAnalytics || null;
   const PracticeListBreakdowns = window.KedrixOnePracticeListBreakdowns || null;
@@ -563,6 +564,9 @@ function documents(state, module, searchResults = []) {
   const activeBundleCompleteness = activeBundle && DocumentCompleteness && typeof DocumentCompleteness.summarizeBundle === 'function'
     ? DocumentCompleteness.summarizeBundle(activeBundle, T)
     : null;
+  const dispatchCenterHtml = DocumentDispatchCenter && typeof DocumentDispatchCenter.renderPanel === 'function'
+    ? DocumentDispatchCenter.renderPanel({ state, i18n: T })
+    : '';
 
   return `
     <section class="hero">
@@ -593,6 +597,8 @@ function documents(state, module, searchResults = []) {
         <div class="kpi-hint">${U.escapeHtml(topTypeEntry ? `${topTypeEntry[1]} ${T.t('ui.documentsWord', 'documenti')}` : T.t('ui.noDocumentsAvailable', 'Nessun documento disponibile'))}</div>
       </article>
     </section>
+
+    ${dispatchCenterHtml}
 
     ${documentReferenceImportHtml}
 

@@ -95,6 +95,11 @@ window.KedrixOneData = (() => {
       },
       quotationRecords: [],
       documentDispatchQueue: [],
+      documentDispatchCenter: {
+        filterStatus: 'all',
+        filterModule: 'all',
+        selectedEntryId: ''
+      },
       quotationsModule: {
         quickFilter: '',
         statusFilter: 'all',

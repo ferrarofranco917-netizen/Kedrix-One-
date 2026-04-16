@@ -682,6 +682,9 @@ window.KedrixOneDepartureNoticeModule = (() => {
         if (!session) return;
         const record = upsertRecord(state, session);
         const payload = buildEmailPayload(session.draft || {}, i18n);
+        const dispatchRecipient = FieldLinks && typeof FieldLinks.resolveDispatchRecipient === 'function'
+          ? FieldLinks.resolveDispatchRecipient({ draft: session.draft || {}, moduleKey: 'departureNotice' })
+          : null;
         if (DocumentOps && typeof DocumentOps.queueAutomaticDispatch === 'function') {
           DocumentOps.queueAutomaticDispatch({
             state,
@@ -691,7 +694,8 @@ window.KedrixOneDepartureNoticeModule = (() => {
             draft: record || session.draft || {},
             subject: payload.subject,
             body: payload.body,
-            recipientLabel: String((session.draft || {}).client || '').trim(),
+            recipientLabel: String(dispatchRecipient?.label || (session.draft || {}).client || '').trim(),
+            moduleLabel: 'Notifica partenza merce',
             save
           });
         }

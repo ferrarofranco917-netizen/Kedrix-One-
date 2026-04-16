@@ -47,6 +47,14 @@ window.KedrixOneModuleFieldLinks = (() => {
     }
   };
 
+
+  const MODULE_RECIPIENT_PRIORITY = {
+    arrivalNotice: ['client', 'consignee', 'importer', 'sender'],
+    departureNotice: ['client', 'consignee', 'importer', 'sender'],
+    remittanceDocuments: ['client', 'consignee', 'sender', 'carrier'],
+    quotations: ['clientName', 'contactPerson', 'carrier']
+  };
+
   function escapeHtml(value) {
     return String(value || '')
       .replaceAll('&', '&amp;')
@@ -133,10 +141,38 @@ window.KedrixOneModuleFieldLinks = (() => {
     return snapshot;
   }
 
+
+  function resolveDispatchRecipient(options = {}) {
+    const { draft = null, moduleKey = '' } = options;
+    if (!draft || typeof draft !== 'object') return null;
+    const priorities = MODULE_RECIPIENT_PRIORITY[moduleKey] || [];
+    const linked = draft.linkedEntities && typeof draft.linkedEntities === 'object' ? draft.linkedEntities : {};
+    for (const fieldName of priorities) {
+      const snapshot = linked[fieldName];
+      if (snapshot && typeof snapshot === 'object') {
+        const label = cleanText(snapshot.displayValue || snapshot.value || snapshot.primary || '');
+        if (label) {
+          return {
+            fieldName,
+            entityKey: cleanText(snapshot.entityKey || ''),
+            recordId: cleanText(snapshot.recordId || ''),
+            label
+          };
+        }
+      }
+      const fallbackLabel = cleanText(draft[fieldName] || '');
+      if (fallbackLabel) {
+        return { fieldName, entityKey: resolveEntityKey(moduleKey, fieldName), recordId: '', label: fallbackLabel };
+      }
+    }
+    return null;
+  }
+
   return {
     getBinding,
     renderDatalist,
     syncDraftField,
-    resolveEntityKey
+    resolveEntityKey,
+    resolveDispatchRecipient
   };
 })();

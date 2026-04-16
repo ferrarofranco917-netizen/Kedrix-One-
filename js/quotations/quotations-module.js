@@ -1079,6 +1079,9 @@ window.KedrixOneQuotationsModule = (() => {
         if (!session) return;
         const record = upsertRecord(state, session);
         const payload = buildEmailPayload(session.draft || {});
+        const dispatchRecipient = FieldLinks && typeof FieldLinks.resolveDispatchRecipient === 'function'
+          ? FieldLinks.resolveDispatchRecipient({ draft: session.draft || {}, moduleKey: 'quotations' })
+          : null;
         if (DocumentOps && typeof DocumentOps.queueAutomaticDispatch === 'function') {
           DocumentOps.queueAutomaticDispatch({
             state,
@@ -1088,7 +1091,8 @@ window.KedrixOneQuotationsModule = (() => {
             draft: record || session.draft || {},
             subject: payload.subject,
             body: payload.body,
-            recipientLabel: String((session.draft || {}).clientName || (session.draft || {}).prospect || '').trim(),
+            recipientLabel: String(dispatchRecipient?.label || (session.draft || {}).clientName || (session.draft || {}).prospect || '').trim(),
+            moduleLabel: 'Quotazioni',
             save
           });
         }

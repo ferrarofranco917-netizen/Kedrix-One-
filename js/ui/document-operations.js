@@ -106,6 +106,7 @@ window.KedrixOneDocumentOps = (() => {
       body: String(body || '').trim(),
       recipient: String(recipient || '').trim(),
       recipientLabel: String(recipientLabel || '').trim(),
+      moduleLabel: String(options.moduleLabel || '').trim(),
       status: 'queued-local-staging',
       queuedAt: new Date().toISOString(),
       sourceDraftSnapshot: draft && typeof draft === 'object' ? JSON.parse(JSON.stringify(draft)) : null

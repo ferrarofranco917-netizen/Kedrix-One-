@@ -704,6 +704,9 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
         if (!session) return;
         const record = upsertRecord(state, session);
         const payload = buildEmailPayload(session.draft || {}, i18n);
+        const dispatchRecipient = FieldLinks && typeof FieldLinks.resolveDispatchRecipient === 'function'
+          ? FieldLinks.resolveDispatchRecipient({ draft: session.draft || {}, moduleKey: 'remittanceDocuments' })
+          : null;
         if (DocumentOps && typeof DocumentOps.queueAutomaticDispatch === 'function') {
           DocumentOps.queueAutomaticDispatch({
             state,
@@ -713,7 +716,8 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
             draft: record || session.draft || {},
             subject: payload.subject,
             body: payload.body,
-            recipientLabel: String((session.draft || {}).client || '').trim(),
+            recipientLabel: String(dispatchRecipient?.label || (session.draft || {}).client || '').trim(),
+            moduleLabel: 'Rimessa documenti',
             save
           });
         }
