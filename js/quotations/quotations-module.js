@@ -4,6 +4,8 @@ window.KedrixOneQuotationsModule = (() => {
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneQuotationsWorkspace || null;
   const Feedback = window.KedrixOneAppFeedback || null;
+  const DocumentOps = window.KedrixOneDocumentOps || null;
+  const FieldLinks = window.KedrixOneModuleFieldLinks || null;
 
   const SERVICE_PROFILES = [
     { value: 'generic', label: 'Generica' },
@@ -338,6 +340,11 @@ window.KedrixOneQuotationsModule = (() => {
     const wrapperClass = `field quotation-field ${fieldClassName}`;
     const id = `qt-${U.escapeHtml(name)}`;
     const attrs = `id="${id}" data-quotation-field="${U.escapeHtml(name)}"${disabled}${readonly}`;
+    const binding = type === 'text' && FieldLinks && typeof FieldLinks.getBinding === 'function'
+      ? FieldLinks.getBinding({ state: options.state, moduleKey: options.moduleKey, fieldName: name })
+      : null;
+    const listAttr = binding ? ` list="${U.escapeHtml(binding.listId)}" autocomplete="off"` : '';
+    const datalist = binding && typeof FieldLinks.renderDatalist === 'function' ? FieldLinks.renderDatalist(binding) : '';
 
     if (type === 'textarea') {
       return `<div class="${wrapperClass}"><label for="${id}">${U.escapeHtml(label)}</label><textarea ${attrs} rows="${rows}" placeholder="${placeholder}">${U.escapeHtml(value || '')}</textarea></div>`;
@@ -352,7 +359,7 @@ window.KedrixOneQuotationsModule = (() => {
       }).join('')}</select></div>`;
     }
 
-    return `<div class="${wrapperClass}"><label for="${id}">${U.escapeHtml(label)}</label><input ${attrs} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}"></div>`;
+    return `<div class="${wrapperClass}"><label for="${id}">${U.escapeHtml(label)}</label><input ${attrs}${listAttr} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}">${datalist}</div>`;
   }
 
   function renderHero(i18n) {
@@ -517,6 +524,7 @@ window.KedrixOneQuotationsModule = (() => {
   }
 
   function renderHeaderTab(state, draft, i18n) {
+    const rf = (label, name, value, options = {}) => renderField(label, name, value, { ...options, state, moduleKey: 'quotations' });
     return `
       <div class="quotations-editor-body">
         ${renderSummaryPills(draft, i18n)}
@@ -536,47 +544,47 @@ window.KedrixOneQuotationsModule = (() => {
         <section class="panel quotations-editor-section">
           <div class="panel-head compact-head"><div><h4 class="panel-title">Testata</h4><p class="panel-subtitle">Identità offerta, validità e soggetti commerciali.</p></div></div>
           <div class="quotations-form-grid">
-            ${renderField('Numero quotazione', 'quoteNumber', draft.quoteNumber, { readonly: true })}
-            ${renderField('Emissione', 'issueDate', draft.issueDate, { type: 'date' })}
-            ${renderField('Valida dal', 'validFrom', draft.validFrom, { type: 'date' })}
-            ${renderField('Valida fino', 'validUntil', draft.validUntil, { type: 'date' })}
-            ${renderField('Stato', 'status', draft.status, { type: 'select', items: STATUS_OPTIONS })}
-            ${renderField('Profilo servizio', 'serviceProfile', draft.serviceProfile, { type: 'select', items: SERVICE_PROFILES })}
-            ${renderField('Movimento', 'movementType', draft.movementType, { type: 'select', items: MOVEMENT_OPTIONS })}
-            ${renderField('Codice', 'code', draft.code)}
-            ${renderField('Descrizione offerta', 'description', draft.description, { full: true })}
-            ${renderField('Cliente', 'clientName', draft.clientName)}
-            ${renderField('Prospect', 'prospect', draft.prospect)}
-            ${renderField('Persona di riferimento', 'contactPerson', draft.contactPerson)}
-            ${renderField('Importatore / Esportatore', 'importerExporter', draft.importerExporter)}
-            ${renderField('Compagnia / Vettore', 'carrier', draft.carrier, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...carrierOptions(state).map((item) => ({ value: item, label: item }))] })}
-            ${renderField('Condizioni di pagamento', 'paymentTerms', draft.paymentTerms, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...paymentTermsOptions().map((item) => ({ value: item, label: item }))] })}
-            ${renderField('Resa', 'incoterm', draft.incoterm, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...incotermOptions(state).map((item) => ({ value: item, label: item }))] })}
+            ${rf('Numero quotazione', 'quoteNumber', draft.quoteNumber, { readonly: true })}
+            ${rf('Emissione', 'issueDate', draft.issueDate, { type: 'date' })}
+            ${rf('Valida dal', 'validFrom', draft.validFrom, { type: 'date' })}
+            ${rf('Valida fino', 'validUntil', draft.validUntil, { type: 'date' })}
+            ${rf('Stato', 'status', draft.status, { type: 'select', items: STATUS_OPTIONS })}
+            ${rf('Profilo servizio', 'serviceProfile', draft.serviceProfile, { type: 'select', items: SERVICE_PROFILES })}
+            ${rf('Movimento', 'movementType', draft.movementType, { type: 'select', items: MOVEMENT_OPTIONS })}
+            ${rf('Codice', 'code', draft.code)}
+            ${rf('Descrizione offerta', 'description', draft.description, { full: true })}
+            ${rf('Cliente', 'clientName', draft.clientName)}
+            ${rf('Prospect', 'prospect', draft.prospect)}
+            ${rf('Persona di riferimento', 'contactPerson', draft.contactPerson)}
+            ${rf('Importatore / Esportatore', 'importerExporter', draft.importerExporter)}
+            ${rf('Compagnia / Vettore', 'carrier', draft.carrier, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...carrierOptions(state).map((item) => ({ value: item, label: item }))] })}
+            ${rf('Condizioni di pagamento', 'paymentTerms', draft.paymentTerms, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...paymentTermsOptions().map((item) => ({ value: item, label: item }))] })}
+            ${rf('Resa', 'incoterm', draft.incoterm, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...incotermOptions(state).map((item) => ({ value: item, label: item }))] })}
           </div>
         </section>
         <section class="panel quotations-editor-section">
           <div class="panel-head compact-head"><div><h4 class="panel-title">Servizio e merce</h4><p class="panel-subtitle">Spazio ottimizzato sulle sole informazioni operative utili alla quotazione.</p></div></div>
           <div class="quotations-form-grid">
-            ${renderField('Origine', 'origin', draft.origin)}
-            ${renderField('Destinazione', 'destination', draft.destination)}
-            ${renderField('Porto / Aeroporto imbarco', 'loadingPort', draft.loadingPort)}
-            ${renderField('Porto / Aeroporto sbarco', 'dischargePort', draft.dischargePort)}
-            ${renderField('Ritiro', 'pickupLocation', draft.pickupLocation)}
-            ${renderField('Consegna', 'deliveryLocation', draft.deliveryLocation)}
-            ${renderField('Tipologia merce', 'goodsType', draft.goodsType, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...goodsTypeOptions().map((item) => ({ value: item, label: item }))] })}
-            ${renderField('Merce pericolosa', 'dangerousGoods', draft.dangerousGoods, { type: 'select', items: [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Sì' }] })}
-            ${renderField('Colli', 'packageCount', draft.packageCount, { type: 'number' })}
-            ${renderField('Tipo colli', 'packageType', draft.packageType)}
-            ${renderField('Dimensioni', 'dimensions', draft.dimensions, { placeholder: 'L x W x H cm' })}
-            ${renderField('Sovrapponibile', 'stackable', draft.stackable, { type: 'select', items: [{ value: 'yes', label: 'Sì' }, { value: 'no', label: 'No' }] })}
-            ${renderField('Peso lordo', 'grossWeight', draft.grossWeight, { type: 'number' })}
-            ${renderField('Peso netto', 'netWeight', draft.netWeight, { type: 'number' })}
-            ${renderField('Volume', 'volume', draft.volume, { type: 'number' })}
-            ${renderField('Peso tassabile', 'chargeableWeight', draft.chargeableWeight, { type: 'number' })}
-            ${renderField('Valore merce', 'cargoValue', draft.cargoValue, { type: 'number' })}
-            ${renderField('Valuta', 'currency', draft.currency, { type: 'select', items: currencies(state).map((item) => ({ value: item, label: item })) })}
-            ${renderField('Nota cliente', 'customerNotes', draft.customerNotes, { type: 'textarea', rows: 4, full: true })}
-            ${renderField('Nota interna', 'internalNotes', draft.internalNotes, { type: 'textarea', rows: 4, full: true })}
+            ${rf('Origine', 'origin', draft.origin)}
+            ${rf('Destinazione', 'destination', draft.destination)}
+            ${rf('Porto / Aeroporto imbarco', 'loadingPort', draft.loadingPort)}
+            ${rf('Porto / Aeroporto sbarco', 'dischargePort', draft.dischargePort)}
+            ${rf('Ritiro', 'pickupLocation', draft.pickupLocation)}
+            ${rf('Consegna', 'deliveryLocation', draft.deliveryLocation)}
+            ${rf('Tipologia merce', 'goodsType', draft.goodsType, { type: 'select', items: [{ value: '', label: 'Seleziona' }, ...goodsTypeOptions().map((item) => ({ value: item, label: item }))] })}
+            ${rf('Merce pericolosa', 'dangerousGoods', draft.dangerousGoods, { type: 'select', items: [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Sì' }] })}
+            ${rf('Colli', 'packageCount', draft.packageCount, { type: 'number' })}
+            ${rf('Tipo colli', 'packageType', draft.packageType)}
+            ${rf('Dimensioni', 'dimensions', draft.dimensions, { placeholder: 'L x W x H cm' })}
+            ${rf('Sovrapponibile', 'stackable', draft.stackable, { type: 'select', items: [{ value: 'yes', label: 'Sì' }, { value: 'no', label: 'No' }] })}
+            ${rf('Peso lordo', 'grossWeight', draft.grossWeight, { type: 'number' })}
+            ${rf('Peso netto', 'netWeight', draft.netWeight, { type: 'number' })}
+            ${rf('Volume', 'volume', draft.volume, { type: 'number' })}
+            ${rf('Peso tassabile', 'chargeableWeight', draft.chargeableWeight, { type: 'number' })}
+            ${rf('Valore merce', 'cargoValue', draft.cargoValue, { type: 'number' })}
+            ${rf('Valuta', 'currency', draft.currency, { type: 'select', items: currencies(state).map((item) => ({ value: item, label: item })) })}
+            ${rf('Nota cliente', 'customerNotes', draft.customerNotes, { type: 'textarea', rows: 4, full: true })}
+            ${rf('Nota interna', 'internalNotes', draft.internalNotes, { type: 'textarea', rows: 4, full: true })}
           </div>
         </section>
       </div>`;
@@ -707,7 +715,7 @@ window.KedrixOneQuotationsModule = (() => {
       </div>`;
   }
 
-  function buildMailtoHref(draft) {
+  function buildEmailPayload(draft) {
     const totals = computeTotals(draft);
     const subject = `Quotazione ${draft.quoteNumber || ''}`.trim();
     const lines = [
@@ -720,7 +728,7 @@ window.KedrixOneQuotationsModule = (() => {
       '',
       draft.customerNotes || ''
     ];
-    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
+    return { subject, body: lines.join('\n') };
   }
 
   function buildPrintableHtml(draft) {
@@ -730,14 +738,12 @@ window.KedrixOneQuotationsModule = (() => {
     return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${U.escapeHtml(draft.quoteNumber || 'Quotazione')}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px;font-size:24px}h2{margin:20px 0 8px;font-size:16px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #cfd4dc;padding:7px;font-size:12px;text-align:left;vertical-align:top}.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}.meta div{border:1px solid #d8dde6;padding:10px}.totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}.totals div{border:1px solid #d8dde6;padding:12px}.notes{margin-top:14px;padding:12px;border:1px solid #d8dde6}</style></head><body><h1>${U.escapeHtml(draft.quoteNumber || 'Quotazione')}</h1><div>${U.escapeHtml(draft.description || '')}</div><div class="meta"><div><strong>Cliente</strong><br>${U.escapeHtml(draft.clientName || draft.prospect || '—')}</div><div><strong>Validità</strong><br>${U.escapeHtml(draft.validFrom || '—')} → ${U.escapeHtml(draft.validUntil || '—')}</div><div><strong>Profilo</strong><br>${U.escapeHtml(profileLabel(draft.serviceProfile))}</div><div><strong>Origine</strong><br>${U.escapeHtml(draft.origin || '—')}</div><div><strong>Destinazione</strong><br>${U.escapeHtml(draft.destination || '—')}</div><div><strong>Resa</strong><br>${U.escapeHtml(draft.incoterm || '—')}</div></div><h2>Dettaglio economico</h2><table><thead><tr><th>Codice</th><th>Descrizione</th><th>Fornitore</th><th>Q.tà</th><th>Costo</th><th>Ricavo</th><th>Valuta</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${U.escapeHtml(row.code || '')}</td><td>${U.escapeHtml(row.description || '')}</td><td>${U.escapeHtml(row.supplier || '')}</td><td>${U.escapeHtml(row.quantity || '')}</td><td>${U.escapeHtml(row.costAmount || '')}</td><td>${U.escapeHtml(row.sellAmount || '')}</td><td>${U.escapeHtml(row.currency || '')}</td></tr>`).join('')}</tbody></table><div class="totals"><div><strong>Totale costi</strong><br>${U.escapeHtml(formatNumber(totals.totalCost))} ${U.escapeHtml(draft.currency || 'EUR')}</div><div><strong>Totale ricavi</strong><br>${U.escapeHtml(formatNumber(totals.totalRevenue))} ${U.escapeHtml(draft.currency || 'EUR')}</div><div><strong>Margine</strong><br>${U.escapeHtml(formatNumber(totals.margin))} ${U.escapeHtml(draft.currency || 'EUR')}</div></div><h2>Documenti</h2><table><thead><tr><th>Titolo</th><th>Categoria</th><th>File</th><th>Nota</th></tr></thead><tbody>${docs.map((doc) => `<tr><td>${U.escapeHtml(doc.title || '')}</td><td>${U.escapeHtml((DOCUMENT_CATEGORY_OPTIONS.find((item) => item.value === doc.category) || {}).label || doc.category || '')}</td><td>${U.escapeHtml(doc.fileName || '')}</td><td>${U.escapeHtml(doc.note || '')}</td></tr>`).join('')}</tbody></table><div class="notes"><strong>Note cliente</strong><br>${U.escapeHtml(draft.customerNotes || '').replace(/\n/g,'<br>')}</div><div class="notes"><strong>Note interne</strong><br>${U.escapeHtml(draft.internalNotes || '').replace(/\n/g,'<br>')}</div></body></html>`;
   }
 
-  function printDraft(draft) {
-    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1200,height=820');
-    if (!popup) return false;
-    popup.document.write(buildPrintableHtml(draft));
-    popup.document.close();
-    popup.focus();
-    popup.print();
-    return true;
+  function printDraft(draft, i18n) {
+    if (!DocumentOps || typeof DocumentOps.openPrintPreview !== 'function') return false;
+    return DocumentOps.openPrintPreview({
+      title: i18n?.t('quotations', 'Quotazioni') || 'Quotazioni',
+      html: buildPrintableHtml(draft)
+    });
   }
 
   async function closeSessionWithGuard(state, sessionId, i18n) {
@@ -774,7 +780,7 @@ window.KedrixOneQuotationsModule = (() => {
           </div>
           <div class="action-row">
             <button class="btn secondary" type="button" data-quotation-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
-            <button class="btn secondary" type="button" data-quotation-email>${U.escapeHtml(i18n?.t('ui.sendEmail', 'Invia email'))}</button>
+            <button class="btn secondary" type="button" data-quotation-save-send>${U.escapeHtml(i18n?.t('ui.saveAndSend', 'Salva e invia'))}</button>
             <button class="btn secondary" type="button" data-quotation-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
             <button class="btn" type="button" data-quotation-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
@@ -984,6 +990,9 @@ window.KedrixOneQuotationsModule = (() => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
         Workspace.setSessionField(state, session.id, field.dataset.quotationField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
+        if (FieldLinks && typeof FieldLinks.syncDraftField === 'function') {
+          FieldLinks.syncDraftField({ state, draft: session.draft, moduleKey: 'quotations', fieldName: field.dataset.quotationField, value: field.value });
+        }
         save?.();
       };
       field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', handler);
@@ -1060,15 +1069,31 @@ window.KedrixOneQuotationsModule = (() => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        printDraft(session.draft || {});
+        printDraft(session.draft || {}, i18n);
       });
     });
 
-    root.querySelectorAll('[data-quotation-email]').forEach((button) => {
+    root.querySelectorAll('[data-quotation-save-send]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        window.location.href = buildMailtoHref(session.draft || {});
+        const record = upsertRecord(state, session);
+        const payload = buildEmailPayload(session.draft || {});
+        if (DocumentOps && typeof DocumentOps.queueAutomaticDispatch === 'function') {
+          DocumentOps.queueAutomaticDispatch({
+            state,
+            moduleKey: 'quotations',
+            documentType: 'quotations',
+            recordId: record?.id || '',
+            draft: record || session.draft || {},
+            subject: payload.subject,
+            body: payload.body,
+            recipientLabel: String((session.draft || {}).clientName || (session.draft || {}).prospect || '').trim(),
+            save
+          });
+        }
+        save?.();
+        render?.();
       });
     });
 

@@ -94,6 +94,7 @@ window.KedrixOneData = (() => {
         sessions: []
       },
       quotationRecords: [],
+      documentDispatchQueue: [],
       quotationsModule: {
         quickFilter: '',
         statusFilter: 'all',
