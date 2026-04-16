@@ -144,7 +144,7 @@ window.KedrixOneDocumentDispatchCenter = (() => {
         <div class="panel-head">
           <div>
             <h3 class="panel-title">${escapeHtml(i18n?.t?.('ui.dispatchCenterTitle', 'Centro invii automatici') || 'Centro invii automatici')}</h3>
-            <p class="panel-subtitle">${escapeHtml(i18n?.t?.('ui.dispatchCenterHint', 'Coda interna Kedrix One per i documenti salvati e inviati senza aprire browser o client email esterni.') || 'Coda interna Kedrix One per i documenti salvati e inviati senza aprire browser o client email esterni.')}</p>
+            <p class="panel-subtitle">${escapeHtml(i18n?.t?.('ui.dispatchCenterHint', 'Coda interna Kedrix One per i documenti salvati e accodati all'invio.') || 'Coda interna Kedrix One per i documenti salvati e accodati all'invio.')}</p>
           </div>
         </div>
         <div class="dispatch-kpi-grid">
@@ -165,7 +165,7 @@ window.KedrixOneDocumentDispatchCenter = (() => {
                   <strong>${escapeHtml(entry.documentReference || entry.recordId || 'Senza riferimento')}</strong>
                   <span class="badge ${getStatusTone(entry.status)}">${escapeHtml(getStatusLabel(entry.status))}</span>
                 </div>
-                <div class="dispatch-entry-meta">${escapeHtml(getModuleLabel(entry.moduleKey))} · ${escapeHtml(entry.recipientLabel || 'Destinatario da definire')}</div>
+                <div class="dispatch-entry-meta">${escapeHtml(getModuleLabel(entry.moduleKey))} · ${escapeHtml(entry.recipientLabel || 'Destinatario da verificare')}</div>
                 <div class="dispatch-entry-subject">${escapeHtml(entry.subject || 'Senza oggetto')}</div>
                 <div class="dispatch-entry-time">${escapeHtml(formatDateTime(entry.queuedAt))}</div>
               </button>

@@ -114,7 +114,7 @@ window.KedrixOneDocumentOps = (() => {
     queue.unshift(entry);
     if (typeof save === 'function') save();
     if (Feedback && typeof Feedback.success === 'function') {
-      Feedback.success('Invio automatico accodato in Kedrix One. Nessun client email esterno aperto.');
+      Feedback.success('Documento salvato e accodato al Centro invii automatici di Kedrix One.');
     }
     return entry;
   }
