@@ -4,8 +4,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneRemittanceDocumentsWorkspace || null;
   const Feedback = window.KedrixOneAppFeedback || null;
-  const DocumentOps = window.KedrixOneDocumentOps || null;
-  const FieldLinks = window.KedrixOneModuleFieldLinks || null;
+  const ModuleFieldLinks = window.KedrixOneModuleFieldLinks || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -25,7 +24,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
   }
 
   function createEmptyDraft(state, overrides = {}) {
-    return Workspace.cloneDraft({
+    const draft = Workspace.cloneDraft({
       editingRecordId: '',
       practiceId: '',
       practiceReference: '',
@@ -54,6 +53,9 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       lineItems: [Workspace.defaultLineItem()],
       ...overrides
     });
+    return ModuleFieldLinks?.seedDraftLinks
+      ? ModuleFieldLinks.seedDraftLinks({ state, moduleKey: 'remittanceDocuments', draft })
+      : draft;
   }
 
   function buildDraftFromPractice(state, practice) {
@@ -135,11 +137,6 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
     const classes = ['field', 'notice-field', `notice-size-${size}`, `notice-field-${String(name || '').trim()}`, `notice-col-${Number.isFinite(span) ? span : 1}`];
     if (options.full || size === 'full') classes.push('full');
     const baseAttrs = `id="rd-${U.escapeHtml(name)}" data-remittance-field="${U.escapeHtml(name)}"${disabled}`;
-    const binding = type === 'text' && FieldLinks && typeof FieldLinks.getBinding === 'function'
-      ? FieldLinks.getBinding({ state: options.state, moduleKey: options.moduleKey, fieldName: name })
-      : null;
-    const listAttr = binding ? ` list="${U.escapeHtml(binding.listId)}" autocomplete="off"` : '';
-    const datalist = binding && typeof FieldLinks.renderDatalist === 'function' ? FieldLinks.renderDatalist(binding) : '';
     if (type === 'textarea') {
       return `<div class="${classes.join(' ')}"><label for="rd-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><textarea ${baseAttrs} rows="${rows}" placeholder="${placeholder}">${U.escapeHtml(value || '')}</textarea></div>`;
     }
@@ -150,7 +147,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
         return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
       }).join('')}</select></div>`;
     }
-    return `<div class="${classes.join(' ')}"><label for="rd-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><input ${baseAttrs}${listAttr} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}">${datalist}</div>`;
+    return `<div class="${classes.join(' ')}"><label for="rd-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><input ${baseAttrs} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}"></div>`;
   }
 
   function renderSessionStrip(state, i18n) {
@@ -285,18 +282,18 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       </section>`;
   }
 
-  function renderGeneralFieldGrid(state, fields, moduleKey, className = 'notice-general-grid') {
-    return `<div class="${U.escapeHtml(className)}">${fields.map((field) => renderField(field.label, field.name, field.value, { ...(field.options || {}), span: field.span || 1, state, moduleKey })).join('')}</div>`;
+  function renderGeneralFieldGrid(fields, className = 'notice-general-grid') {
+    return `<div class="${U.escapeHtml(className)}">${fields.map((field) => renderField(field.label, field.name, field.value, { ...(field.options || {}), span: field.span || 1 })).join('')}</div>`;
   }
 
-  function renderGeneralSection(state, moduleKey, title, hint, fields, options = {}) {
+  function renderGeneralSection(title, hint, fields, options = {}) {
     return `
       <section class="remittance-documents-section ${U.escapeHtml(options.sectionClass || '')}">
         <div class="remittance-documents-section-head">
           <h4>${U.escapeHtml(title)}</h4>
           ${hint ? `<p>${U.escapeHtml(hint)}</p>` : ''}
         </div>
-        ${renderGeneralFieldGrid(state, fields, moduleKey, options.gridClass || 'remittance-documents-general-grid')}
+        ${renderGeneralFieldGrid(fields, options.gridClass || 'remittance-documents-general-grid')}
       </section>`;
   }
 
@@ -320,7 +317,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       </section>`;
   }
 
-  function renderGeneralTab(state, draft, i18n) {
+  function renderGeneralTab(draft, i18n) {
     const identityFields = [
       { label: i18n?.t('ui.generatedNumber', 'Pratica'), name: 'practiceReference', value: draft.practiceReference, options: { disabled: true } },
       { label: i18n?.t('ui.type', 'Tipologia'), name: 'practiceType', value: draft.practiceType, options: { disabled: true } },
@@ -357,22 +354,22 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       ${renderSummaryPills(draft, i18n)}
       <div class="remittance-documents-general-layout">
         ${renderLinkedPracticeCard(draft, i18n)}
-        ${renderGeneralSection(state, 'remittanceDocuments',
+        ${renderGeneralSection(
           i18n?.t('ui.remittanceDocumentsIdentityTitle', 'Identità documento'),
           i18n?.t('ui.remittanceDocumentsIdentityHint', 'Riferimenti chiave della rimessa, operatore e legame con la pratica.'),
           identityFields
         )}
-        ${renderGeneralSection(state, 'remittanceDocuments',
+        ${renderGeneralSection(
           i18n?.t('ui.remittanceDocumentsCounterpartiesTitle', 'Parti e recapiti'),
           i18n?.t('ui.remittanceDocumentsCounterpartiesHint', 'Cliente, mittente, destinatario e soggetto di riferimento per l’invio.'),
           counterpartFields
         )}
-        ${renderGeneralSection(state, 'remittanceDocuments',
+        ${renderGeneralSection(
           i18n?.t('ui.remittanceDocumentsMovementTitle', 'Movimento e trasporto'),
           i18n?.t('ui.remittanceDocumentsMovementHint', 'Nodi logistici e dati di trasporto riusabili per stampa ed email.'),
           movementFields
         )}
-        ${renderGeneralSection(state, 'remittanceDocuments',
+        ${renderGeneralSection(
           i18n?.t('ui.remittanceDocumentsValuesTitle', 'Valori economici'),
           i18n?.t('ui.remittanceDocumentsValuesHint', 'Importo e valuta mantenuti compatti per una lettura desktop enterprise.'),
           valueFields,
@@ -389,7 +386,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       </div>`;
   }
 
-  function buildEmailPayload(draft, i18n) {
+  function buildMailtoHref(draft, i18n) {
     const subject = `${i18n?.t('practices/rimessa-documenti', 'Rimessa documenti')} ${draft.practiceReference || ''}`.trim();
     const lines = [
       `${i18n?.t('ui.generatedNumber', 'Pratica')}: ${draft.practiceReference || '—'}`,
@@ -399,7 +396,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       '',
       draft.customerText || draft.internalText || ''
     ];
-    return { subject, body: lines.join('\n') };
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
   }
 
   function buildPrintableHtml(draft, i18n) {
@@ -408,11 +405,13 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
   }
 
   function printDraft(draft, i18n) {
-    if (!DocumentOps || typeof DocumentOps.openPrintPreview !== 'function') return false;
-    return DocumentOps.openPrintPreview({
-      title: i18n?.t('practices/rimessa-documenti', 'Rimessa documenti') || 'Rimessa documenti',
-      html: buildPrintableHtml(draft, i18n)
-    });
+    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=800');
+    if (!popup) return false;
+    popup.document.write(buildPrintableHtml(draft, i18n));
+    popup.document.close();
+    popup.focus();
+    popup.print();
+    return true;
   }
 
   async function closeSessionWithGuard(state, sessionId, i18n) {
@@ -450,7 +449,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
           </div>
           <div class="action-row">
             <button class="btn secondary" type="button" data-remittance-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
-            <button class="btn secondary" type="button" data-remittance-save-send>${U.escapeHtml(i18n?.t('ui.saveAndSend', 'Salva e invia'))}</button>
+            <button class="btn secondary" type="button" data-remittance-email>${U.escapeHtml(i18n?.t('ui.sendEmail', 'Invia email'))}</button>
             <button class="btn secondary" type="button" data-remittance-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
             <button class="btn" type="button" data-remittance-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
@@ -460,7 +459,7 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
           <button class="tab-chip${activeTab === 'texts' ? ' active' : ''}" type="button" data-remittance-tab="texts">${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</button>
           <button class="tab-chip${activeTab === 'detail' ? ' active' : ''}" type="button" data-remittance-tab="detail">${U.escapeHtml(i18n?.t('ui.detail', 'Dettaglio'))}</button>
         </div>
-        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : activeTab === 'detail' ? renderDetailTable(draft, i18n) : renderGeneralTab(state, draft, i18n)}
+        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : activeTab === 'detail' ? renderDetailTable(draft, i18n) : renderGeneralTab(draft, i18n)}
       </section>`;
   }
 
@@ -642,10 +641,17 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       const handler = () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        Workspace.setSessionField(state, session.id, field.dataset.remittanceField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
-        if (FieldLinks && typeof FieldLinks.syncDraftField === 'function') {
-          FieldLinks.syncDraftField({ state, draft: session.draft, moduleKey: 'remittanceDocuments', fieldName: field.dataset.remittanceField, value: field.value });
+        const updatedSession = Workspace.setSessionField(state, session.id, field.dataset.remittanceField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
+        if (updatedSession && ModuleFieldLinks?.syncDraftField) {
+          ModuleFieldLinks.syncDraftField({
+            state,
+            moduleKey: 'remittanceDocuments',
+            draft: updatedSession.draft,
+            fieldName: field.dataset.remittanceField,
+            value: field.value
+          });
         }
+        ModuleFieldLinks?.enhanceFields?.({ root, state, moduleKey: 'remittanceDocuments', draft: updatedSession?.draft || session.draft });
         save?.();
       };
       field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', handler);
@@ -679,6 +685,13 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
+    ModuleFieldLinks?.enhanceFields?.({
+      root,
+      state,
+      moduleKey: 'remittanceDocuments',
+      draft: Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) })?.draft || null
+    });
+
     root.querySelectorAll('[data-remittance-session-close]').forEach((button) => {
       button.addEventListener('click', async (event) => {
         event.preventDefault();
@@ -698,31 +711,11 @@ window.KedrixOneRemittanceDocumentsModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-remittance-save-send]').forEach((button) => {
+    root.querySelectorAll('[data-remittance-email]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        const record = upsertRecord(state, session);
-        const payload = buildEmailPayload(session.draft || {}, i18n);
-        const dispatchRecipient = FieldLinks && typeof FieldLinks.resolveDispatchRecipient === 'function'
-          ? FieldLinks.resolveDispatchRecipient({ draft: session.draft || {}, moduleKey: 'remittanceDocuments' })
-          : null;
-        if (DocumentOps && typeof DocumentOps.queueAutomaticDispatch === 'function') {
-          DocumentOps.queueAutomaticDispatch({
-            state,
-            moduleKey: 'remittanceDocuments',
-            documentType: 'remittanceDocuments',
-            recordId: record?.id || '',
-            draft: record || session.draft || {},
-            subject: payload.subject,
-            body: payload.body,
-            recipientLabel: String(dispatchRecipient?.label || (session.draft || {}).client || '').trim(),
-            moduleLabel: 'Rimessa documenti',
-            save
-          });
-        }
-        save?.();
-        render?.();
+        window.location.href = buildMailtoHref(session.draft || {}, i18n);
       });
     });
 

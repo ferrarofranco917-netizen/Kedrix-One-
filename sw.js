@@ -1,6 +1,6 @@
 // AQ2R33 cache neutralization for audit phase
-const STATIC_CACHE = 'kedrix-one-stepaq54-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq54-runtime-v1';
+const STATIC_CACHE = 'kedrix-one-stepaq55-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq55-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',
@@ -8,10 +8,7 @@ const STATIC_FILES = [
   './style-density.css',
   './manifest.json',
   './favicon.ico',
-  './brand/kedrix-one-mark.svg',
-  './js/ui/document-operations.js',
-  './js/ui/document-dispatch-center.js',
-  './js/master-data/module-field-links.js'
+  './brand/kedrix-one-mark.svg'
 ];
 
 self.addEventListener('install', (event) => {

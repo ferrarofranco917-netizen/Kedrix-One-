@@ -4,8 +4,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneArrivalNoticeWorkspace || null;
   const Feedback = window.KedrixOneAppFeedback || null;
-  const DocumentOps = window.KedrixOneDocumentOps || null;
-  const FieldLinks = window.KedrixOneModuleFieldLinks || null;
+  const ModuleFieldLinks = window.KedrixOneModuleFieldLinks || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -32,7 +31,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   }
 
   function createEmptyDraft(state, overrides = {}) {
-    return Workspace.cloneDraft({
+    const draft = Workspace.cloneDraft({
       editingRecordId: '',
       practiceId: '',
       practiceReference: '',
@@ -72,6 +71,9 @@ window.KedrixOneArrivalNoticeModule = (() => {
       lineItems: [Workspace.defaultLineItem()],
       ...overrides
     });
+    return ModuleFieldLinks?.seedDraftLinks
+      ? ModuleFieldLinks.seedDraftLinks({ state, moduleKey: 'arrivalNotice', draft })
+      : draft;
   }
 
   function buildDraftFromPractice(state, practice) {
@@ -174,11 +176,6 @@ window.KedrixOneArrivalNoticeModule = (() => {
     const classes = ['field', 'notice-field', `notice-size-${size}`, `notice-field-${String(name || '').trim()}`, `notice-col-${Number.isFinite(span) ? span : 1}`];
     if (options.full || size === 'full') classes.push('full');
     const baseAttrs = `id="an-${U.escapeHtml(name)}" data-arrival-notice-field="${U.escapeHtml(name)}"${disabled}`;
-    const binding = type === 'text' && FieldLinks && typeof FieldLinks.getBinding === 'function'
-      ? FieldLinks.getBinding({ state: options.state, moduleKey: options.moduleKey, fieldName: name })
-      : null;
-    const listAttr = binding ? ` list="${U.escapeHtml(binding.listId)}" autocomplete="off"` : '';
-    const datalist = binding && typeof FieldLinks.renderDatalist === 'function' ? FieldLinks.renderDatalist(binding) : '';
     if (type === 'textarea') {
       return `<div class="${classes.join(' ')}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><textarea ${baseAttrs} rows="${rows}" placeholder="${placeholder}">${U.escapeHtml(value || '')}</textarea></div>`;
     }
@@ -189,7 +186,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
         return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
       }).join('')}</select></div>`;
     }
-    return `<div class="${classes.join(' ')}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><input ${baseAttrs}${listAttr} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}">${datalist}</div>`;
+    return `<div class="${classes.join(' ')}"><label for="an-${U.escapeHtml(name)}">${U.escapeHtml(label)}</label><input ${baseAttrs} type="${U.escapeHtml(type)}" value="${U.escapeHtml(value || '')}" placeholder="${placeholder}"></div>`;
   }
 
   function renderSessionStrip(state, i18n) {
@@ -315,11 +312,11 @@ window.KedrixOneArrivalNoticeModule = (() => {
       </section>`;
   }
 
-  function renderGeneralFieldGrid(state, fields, moduleKey) {
-    return `<div class=\"notice-general-grid\">${fields.map((field) => renderField(field.label, field.name, field.value, { ...(field.options || {}), span: field.span || 1, state, moduleKey })).join('')}</div>`;
+  function renderGeneralFieldGrid(fields) {
+    return `<div class="notice-general-grid">${fields.map((field) => renderField(field.label, field.name, field.value, { ...(field.options || {}), span: field.span || 1 })).join('')}</div>`;
   }
 
-  function renderGeneralTab(state, draft, i18n) {
+  function renderGeneralTab(draft, i18n) {
     const fields = [
       { label: i18n?.t('ui.generatedNumber', 'Pratica'), name: 'practiceReference', value: draft.practiceReference, options: { disabled: true } },
       { label: i18n?.t('ui.clientRequired', 'Cliente'), name: 'client', value: draft.client },
@@ -354,7 +351,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
     ];
     return `
       ${renderSummaryPills(draft, i18n)}
-      ${renderGeneralFieldGrid(state, fields, 'arrivalNotice')}
+      ${renderGeneralFieldGrid(fields)}
       ${renderLineTable(draft, i18n)}`;
   }
 
@@ -367,7 +364,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   }
 
 
-  function buildEmailPayload(draft, i18n) {
+  function buildMailtoHref(draft, i18n) {
     const subject = `${i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce')} ${draft.practiceReference || ''}`.trim();
     const lines = [
       `${i18n?.t('ui.generatedNumber', 'Pratica')}: ${draft.practiceReference || '—'}`,
@@ -379,7 +376,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
       '',
       draft.customerText || draft.internalText || ''
     ];
-    return { subject, body: lines.join('\n') };
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
   }
 
   function buildPrintableHtml(draft, i18n) {
@@ -388,11 +385,13 @@ window.KedrixOneArrivalNoticeModule = (() => {
   }
 
   function printDraft(draft, i18n) {
-    if (!DocumentOps || typeof DocumentOps.openPrintPreview !== 'function') return false;
-    return DocumentOps.openPrintPreview({
-      title: i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce') || 'Notifica arrivo merce',
-      html: buildPrintableHtml(draft, i18n)
-    });
+    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=800');
+    if (!popup) return false;
+    popup.document.write(buildPrintableHtml(draft, i18n));
+    popup.document.close();
+    popup.focus();
+    popup.print();
+    return true;
   }
 
   async function closeSessionWithGuard(state, sessionId, i18n) {
@@ -428,7 +427,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
           </div>
           <div class="action-row">
             <button class="btn secondary" type="button" data-arrival-notice-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
-            <button class="btn secondary" type="button" data-arrival-notice-save-send>${U.escapeHtml(i18n?.t('ui.saveAndSend', 'Salva e invia'))}</button>
+            <button class="btn secondary" type="button" data-arrival-notice-email>${U.escapeHtml(i18n?.t('ui.sendEmail', 'Invia email'))}</button>
             <button class="btn secondary" type="button" data-arrival-notice-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
             <button class="btn" type="button" data-arrival-notice-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
@@ -437,7 +436,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
           <button class="tab-chip${activeTab === 'general' ? ' active' : ''}" type="button" data-arrival-notice-tab="general">${U.escapeHtml(i18n?.t('ui.general', 'Generale'))}</button>
           <button class="tab-chip${activeTab === 'texts' ? ' active' : ''}" type="button" data-arrival-notice-tab="texts">${U.escapeHtml(i18n?.t('ui.texts', 'Testi'))}</button>
         </div>
-        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : renderGeneralTab(state, draft, i18n)}
+        ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : renderGeneralTab(draft, i18n)}
       </section>`;
   }
 
@@ -619,10 +618,17 @@ window.KedrixOneArrivalNoticeModule = (() => {
       const handler = () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        Workspace.setSessionField(state, session.id, field.dataset.arrivalNoticeField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
-        if (FieldLinks && typeof FieldLinks.syncDraftField === 'function') {
-          FieldLinks.syncDraftField({ state, draft: session.draft, moduleKey: 'arrivalNotice', fieldName: field.dataset.arrivalNoticeField, value: field.value });
+        const updatedSession = Workspace.setSessionField(state, session.id, field.dataset.arrivalNoticeField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
+        if (updatedSession && ModuleFieldLinks?.syncDraftField) {
+          ModuleFieldLinks.syncDraftField({
+            state,
+            moduleKey: 'arrivalNotice',
+            draft: updatedSession.draft,
+            fieldName: field.dataset.arrivalNoticeField,
+            value: field.value
+          });
         }
+        ModuleFieldLinks?.enhanceFields?.({ root, state, moduleKey: 'arrivalNotice', draft: updatedSession?.draft || session.draft });
         save?.();
       };
       field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', handler);
@@ -657,6 +663,13 @@ window.KedrixOneArrivalNoticeModule = (() => {
     });
 
 
+    ModuleFieldLinks?.enhanceFields?.({
+      root,
+      state,
+      moduleKey: 'arrivalNotice',
+      draft: Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) })?.draft || null
+    });
+
     root.querySelectorAll('[data-arrival-notice-session-close]').forEach((button) => {
       button.addEventListener('click', async (event) => {
         event.preventDefault();
@@ -676,31 +689,11 @@ window.KedrixOneArrivalNoticeModule = (() => {
       });
     });
 
-    root.querySelectorAll('[data-arrival-notice-save-send]').forEach((button) => {
+    root.querySelectorAll('[data-arrival-notice-email]').forEach((button) => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        const record = upsertRecord(state, session);
-        const payload = buildEmailPayload(session.draft || {}, i18n);
-        const dispatchRecipient = FieldLinks && typeof FieldLinks.resolveDispatchRecipient === 'function'
-          ? FieldLinks.resolveDispatchRecipient({ draft: session.draft || {}, moduleKey: 'arrivalNotice' })
-          : null;
-        if (DocumentOps && typeof DocumentOps.queueAutomaticDispatch === 'function') {
-          DocumentOps.queueAutomaticDispatch({
-            state,
-            moduleKey: 'arrivalNotice',
-            documentType: 'arrivalNotice',
-            recordId: record?.id || '',
-            draft: record || session.draft || {},
-            subject: payload.subject,
-            body: payload.body,
-            recipientLabel: String(dispatchRecipient?.label || (session.draft || {}).client || '').trim(),
-            moduleLabel: 'Notifica arrivo merce',
-            save
-          });
-        }
-        save?.();
-        render?.();
+        window.location.href = buildMailtoHref(session.draft || {}, i18n);
       });
     });
 
