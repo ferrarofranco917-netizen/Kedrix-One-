@@ -1,315 +1,227 @@
 window.KedrixOneQuotationsWorkspace = (() => {
   'use strict';
 
-  function nowIso() {
-    return new Date().toISOString();
+  function clone(value) {
+    if (typeof window !== 'undefined' && typeof window.structuredClone === 'function') {
+      return window.structuredClone(value);
+    }
+    return JSON.parse(JSON.stringify(value));
   }
 
-  function nextSessionId() {
-    return `qt-session-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  function today() {
+    return new Date().toISOString().slice(0, 10);
   }
 
-  function nextEntityId(prefix = 'qt') {
-    return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  function buildSessionId() {
+    return `quot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
   function defaultLineItem(overrides = {}) {
     return {
-      id: nextEntityId('qt-line'),
+      id: `qli-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       code: '',
       description: '',
-      calculationType: 'fixed',
+      calcType: 'fixed',
       quantity: '1',
-      unit: 'lot',
+      unit: 'flat',
       supplier: '',
-      costAmount: '',
-      sellAmount: '',
+      cost: '',
+      revenue: '',
       currency: 'EUR',
       vat: '22',
-      note: '',
+      notes: '',
       ...overrides
     };
   }
 
-  function defaultDocument(overrides = {}) {
+  function defaultAttachment(overrides = {}) {
     return {
-      id: nextEntityId('qt-doc'),
+      id: `qad-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       title: '',
       category: 'quotation',
       fileName: '',
-      fileSize: '',
-      uploadedAt: nowIso(),
       note: '',
       ...overrides
     };
   }
 
-  function cloneDraft(draft = {}) {
-    return {
-      editingRecordId: '',
-      quoteNumber: '',
-      linkedPracticeId: '',
-      linkedPracticeReference: '',
-      linkedPracticeType: '',
-      status: 'draft',
-      serviceProfile: 'generic',
-      movementType: 'export',
-      description: '',
-      code: '',
-      issueDate: new Date().toISOString().slice(0, 10),
-      validFrom: new Date().toISOString().slice(0, 10),
-      validUntil: '',
-      clientId: '',
-      clientName: '',
-      prospect: '',
-      contactPerson: '',
-      importerExporter: '',
-      carrier: '',
-      paymentTerms: '',
-      incoterm: '',
-      origin: '',
-      destination: '',
-      loadingPort: '',
-      dischargePort: '',
-      pickupLocation: '',
-      deliveryLocation: '',
-      goodsType: '',
-      dangerousGoods: 'no',
-      packageCount: '',
-      packageType: '',
-      dimensions: '',
-      stackable: 'yes',
-      grossWeight: '',
-      netWeight: '',
-      volume: '',
-      chargeableWeight: '',
-      cargoValue: '',
-      currency: 'EUR',
-      customerNotes: '',
-      internalNotes: '',
-      lineItems: [defaultLineItem()],
-      documents: [],
-      createdAt: '',
-      updatedAt: '',
-      ...draft,
-      lineItems: Array.isArray(draft?.lineItems) && draft.lineItems.length
-        ? draft.lineItems.map((item) => defaultLineItem(item))
-        : [defaultLineItem()],
-      documents: Array.isArray(draft?.documents)
-        ? draft.documents.map((item) => defaultDocument(item))
-        : []
-    };
-  }
-
-  function signatureOf(draft = {}) {
-    try {
-      return JSON.stringify(cloneDraft(draft));
-    } catch (error) {
-      return '';
-    }
-  }
-
-  function normalizeSession(session = {}, createEmptyDraft) {
-    const draft = cloneDraft(session?.draft && typeof session.draft === 'object'
-      ? session.draft
-      : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : {}));
-    const currentSignature = signatureOf(draft);
-    const savedSignature = String(session?.lastSavedDraftSignature || '').trim() || (Boolean(session?.isDirty) ? '' : currentSignature);
-    return {
-      id: String(session?.id || '').trim() || nextSessionId(),
-      source: String(session?.source || '').trim() || 'manual',
-      openedAt: session?.openedAt || nowIso(),
-      lastTouchedAt: session?.lastTouchedAt || session?.openedAt || nowIso(),
-      isDirty: Boolean(session?.isDirty),
-      lastSavedDraftSignature: savedSignature,
-      uiState: {
-        tab: String(session?.uiState?.tab || 'header').trim() || 'header'
-      },
-      draft
-    };
+  function cloneDraft(draft) {
+    return clone(draft || {});
   }
 
   function ensureState(state, options = {}) {
-    if (!state || typeof state !== 'object') return null;
-    const { createEmptyDraft } = options;
     if (!state.quotationsWorkspace || typeof state.quotationsWorkspace !== 'object') {
       state.quotationsWorkspace = { activeSessionId: '', sessions: [] };
     }
+    if (!Array.isArray(state.quotationsWorkspace.sessions)) state.quotationsWorkspace.sessions = [];
     if (!Array.isArray(state.quotationRecords)) state.quotationRecords = [];
-    if (!state.quotationsModule || typeof state.quotationsModule !== 'object') {
-      state.quotationsModule = {
-        quickFilter: '',
-        statusFilter: 'all',
-        profileFilter: 'all',
-        clientFilter: '',
-        validOn: ''
-      };
+    if (!state.quotationFilters || typeof state.quotationFilters !== 'object') {
+      state.quotationFilters = { quick: '', serviceProfile: 'all', status: 'all' };
     }
-    const workspace = state.quotationsWorkspace;
-    workspace.sessions = Array.isArray(workspace.sessions)
-      ? workspace.sessions.map((session) => normalizeSession(session, createEmptyDraft))
-      : [];
-    if (!workspace.sessions.length) {
-      workspace.activeSessionId = '';
-      return workspace;
+    if (!state.quotationDispatchQueue || !Array.isArray(state.quotationDispatchQueue)) {
+      state.quotationDispatchQueue = [];
     }
-    const activeExists = workspace.sessions.some((session) => session.id === workspace.activeSessionId);
-    if (!activeExists) workspace.activeSessionId = workspace.sessions[0].id;
-    return workspace;
+    if (!state.quotationsWorkspace.activeSessionId && state.quotationsWorkspace.sessions.length) {
+      state.quotationsWorkspace.activeSessionId = String(state.quotationsWorkspace.sessions[0].id || '').trim();
+    }
+    return state.quotationsWorkspace;
   }
 
-  function listSessions(state, options = {}) {
-    const workspace = ensureState(state, options);
-    return workspace ? [...workspace.sessions] : [];
+  function listSessions(state) {
+    ensureState(state);
+    return state.quotationsWorkspace.sessions;
   }
 
-  function getActiveSession(state, options = {}) {
-    const workspace = ensureState(state, options);
-    if (!workspace) return null;
-    if (!workspace.activeSessionId) return workspace.sessions[0] || null;
-    return workspace.sessions.find((session) => session.id === workspace.activeSessionId) || workspace.sessions[0] || null;
+  function getSession(state, sessionId = '') {
+    ensureState(state);
+    const target = String(sessionId || state.quotationsWorkspace.activeSessionId || '').trim();
+    return state.quotationsWorkspace.sessions.find((entry) => String(entry?.id || '').trim() === target) || null;
   }
 
-  function findSession(state, sessionId, options = {}) {
-    const workspace = ensureState(state, options);
-    if (!workspace || !sessionId) return null;
-    return workspace.sessions.find((session) => session.id === sessionId) || null;
+  function getActiveSession(state) {
+    return getSession(state, state?.quotationsWorkspace?.activeSessionId || '');
   }
 
-  function touchSession(session) {
-    if (!session) return session;
-    session.lastTouchedAt = nowIso();
+  function openSession(state, draft, options = {}) {
+    ensureState(state);
+    const id = String(options.id || buildSessionId()).trim();
+    const session = {
+      id,
+      tab: String(options.tab || 'testata').trim() || 'testata',
+      isDirty: Boolean(options.isDirty),
+      draft: cloneDraft(draft)
+    };
+    state.quotationsWorkspace.sessions.unshift(session);
+    state.quotationsWorkspace.activeSessionId = id;
     return session;
   }
 
-  function openDraftSession(state, options = {}) {
-    const { draft, source = 'manual', createEmptyDraft, isDirty = true, tab = 'header' } = options;
-    const workspace = ensureState(state, { createEmptyDraft });
-    if (!workspace) return null;
-    const session = normalizeSession({
-      id: nextSessionId(),
-      source,
-      openedAt: nowIso(),
-      lastTouchedAt: nowIso(),
-      isDirty,
-      uiState: { tab },
-      draft: draft && typeof draft === 'object' ? draft : (typeof createEmptyDraft === 'function' ? createEmptyDraft() : {})
-    }, createEmptyDraft);
-    workspace.sessions = [session, ...workspace.sessions];
-    workspace.activeSessionId = session.id;
+  function switchSession(state, sessionId) {
+    ensureState(state);
+    const target = String(sessionId || '').trim();
+    const exists = state.quotationsWorkspace.sessions.some((entry) => String(entry?.id || '').trim() == target);
+    if (exists) state.quotationsWorkspace.activeSessionId = target;
+    return getActiveSession(state);
+  }
+
+  function closeSession(state, sessionId) {
+    ensureState(state);
+    const target = String(sessionId || '').trim();
+    state.quotationsWorkspace.sessions = state.quotationsWorkspace.sessions.filter((entry) => String(entry?.id || '').trim() !== target);
+    if (String(state.quotationsWorkspace.activeSessionId || '').trim() === target) {
+      state.quotationsWorkspace.activeSessionId = state.quotationsWorkspace.sessions[0] ? String(state.quotationsWorkspace.sessions[0].id || '').trim() : '';
+    }
+  }
+
+  function replaceSessionDraft(state, sessionId, draft, options = {}) {
+    const session = getSession(state, sessionId);
+    if (!session) return null;
+    session.draft = cloneDraft(draft);
+    if (Object.prototype.hasOwnProperty.call(options, 'isDirty')) {
+      session.isDirty = Boolean(options.isDirty);
+    }
+    if (options.tab) session.tab = String(options.tab).trim() || session.tab;
     return session;
   }
 
-  function openRecordSession(state, record, options = {}) {
-    const { createEmptyDraft, tab = 'header' } = options;
-    if (!record || typeof record !== 'object') return null;
-    const workspace = ensureState(state, { createEmptyDraft });
-    if (!workspace) return null;
-    const recordId = String(record.id || '').trim();
-    const existing = workspace.sessions.find((session) => String(session?.draft?.editingRecordId || '').trim() === recordId) || null;
-    if (existing) {
-      existing.draft = cloneDraft(record);
-      existing.isDirty = false;
-      existing.lastSavedDraftSignature = signatureOf(existing.draft);
-      existing.uiState = { ...(existing.uiState || {}), tab };
-      workspace.activeSessionId = existing.id;
-      touchSession(existing);
-      return existing;
-    }
-    return openDraftSession(state, {
-      draft: cloneDraft(record),
-      source: 'record',
-      createEmptyDraft,
-      isDirty: false,
-      tab
+  function updateField(state, sessionId, fieldName, value) {
+    const session = getSession(state, sessionId);
+    if (!session) return null;
+    session.draft[fieldName] = value;
+    session.isDirty = true;
+    return session.draft;
+  }
+
+  function setTab(state, sessionId, tabKey) {
+    const session = getSession(state, sessionId);
+    if (!session) return null;
+    session.tab = String(tabKey || 'testata').trim() || 'testata';
+    return session.tab;
+  }
+
+  function nextQuotationNumber(state) {
+    ensureState(state);
+    const year = new Date().getFullYear();
+    let maxNumber = 0;
+    state.quotationRecords.forEach((record) => {
+      const match = String(record?.quotationNumber || '').match(/Q-(\d{4})-(\d{4})/);
+      if (match && Number(match[1]) === year) {
+        maxNumber = Math.max(maxNumber, Number(match[2] || 0));
+      }
     });
+    return `Q-${year}-${String(maxNumber + 1).padStart(4, '0')}`;
   }
 
-  function switchSession(state, sessionId, options = {}) {
-    const workspace = ensureState(state, options);
-    if (!workspace) return null;
-    if (!workspace.sessions.some((session) => session.id === sessionId)) return getActiveSession(state, options);
-    workspace.activeSessionId = sessionId;
-    return getActiveSession(state, options);
-  }
-
-  function setSessionField(state, sessionId, fieldName, value, options = {}) {
-    const session = findSession(state, sessionId, options);
+  function saveRecord(state, sessionId, meta = {}) {
+    ensureState(state);
+    const session = getSession(state, sessionId);
     if (!session) return null;
-    session.draft = cloneDraft({ ...session.draft, [fieldName]: value });
-    session.isDirty = true;
-    touchSession(session);
-    return session;
-  }
-
-  function updateSessionDraft(state, sessionId, updater, options = {}) {
-    const session = findSession(state, sessionId, options);
-    if (!session || typeof updater !== 'function') return null;
-    const nextDraft = updater(cloneDraft(session.draft));
-    session.draft = cloneDraft(nextDraft);
-    session.isDirty = true;
-    touchSession(session);
-    return session;
-  }
-
-  function hasSessionUnsavedChanges(state, sessionId, options = {}) {
-    const session = findSession(state, sessionId, options);
-    if (!session) return false;
-    if (!session.isDirty) return false;
-    const currentSignature = signatureOf(session.draft);
-    const savedSignature = String(session.lastSavedDraftSignature || '').trim();
-    if (savedSignature && currentSignature === savedSignature) {
-      session.isDirty = false;
-      touchSession(session);
-      return false;
+    const draft = cloneDraft(session.draft || {});
+    const now = new Date().toISOString();
+    const recordId = String(draft.editingRecordId || '').trim() || `QREC-${Date.now()}`;
+    if (!draft.quotationNumber) {
+      draft.quotationNumber = nextQuotationNumber(state);
     }
-    return true;
-  }
-
-  function setSessionTab(state, sessionId, tab, options = {}) {
-    const session = findSession(state, sessionId, options);
-    if (!session) return null;
-    session.uiState = { ...(session.uiState || {}), tab: String(tab || 'header').trim() || 'header' };
-    touchSession(session);
-    return session;
-  }
-
-  function markSessionSaved(state, sessionId, options = {}) {
-    const session = findSession(state, sessionId, options);
-    if (!session) return null;
-    session.lastSavedDraftSignature = signatureOf(session.draft);
+    const existingIndex = state.quotationRecords.findIndex((entry) => String(entry?.id || '').trim() === recordId);
+    const createdAt = existingIndex >= 0
+      ? state.quotationRecords[existingIndex].createdAt
+      : now;
+    const record = {
+      id: recordId,
+      quotationNumber: String(draft.quotationNumber || '').trim(),
+      status: String(draft.status || 'draft').trim() || 'draft',
+      serviceProfile: String(draft.serviceProfile || 'generic').trim() || 'generic',
+      title: String(draft.title || '').trim(),
+      client: String(draft.client || '').trim(),
+      validFrom: String(draft.validFrom || '').trim(),
+      validTo: String(draft.validTo || '').trim(),
+      practiceId: String(draft.practiceId || '').trim(),
+      practiceReference: String(draft.practiceReference || '').trim(),
+      createdAt,
+      updatedAt: now,
+      updatedBy: String(meta.updatedBy || '').trim(),
+      draft
+    };
+    if (existingIndex >= 0) state.quotationRecords[existingIndex] = record;
+    else state.quotationRecords.unshift(record);
+    session.draft.editingRecordId = recordId;
+    session.draft.quotationNumber = record.quotationNumber;
     session.isDirty = false;
-    touchSession(session);
-    return session;
+    return record;
   }
 
-  function closeSession(state, sessionId, options = {}) {
-    const workspace = ensureState(state, options);
-    if (!workspace) return false;
-    const before = workspace.sessions.length;
-    workspace.sessions = workspace.sessions.filter((session) => session.id !== sessionId);
-    if (workspace.activeSessionId === sessionId) {
-      workspace.activeSessionId = workspace.sessions[0]?.id || '';
-    }
-    return workspace.sessions.length !== before;
+  function queueDispatch(state, record, options = {}) {
+    ensureState(state);
+    const entry = {
+      id: `QDIS-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      moduleKey: 'quotations',
+      recordId: String(record?.id || '').trim(),
+      quotationNumber: String(record?.quotationNumber || '').trim(),
+      recipient: String(options.recipient || record?.client || '').trim(),
+      status: 'queued',
+      queuedAt: new Date().toISOString()
+    };
+    state.quotationDispatchQueue.unshift(entry);
+    return entry;
   }
 
   return {
-    defaultLineItem,
-    defaultDocument,
     cloneDraft,
+    defaultLineItem,
+    defaultAttachment,
     ensureState,
     listSessions,
+    getSession,
     getActiveSession,
-    findSession,
-    openDraftSession,
-    openRecordSession,
+    openSession,
     switchSession,
-    setSessionField,
-    updateSessionDraft,
-    hasSessionUnsavedChanges,
-    setSessionTab,
-    markSessionSaved,
-    closeSession
+    closeSession,
+    replaceSessionDraft,
+    updateField,
+    setTab,
+    nextQuotationNumber,
+    saveRecord,
+    queueDispatch,
+    today
   };
 })();

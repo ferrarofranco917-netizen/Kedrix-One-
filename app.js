@@ -50,7 +50,6 @@
   const ArrivalNoticeModule = window.KedrixOneArrivalNoticeModule || null;
   const DepartureNoticeModule = window.KedrixOneDepartureNoticeModule || null;
   const RemittanceDocumentsModule = window.KedrixOneRemittanceDocumentsModule || null;
-  const DocumentDispatchCenter = window.KedrixOneDocumentDispatchCenter || null;
   const QuotationsModule = window.KedrixOneQuotationsModule || null;
 
   function getMasterDataQuickAdd() {
@@ -79,9 +78,6 @@
   }
   if (RemittanceDocumentsModule && typeof RemittanceDocumentsModule.ensureState === 'function') {
     RemittanceDocumentsModule.ensureState(state);
-  }
-  if (QuotationsModule && typeof QuotationsModule.ensureState === 'function') {
-    QuotationsModule.ensureState(state);
   }
 
   function ensurePracticeListState() {
@@ -2070,18 +2066,6 @@ function renderDocumentPreviewPanel() {
         i18n: I18N
       });
     }
-
-    if (DocumentDispatchCenter && typeof DocumentDispatchCenter.bind === 'function') {
-      DocumentDispatchCenter.ensureState?.(state);
-      DocumentDispatchCenter.bind({
-        state,
-        root: main,
-        save,
-        render,
-        toast,
-        navigate
-      });
-    }
   }
 
   function renderSidebar() {
@@ -2205,7 +2189,7 @@ function renderDocumentPreviewPanel() {
       }
       QuotationsModule.ensureState?.(state);
       main.innerHTML = QuotationsModule.render(state, { i18n: I18N, getSelectedPractice: selectedPractice });
-      bindQuotationsEvents();
+      bindQuotationEvents();
       return;
     }
 
@@ -2335,9 +2319,10 @@ function renderDocumentPreviewPanel() {
     });
   }
 
-  function bindRemittanceDocumentsEvents() {
-    if (!RemittanceDocumentsModule || typeof RemittanceDocumentsModule.bind !== 'function') return;
-    RemittanceDocumentsModule.bind({
+
+  function bindQuotationEvents() {
+    if (!QuotationsModule || typeof QuotationsModule.bind !== 'function') return;
+    QuotationsModule.bind({
       root: main,
       state,
       save,
@@ -2348,9 +2333,9 @@ function renderDocumentPreviewPanel() {
     });
   }
 
-  function bindQuotationsEvents() {
-    if (!QuotationsModule || typeof QuotationsModule.bind !== 'function') return;
-    QuotationsModule.bind({
+  function bindRemittanceDocumentsEvents() {
+    if (!RemittanceDocumentsModule || typeof RemittanceDocumentsModule.bind !== 'function') return;
+    RemittanceDocumentsModule.bind({
       root: main,
       state,
       save,

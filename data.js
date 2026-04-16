@@ -94,18 +94,11 @@ window.KedrixOneData = (() => {
         sessions: []
       },
       quotationRecords: [],
-      documentDispatchQueue: [],
-      documentDispatchCenter: {
-        filterStatus: 'all',
-        filterModule: 'all',
-        selectedEntryId: ''
-      },
-      quotationsModule: {
-        quickFilter: '',
-        statusFilter: 'all',
-        profileFilter: 'all',
-        clientFilter: '',
-        validOn: ''
+      quotationDispatchQueue: [],
+      quotationFilters: {
+        quick: '',
+        serviceProfile: 'all',
+        status: 'all'
       },
       practiceDuplicateSource: null,
       masterDataModule: {
@@ -204,6 +197,7 @@ window.KedrixOneData = (() => {
             'practices/booking-d-imbarco',
             'practices/notifica-arrivo-merce',
             'practices/notifica-partenza-merce',
+            'practices/rimessa-documenti',
             'crm/indicatori'
           ],
           disabledSubmodules: ['practices/buono-consegna-merce-aerea']
