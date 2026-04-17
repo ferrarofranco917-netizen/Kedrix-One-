@@ -4,10 +4,6 @@ window.KedrixOneMasterDataOverview = (() => {
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const LogisticsArchives = window.KedrixOneLogisticsArchives || null;
 
-  function getSupplierPriceLists() {
-    return window.KedrixOneSupplierPriceLists || null;
-  }
-
   const GROUPS = [
     {
       key: 'crm',
@@ -103,13 +99,6 @@ window.KedrixOneMasterDataOverview = (() => {
       const tone = item.count > 0 ? 'success' : 'default';
       return `<span class="master-data-overview-chip ${tone}">${escapeHtml(item.label)} · ${escapeHtml(item.count)}</span>`;
     }).join('');
-    const SupplierPriceLists = getSupplierPriceLists();
-    const supplierPriceMeta = group.key === 'quotes' && SupplierPriceLists && typeof SupplierPriceLists.getOverviewMeta === 'function'
-      ? SupplierPriceLists.getOverviewMeta(state)
-      : null;
-    const supplierPriceHtml = supplierPriceMeta
-      ? `<div class="master-data-overview-inline-meta">${escapeHtml(t(i18n, 'ui.masterDataSupplierPriceListOverviewInline', 'Listini attivi'))}: <strong>${escapeHtml(supplierPriceMeta.activeRecords)}</strong> · ${escapeHtml(t(i18n, 'ui.masterDataSupplierPriceListCoverage', 'fornitori coperti'))}: <strong>${escapeHtml(supplierPriceMeta.supplierCoverage)}</strong></div>`
-      : '';
     return `
       <article class="master-data-overview-card level-${escapeHtml(coverage.level)}">
         <div class="master-data-overview-head">
@@ -124,7 +113,6 @@ window.KedrixOneMasterDataOverview = (() => {
           <strong>${escapeHtml(coverage.totalRecords)}</strong>
           <span>${escapeHtml(t(i18n, 'ui.masterDataOverviewRecords', 'schede strutturate'))}</span>
         </div>
-        ${supplierPriceHtml}
         <div class="master-data-overview-meta">${escapeHtml(`${coverage.readyFamilies}/${coverage.totalFamilies}`)} ${escapeHtml(t(i18n, 'ui.masterDataOverviewFamiliesReady', 'famiglie attive'))}</div>
         <div class="master-data-overview-chips">${familyChips}</div>
       </article>`;
@@ -136,31 +124,17 @@ window.KedrixOneMasterDataOverview = (() => {
       : {};
     const def = defs[activeEntity];
     if (!def) return '';
-    const SupplierPriceLists = getSupplierPriceLists();
-    const customDescriptor = activeEntity === 'supplierPriceList' && SupplierPriceLists && typeof SupplierPriceLists.describeActiveFamily === 'function'
-      ? SupplierPriceLists.describeActiveFamily(i18n)
-      : null;
     const count = listCount(state, activeEntity);
     const structured = Boolean(def.structured);
-    const title = customDescriptor
-      ? customDescriptor.title
-      : (structured
-        ? t(i18n, 'ui.masterDataOverviewActiveStructuredTitle', 'Scheda entità completa')
-        : t(i18n, 'ui.masterDataOverviewActiveDirectoryTitle', 'Directory operativa'));
-    const detail = customDescriptor
-      ? customDescriptor.detail
-      : (structured
-        ? t(i18n, 'ui.masterDataOverviewActiveStructuredDetail', 'Questa famiglia salva schede complete con dati fiscali, contatti e riuso futuro in CRM, Quotazioni, Import e collegamenti forti.')
-        : t(i18n, 'ui.masterDataOverviewActiveDirectoryDetail', 'Questa famiglia resta una directory operativa leggera, utile come supporto e normalizzazione nei flussi.'));
-    const metricLabel = customDescriptor
-      ? customDescriptor.metricLabel
-      : (structured
-        ? t(i18n, 'ui.masterDataOverviewActiveStructuredMetric', 'schede complete')
-        : t(i18n, 'ui.masterDataOverviewActiveDirectoryMetric', 'voci di directory'));
-    const badgeLabel = customDescriptor
-      ? customDescriptor.badgeLabel
-      : (structured ? t(i18n, 'ui.masterDataOverviewStructuredBadge', 'Strutturata') : t(i18n, 'ui.masterDataOverviewDirectoryBadge', 'Directory'));
-    const badgeTone = customDescriptor ? (customDescriptor.badgeTone || 'success') : (structured ? 'success' : 'default');
+    const title = structured
+      ? t(i18n, 'ui.masterDataOverviewActiveStructuredTitle', 'Scheda entità completa')
+      : t(i18n, 'ui.masterDataOverviewActiveDirectoryTitle', 'Directory operativa');
+    const detail = structured
+      ? t(i18n, 'ui.masterDataOverviewActiveStructuredDetail', 'Questa famiglia salva schede complete con dati fiscali, contatti e riuso futuro in CRM, Quotazioni, Import e collegamenti forti.')
+      : t(i18n, 'ui.masterDataOverviewActiveDirectoryDetail', 'Questa famiglia resta una directory operativa leggera, utile come supporto e normalizzazione nei flussi.')
+    const metricLabel = structured
+      ? t(i18n, 'ui.masterDataOverviewActiveStructuredMetric', 'schede complete')
+      : t(i18n, 'ui.masterDataOverviewActiveDirectoryMetric', 'voci di directory');
     return `
       <section class="panel master-data-active-context">
         <div class="panel-head compact">
@@ -168,7 +142,7 @@ window.KedrixOneMasterDataOverview = (() => {
             <h3 class="panel-title">${escapeHtml(def.familyLabel)}</h3>
             <p class="panel-subtitle">${escapeHtml(title)}</p>
           </div>
-          <span class="badge ${escapeHtml(badgeTone)}">${escapeHtml(badgeLabel)}</span>
+          <span class="badge ${structured ? 'success' : 'default'}">${escapeHtml(structured ? t(i18n, 'ui.masterDataOverviewStructuredBadge', 'Strutturata') : t(i18n, 'ui.masterDataOverviewDirectoryBadge', 'Directory'))}</span>
         </div>
         <div class="master-data-active-context-body">
           <p>${escapeHtml(detail)}</p>

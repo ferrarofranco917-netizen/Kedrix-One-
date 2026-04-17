@@ -4,10 +4,6 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const VatAutofill = window.KedrixOneVatAutofill || null;
 
-  function getSupplierPriceLists() {
-    return window.KedrixOneSupplierPriceLists || null;
-  }
-
   function getImportFoundation() {
     return window.KedrixOneImportFoundation || null;
   }
@@ -218,12 +214,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return record;
   }
 
-  function renderEntryFormFields({ state, activeDef, formDraft, t }) {
-    const SupplierPriceLists = getSupplierPriceLists();
-    if (activeDef && activeDef.customEditor === 'supplier-price-lists' && SupplierPriceLists && typeof SupplierPriceLists.renderEditor === 'function') {
-      return SupplierPriceLists.renderEditor({ state, formDraft, i18n: t });
-    }
-
+  function renderEntryFormFields({ activeDef, formDraft, t }) {
     const structuredFields = MasterDataEntities && typeof MasterDataEntities.getFormFields === 'function'
       ? MasterDataEntities.getFormFields(activeDef.key, t)
       : [];
@@ -289,21 +280,11 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const familyOptions = Object.values(defs);
     const MasterDataOverview = getMasterDataOverview();
     const ImportFoundation = getImportFoundation();
-    const SupplierPriceLists = getSupplierPriceLists();
     const overviewHtml = MasterDataOverview && typeof MasterDataOverview.renderSummary === 'function'
       ? MasterDataOverview.renderSummary({ state, activeEntity, i18n: t })
       : `<section class="panel master-data-active-context"><div class="panel-head compact"><div><h3 class="panel-title">${escapeHtml(t.t('ui.masterDataOverviewFallbackTitle', 'Fondazione anagrafiche'))}</h3><p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataOverviewFallbackDetail', 'Panoramica temporaneamente non disponibile: ricarica la schermata per inizializzare il riepilogo anagrafiche.'))}</p></div></div></section>`;
     const importHtml = !quickAddContext && ImportFoundation && typeof ImportFoundation.renderPanel === 'function'
       ? ImportFoundation.renderPanel({ state, activeEntity, i18n: t })
-      : '';
-    const selectedRecord = moduleState.selectedRecordId && MasterDataEntities && typeof MasterDataEntities.getEntityRecordById === 'function'
-      ? MasterDataEntities.getEntityRecordById(state, activeEntity, moduleState.selectedRecordId)
-      : null;
-    const supplierBridgeHtml = !quickAddContext && SupplierPriceLists && typeof SupplierPriceLists.renderSupplierBridgePanel === 'function' && activeEntity === 'supplier' && selectedRecord
-      ? SupplierPriceLists.renderSupplierBridgePanel({ state, supplierRecord: selectedRecord, i18n: t })
-      : '';
-    const supplierPriceListFoundationHtml = !quickAddContext && SupplierPriceLists && typeof SupplierPriceLists.renderFoundationPanel === 'function' && activeEntity === 'supplierPriceList'
-      ? SupplierPriceLists.renderFoundationPanel({ state, i18n: t })
       : '';
 
     return `
@@ -314,8 +295,6 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       </section>
 
       ${overviewHtml}
-      ${supplierBridgeHtml}
-      ${supplierPriceListFoundationHtml}
       ${importHtml}
 
       <section class="master-data-shell two-col master-data-shell-v2">
@@ -358,7 +337,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           ${renderRecordMeta(formDraft, t)}
 
           <form id="masterDataEntryForm" class="master-data-form-stack">
-            ${renderEntryFormFields({ state, activeDef, formDraft, t })}
+            ${renderEntryFormFields({ activeDef, formDraft, t })}
             <div class="form-actions master-data-actions">
               <button class="btn" type="submit">${escapeHtml(isEditing ? t.t('ui.masterDataUpdateEntry', 'Salva modifiche') : t.t('ui.masterDataSaveEntry', 'Salva anagrafica'))}</button>
               ${isEditing ? `<button class="btn secondary" id="masterDataResetButton" type="button">${escapeHtml(t.t('ui.masterDataResetForm', 'Nuova scheda'))}</button>` : ''}
@@ -381,7 +360,6 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const resetButton = root.querySelector('#masterDataResetButton');
     const newButton = root.querySelector('#masterDataNewButton');
     const vatLookupButton = root.querySelector('#masterDataVatLookupButton');
-    const createSupplierPriceListButton = root.querySelector('#supplierCreatePriceListButton');
     const activeEntity = moduleState.quickAddContext?.entityKey || moduleState.activeEntity || 'client';
 
     familySelect?.addEventListener('change', (event) => {
@@ -407,19 +385,6 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
     newButton?.addEventListener('click', () => {
       resetEntityDraft(state, activeEntity);
-      save();
-      render();
-    });
-
-    createSupplierPriceListButton?.addEventListener('click', () => {
-      if (!MasterDataEntities || typeof MasterDataEntities.getEntityRecordById !== 'function') return;
-      const supplierRecord = MasterDataEntities.getEntityRecordById(state, 'supplier', moduleState.selectedRecordId || '');
-      const SupplierPriceLists = getSupplierPriceLists();
-      if (!supplierRecord || !SupplierPriceLists || typeof SupplierPriceLists.createDraftFromSupplier !== 'function') return;
-      moduleState.activeEntity = 'supplierPriceList';
-      moduleState.selectedRecordId = '';
-      moduleState.searchQuery = '';
-      moduleState.formDrafts.supplierPriceList = SupplierPriceLists.createDraftFromSupplier(supplierRecord);
       save();
       render();
     });
@@ -487,24 +452,14 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       const defs = getEntityDefinitions(i18n);
       const def = defs[targetEntity];
       const payload = { ...currentDraft };
-      const SupplierPriceLists = getSupplierPriceLists();
-      const result = def && def.customEditor === 'supplier-price-lists' && SupplierPriceLists && typeof SupplierPriceLists.saveRecord === 'function'
-        ? SupplierPriceLists.saveRecord(state, payload)
-        : (def && def.structured && MasterDataEntities && typeof MasterDataEntities.saveBusinessEntity === 'function'
-          ? MasterDataEntities.saveBusinessEntity(state, targetEntity, payload, i18n)
-          : (MasterDataEntities && typeof MasterDataEntities.saveDirectoryEntity === 'function'
-            ? MasterDataEntities.saveDirectoryEntity(state, targetEntity, payload, i18n)
-            : { ok: false, reason: 'invalid-entity' }));
+      const result = def && def.structured && MasterDataEntities && typeof MasterDataEntities.saveBusinessEntity === 'function'
+        ? MasterDataEntities.saveBusinessEntity(state, targetEntity, payload, i18n)
+        : (MasterDataEntities && typeof MasterDataEntities.saveDirectoryEntity === 'function'
+          ? MasterDataEntities.saveDirectoryEntity(state, targetEntity, payload, i18n)
+          : { ok: false, reason: 'invalid-entity' });
 
       if (!result.ok) {
-        const customMessage = result.reason === 'missing-supplier'
-          ? i18n.t('ui.masterDataSupplierPriceListMissingSupplier', 'Seleziona un fornitore per il listino.')
-          : (result.reason === 'missing-service'
-            ? i18n.t('ui.masterDataSupplierPriceListMissingService', 'Compila almeno servizio o modalità del listino.')
-            : (result.reason === 'missing-amount'
-              ? i18n.t('ui.masterDataSupplierPriceListMissingAmount', 'Compila il costo fornitore del listino.')
-              : i18n.t('ui.masterDataMissingValue', 'Compila il valore da inserire.')));
-        toast(customMessage, 'warning');
+        toast(i18n.t('ui.masterDataMissingValue', 'Compila il valore da inserire.'), 'warning');
         return;
       }
 

@@ -5,10 +5,6 @@ window.KedrixOneMasterDataEntities = (() => {
     return i18n && typeof i18n.t === 'function' ? i18n.t(key, fallback) : fallback;
   }
 
-  function getSupplierPriceLists() {
-    return window.KedrixOneSupplierPriceLists || null;
-  }
-
   function cleanText(value) {
     return String(value || '').trim();
   }
@@ -77,16 +73,6 @@ window.KedrixOneMasterDataEntities = (() => {
         suggestionKeys: ['suppliers'],
         idPrefix: 'SUP-',
         structured: true
-      },
-      supplierPriceList: {
-        key: 'supplierPriceList',
-        familyLabel: t(i18n, 'ui.masterDataFamilySupplierPriceLists', 'Listini fornitore'),
-        singleLabel: t(i18n, 'ui.masterDataSupplierPriceListSingle', 'Listino fornitore'),
-        valueLabel: t(i18n, 'ui.masterDataSupplierPriceListSingle', 'Listino fornitore'),
-        storageType: 'custom',
-        customEditor: 'supplier-price-lists',
-        fieldNames: [],
-        suggestionKeys: []
       },
       vessel: {
         key: 'vessel',
@@ -434,15 +420,14 @@ window.KedrixOneMasterDataEntities = (() => {
     }
 
     const store = ensureRecordStore(state, entityKey);
+    if (store.length) return;
     const directory = ensureDirectory(state, def.directoryKey);
-    directory.forEach((entry) => {
+    directory.forEach((entry, index) => {
       const value = cleanText(entry && typeof entry === 'object' ? (entry.value || entry.name || entry.label || entry.displayValue || '') : entry);
       if (!value) return;
       const city = cleanText(entry && typeof entry === 'object' ? entry.city : '');
-      const exists = store.some((record) => cleanUpper(record && record.name) === cleanUpper(value));
-      if (exists) return;
       store.push({
-        id: nextSequentialId(def.idPrefix, store),
+        id: `${def.idPrefix}${String(index + 1).padStart(3, '0')}`,
         name: value,
         city,
         active: true,
@@ -562,13 +547,6 @@ window.KedrixOneMasterDataEntities = (() => {
     const defs = allDefinitions();
     const def = defs[entityKey];
     if (!def) return buildSimpleDraft();
-    if (def.storageType === 'custom') {
-      const SupplierPriceLists = getSupplierPriceLists();
-      if (SupplierPriceLists && typeof SupplierPriceLists.createFormDraft === 'function') {
-        return SupplierPriceLists.createFormDraft(sourceRecord);
-      }
-      return buildSimpleDraft();
-    }
     if (!sourceRecord) return def.structured ? buildBusinessDraft() : buildSimpleDraft();
     return def.structured ? buildDraftFromStructuredRecord(sourceRecord) : buildDraftFromDirectoryRecord(sourceRecord);
   }
@@ -756,13 +734,6 @@ window.KedrixOneMasterDataEntities = (() => {
     const defs = allDefinitions();
     const def = defs[entityKey];
     if (!def) return [];
-
-    if (def.storageType === 'custom') {
-      const SupplierPriceLists = getSupplierPriceLists();
-      return SupplierPriceLists && typeof SupplierPriceLists.listRecords === 'function'
-        ? SupplierPriceLists.listRecords(state)
-        : [];
-    }
 
     if (entityKey === 'client') {
       return (Array.isArray(state.clients) ? state.clients : [])
@@ -1002,13 +973,6 @@ window.KedrixOneMasterDataEntities = (() => {
     const defs = allDefinitions();
     const def = defs[entityKey];
     if (!def) return null;
-
-    if (def.storageType === 'custom') {
-      const SupplierPriceLists = getSupplierPriceLists();
-      return SupplierPriceLists && typeof SupplierPriceLists.getRecordById === 'function'
-        ? SupplierPriceLists.getRecordById(state, recordId)
-        : null;
-    }
 
     if (entityKey === 'client') {
       const match = (Array.isArray(state.clients) ? state.clients : []).find((item) => cleanText(item.id) === cleanText(recordId));
