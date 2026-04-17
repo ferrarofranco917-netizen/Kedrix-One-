@@ -200,44 +200,6 @@ window.KedrixOneData = (() => {
             taricCodes: [{ value: '40111000', label: '40111000', description: 'Pneumatici nuovi di gomma', displayValue: '40111000 · Pneumatici nuovi di gomma' }],
             transportUnitTypes: defaultTransportUnitTypes
           }
-        },
-        masterDataRecords: {
-          supplierPriceLists: [
-            {
-              id: 'SPL-001',
-              supplierId: '',
-              supplierName: 'Broker Doganale Piemonte',
-              service: 'Assistenza pratica import',
-              mode: 'sea',
-              route: 'Genova import mare',
-              equipment: 'FCL',
-              costAmount: '185.00',
-              currency: 'EUR',
-              costUnit: 'shipment',
-              validityStart: '2026-01-01',
-              validityEnd: '2026-12-31',
-              coverageArea: 'Liguria / Piemonte',
-              notes: 'Comprende presidio documentale e svincolo standard.',
-              active: true
-            },
-            {
-              id: 'SPL-002',
-              supplierId: '',
-              supplierName: 'Autotrasporti Nord Ovest',
-              service: 'Trasporto container 40HC',
-              mode: 'road',
-              route: 'Genova → Torino',
-              equipment: '40HC',
-              costAmount: '420.00',
-              currency: 'EUR',
-              costUnit: 'container',
-              validityStart: '2026-02-01',
-              validityEnd: '2026-06-30',
-              coverageArea: 'Nord Ovest',
-              notes: 'Carico diretto con 2h franchigia incluse.',
-              active: true
-            }
-          ]
         }
       },
       users: [

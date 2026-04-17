@@ -1,6 +1,6 @@
-// AQ60 supplier price list foundation
-const STATIC_CACHE = 'kedrix-one-stepaq60-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq60-runtime-v1';
+// AQ59 quotations intelligent profile presets
+const STATIC_CACHE = 'kedrix-one-stepaq59-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq59-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',
