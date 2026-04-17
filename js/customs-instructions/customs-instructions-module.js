@@ -6,7 +6,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   const Workspace = window.KedrixOneCustomsInstructionsWorkspace || null;
   const Relations = window.KedrixOneCustomsInstructionsRelations || null;
   const Density = window.KedrixOneDensitySystem || null;
-  const DocumentOps = window.KedrixOneDocumentOperations || null;
+  const Branding = window.KedrixOneModuleBranding || null;
 
   const SEA_COLUMNS = ['containerCode', 'transportUnitType', 'seals', 'loadingDate', 'taric', 'description', 'packageCount', 'netWeight', 'grossWeight', 'volume'];
   const AIR_ROAD_COLUMNS = ['marksNumbers', 'description', 'packageCount', 'netWeight', 'grossWeight'];
@@ -518,7 +518,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   function renderHeader(state, i18n) {
     const kpis = buildKpis(state);
-    return `
+    return `${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale modulare Kedrix', meta: ['Istruzioni di sdoganamento'] }) || ''}
       <section class="hero">
         <div class="hero-meta">AQ21B · ${U.escapeHtml(i18n?.t('ui.customsInstructionsHeroEyebrow', 'Pratiche · consolidamento sottomodulo esistente'))}</div>
         <h2>${U.escapeHtml(i18n?.t('submodules.practices/istruzioni-di-sdoganamento', 'Istruzioni di sdoganamento'))} · Foundation</h2>
@@ -776,57 +776,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       </section>`;
   }
 
-
-  function buildPrintableHtml(draft, i18n) {
-    const metaItems = [
-      [i18n?.t('ui.generatedNumber', 'Pratica'), draft.practiceReference || '—'],
-      [i18n?.t('ui.practiceType', 'Tipo pratica'), draft.practiceType || '—'],
-      [i18n?.t('ui.customsOffice', 'Dogana'), draft.customsOffice || '—'],
-      [i18n?.t('ui.customsSection', 'Sezione'), draft.customsSection || '—'],
-      [i18n?.t('ui.incoterm', 'Incoterm'), draft.incoterm || '—'],
-      [i18n?.t('ui.reference', 'Riferimento'), draft.mainReference || draft.senderReference || '—']
-    ];
-    const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
-    const cols = Array.isArray(draft.lineColumns) && draft.lineColumns.length ? draft.lineColumns : buildLineColumns(draft.mode);
-    return `
-      <section class="print-meta-grid">${metaItems.map(([label, value]) => `<div class="print-meta-card"><strong>${U.escapeHtml(label)}</strong>${U.escapeHtml(value)}</div>`).join('')}</section>
-      <section class="print-section"><h2>${U.escapeHtml(draft.principalPartyLabel || i18n?.t('ui.customsInstructionsPrincipalParty', 'Soggetto principale'))}</h2><div class="print-block">${U.escapeHtml(draft.principalParty || '—')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.customsInstructionsGoodsDeclaration', 'Dichiarazione merce'))}</h2><div class="print-block">${U.escapeHtml(draft.goodsDeclaration || '').replace(/\n/g, '<br>')}</div></section>
-      <table><thead><tr>${cols.map((col) => `<th>${U.escapeHtml(lineFieldLabel(col, i18n))}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${cols.map((col) => `<td>${U.escapeHtml(row?.[col] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.customsInstructionsAttachedText', 'Testo allegati'))}</h2><div class="print-block">${U.escapeHtml(draft.attachedText || '').replace(/\n/g, '<br>')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.customsInstructionsFooterText', 'Testo footer'))}</h2><div class="print-block">${U.escapeHtml(draft.footerText || '').replace(/\n/g, '<br>')}</div></section>`;
-  }
-
-  function printDraft(draft, i18n, state) {
-    if (DocumentOps && typeof DocumentOps.printHtmlDocument === 'function') {
-      return DocumentOps.printHtmlDocument({
-        title: i18n?.t('ui.customsInstructionsEditorTitle', 'Istruzioni di sdoganamento') || 'Istruzioni di sdoganamento',
-        bodyHtml: buildPrintableHtml(draft, i18n),
-        companyConfig: state?.companyConfig || null,
-        clientConfig: DocumentOps?.resolveClientBranding ? DocumentOps.resolveClientBranding(state, draft) : { name: String(draft?.principalParty || '').trim(), logoUrl: '' }
-      });
-    }
-    return false;
-  }
-
-  function queueDispatchForDraft(state, record, i18n) {
-    if (!DocumentOps || typeof DocumentOps.queueDispatch !== 'function') return null;
-    return DocumentOps.queueDispatch(state, {
-      moduleKey: 'customs-instructions',
-      moduleLabel: i18n?.t('practices/istruzioni-di-sdoganamento', 'Istruzioni di sdoganamento') || 'Istruzioni di sdoganamento',
-      documentLabel: i18n?.t('practices/istruzioni-di-sdoganamento', 'Istruzioni di sdoganamento') || 'Istruzioni di sdoganamento',
-      recordId: String(record?.id || record?.editingRecordId || '').trim(),
-      practiceId: String(record?.practiceId || '').trim(),
-      practiceReference: String(record?.practiceReference || '').trim(),
-      recipientEmail: DocumentOps.deriveRecipientEmail(record),
-      subject: `${i18n?.t('practices/istruzioni-di-sdoganamento', 'Istruzioni di sdoganamento') || 'Istruzioni di sdoganamento'} ${String(record?.practiceReference || '').trim()}`.trim(),
-      snapshot: {
-        title: String(record?.practiceReference || record?.mainReference || '').trim(),
-        client: String(record?.principalParty || '').trim()
-      }
-    });
-  }
-
   function renderEditor(state, i18n) {
     const session = activeSession(state);
     if (!session) {
@@ -856,8 +805,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
         </div>
         ${activeTab === 'texts' ? renderTextsTab(draft, i18n) : renderGeneralTab(draft, i18n, state)}
         <div class="action-row customs-instructions-actions-row">
-          <button class="btn secondary" type="button" data-customs-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
-          <button class="btn secondary" type="button" data-customs-dispatch>${U.escapeHtml(i18n?.t('ui.saveAndSend', 'Salva e invia'))}</button>
           <button class="btn" type="button" data-customs-save>${U.escapeHtml(i18n?.t('ui.save', 'Salva'))}</button>
           <button class="btn secondary" type="button" data-customs-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           <button class="btn secondary" type="button" data-customs-close-active>${U.escapeHtml(i18n?.t('ui.close', 'Chiudi'))}</button>
@@ -989,23 +936,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     }
     helpers.save?.();
     helpers.render?.();
-  }
-
-  function saveAndDispatchActive(state, helpers = {}) {
-    const session = activeSession(state);
-    if (!session) return;
-    const errors = validationErrors(session.draft, helpers.i18n);
-    if (errors.length) {
-      helpers.toast?.(errors[0], 'warning');
-      return;
-    }
-    const savedRecord = upsertRecord(state, normalizeDraftForSave(session.draft));
-    syncSessionDraft(session, savedRecord);
-    Workspace.markSessionSaved(state, session.id, { createEmptyDraft: () => createEmptyDraft(state) });
-    queueDispatchForDraft(state, savedRecord, helpers.i18n);
-    helpers.save?.();
-    helpers.render?.();
-    helpers.toast?.(helpers.i18n?.t('ui.documentQueuedForDispatch', 'Documento salvato e accodato al Centro invii automatici di Kedrix One.'), 'success');
   }
 
   function bind(helpers = {}) {
@@ -1153,16 +1083,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
         helpers.save?.();
         helpers.render?.();
       });
-    });
-
-    root.querySelector('[data-customs-print]')?.addEventListener('click', () => {
-      const session = activeSession(state);
-      if (!session) return;
-      printDraft(session.draft || {}, helpers.i18n, state);
-    });
-
-    root.querySelector('[data-customs-dispatch]')?.addEventListener('click', () => {
-      saveAndDispatchActive(state, helpers);
     });
 
     root.querySelector('[data-customs-save]')?.addEventListener('click', () => {

@@ -3,7 +3,7 @@ window.KedrixOneBookingEmbarkationModule = (() => {
 
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneBookingEmbarkationWorkspace || null;
-  const DocumentOps = window.KedrixOneDocumentOperations || null;
+  const Branding = window.KedrixOneModuleBranding || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -244,57 +244,6 @@ window.KedrixOneBookingEmbarkationModule = (() => {
       </div>`;
   }
 
-
-  function buildPrintableHtml(draft, i18n) {
-    const metaItems = [
-      [i18n?.t('ui.generatedNumber', 'Pratica'), draft.practiceReference || '—'],
-      [i18n?.t('ui.practiceType', 'Tipo pratica'), draft.practiceType || '—'],
-      [i18n?.t('ui.bookingWord', 'Booking'), draft.bookingReference || '—'],
-      [i18n?.t('ui.company', 'Compagnia'), draft.company || '—'],
-      [i18n?.t('ui.bookingEmbarkationLoadingPort', 'Porto carico'), draft.loadingPort || '—'],
-      [i18n?.t('ui.bookingEmbarkationUnloadingPort', 'Porto scarico'), draft.unloadingPort || '—'],
-      [i18n?.t('ui.vessel', 'Nave'), draft.vessel || '—'],
-      [i18n?.t('ui.voyage', 'Viaggio'), draft.voyage || '—']
-    ];
-    return `
-      <section class="print-meta-grid">${metaItems.map(([label, value]) => `<div class="print-meta-card"><strong>${U.escapeHtml(label)}</strong>${U.escapeHtml(value)}</div>`).join('')}</section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.bookingEmbarkationLoadingPlace', 'Luogo carico'))}</h2><div class="print-block">${U.escapeHtml(draft.loadingPlace || '—')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.finalDestination', 'Destinazione finale'))}</h2><div class="print-block">${U.escapeHtml(draft.finalDestination || '—')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.goods', 'Merce'))}</h2><div class="print-block">${U.escapeHtml(draft.goods || '—')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.containers', 'Container'))}</h2><div class="print-block">${U.escapeHtml(draft.containers || '—')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.bookingEmbarkationCustomerText', 'Testo cliente'))}</h2><div class="print-block">${U.escapeHtml(draft.customerText || '').replace(/\n/g, '<br>')}</div></section>`;
-  }
-
-  function printDraft(draft, i18n, state) {
-    if (DocumentOps && typeof DocumentOps.printHtmlDocument === 'function') {
-      return DocumentOps.printHtmlDocument({
-        title: i18n?.t('ui.bookingEmbarkationTitle', 'Booking d’imbarco') || 'Booking d’imbarco',
-        bodyHtml: buildPrintableHtml(draft, i18n),
-        companyConfig: state?.companyConfig || null,
-        clientConfig: DocumentOps?.resolveClientBranding ? DocumentOps.resolveClientBranding(state, draft) : { name: String(draft?.transitary || draft?.company || '').trim(), logoUrl: '' }
-      });
-    }
-    return false;
-  }
-
-  function queueDispatchForDraft(state, record, i18n) {
-    if (!DocumentOps || typeof DocumentOps.queueDispatch !== 'function') return null;
-    return DocumentOps.queueDispatch(state, {
-      moduleKey: 'booking-embarkation',
-      moduleLabel: i18n?.t('ui.bookingEmbarkationTitle', 'Booking d’imbarco') || 'Booking d’imbarco',
-      documentLabel: i18n?.t('ui.bookingEmbarkationTitle', 'Booking d’imbarco') || 'Booking d’imbarco',
-      recordId: String(record?.id || record?.editingRecordId || '').trim(),
-      practiceId: String(record?.practiceId || '').trim(),
-      practiceReference: String(record?.practiceReference || '').trim(),
-      recipientEmail: DocumentOps.deriveRecipientEmail(record),
-      subject: `${i18n?.t('ui.bookingEmbarkationTitle', 'Booking d’imbarco') || 'Booking d’imbarco'} ${String(record?.practiceReference || '').trim()}`.trim(),
-      snapshot: {
-        title: String(record?.practiceReference || record?.bookingReference || '').trim(),
-        client: String(record?.transitary || record?.company || '').trim()
-      }
-    });
-  }
-
   function renderEditor(state, i18n) {
     const session = Workspace?.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) }) || null;
     if (!session) return '';
@@ -308,8 +257,6 @@ window.KedrixOneBookingEmbarkationModule = (() => {
             <p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.bookingEmbarkationEditorHint', 'Documento operativo collegato alla pratica madre, con dati generali e testi pronti per stampa o invio.'))}</p>
           </div>
           <div class="action-row">
-            <button class="btn secondary" type="button" data-booking-embarkation-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
-            <button class="btn secondary" type="button" data-booking-embarkation-email>${U.escapeHtml(i18n?.t('ui.saveAndSend', 'Salva e invia'))}</button>
             <button class="btn secondary" type="button" data-booking-embarkation-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
             <button class="btn" type="button" data-booking-embarkation-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
@@ -349,6 +296,7 @@ window.KedrixOneBookingEmbarkationModule = (() => {
     const kpis = buildKpis(state);
     const selectedPractice = typeof options.getSelectedPractice === 'function' ? options.getSelectedPractice() : null;
     return `
+      ${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale modulare Kedrix', meta: ['Documento operativo'] }) || ''}
       <section class="hero">
         <div class="hero-meta">${U.escapeHtml(i18n?.t('ui.bookingEmbarkationEyebrow', 'PRATICHE · BOOKING D’IMBARCO'))}</div>
         <h2>${U.escapeHtml(i18n?.t('practices/booking-d-imbarco', 'Booking d’imbarco'))}</h2>
@@ -471,27 +419,6 @@ window.KedrixOneBookingEmbarkationModule = (() => {
         save?.();
       };
       field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', handler);
-    });
-
-    root.querySelectorAll('[data-booking-embarkation-print]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
-        if (!session) return;
-        printDraft(session.draft || {}, i18n, state);
-      });
-    });
-
-    root.querySelectorAll('[data-booking-embarkation-email]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
-        if (!session) return;
-        const savedRecord = upsertRecord(state, session);
-        save?.();
-        queueDispatchForDraft(state, savedRecord, i18n);
-        save?.();
-        render?.();
-        toast?.(i18n?.t('ui.documentQueuedForDispatch', 'Documento salvato e accodato al Centro invii automatici di Kedrix One.'), 'success');
-      });
     });
 
     root.querySelectorAll('[data-booking-embarkation-save-continue]').forEach((button) => {
