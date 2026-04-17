@@ -109,6 +109,7 @@ window.KedrixOneModules = (() => {
       category: 'foundation',
       tierHint: 'base',
       submodules: [
+        'Fornitori',
         'Ditte',
         'Utenti',
         'Conti correnti',

@@ -267,6 +267,35 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     }).join('')}</div>`;
   }
 
+  function getRouteEntityMeta(state, defs) {
+    const route = String(state && state.currentRoute || '').trim();
+    const map = {
+      'master-data/fornitori': 'supplier',
+      'master-data/clienti': 'client',
+      'master-data/importatori': 'importer',
+      'master-data/destinatari': 'consignee',
+      'master-data/mittenti': 'sender',
+      'master-data/compagnie-marittime': 'shippingCompany',
+      'master-data/compagnie-aeree': 'airline',
+      'master-data/vettori': 'carrier',
+      'master-data/navi': 'vessel',
+      'master-data/taric': 'taric',
+      'master-data/dogane': 'customsOffice',
+      'master-data/porti': 'seaPort',
+      'master-data/aeroporti': 'airport',
+      'master-data/terminal': 'terminal',
+      'master-data/origini': 'origin',
+      'master-data/destinazioni': 'destination',
+      'master-data/localita-logistiche': 'logisticsLocation',
+      'master-data/depositi': 'deposit',
+      'master-data/collega-a': 'warehouseLink',
+      'master-data/codici-articolo': 'articleCode',
+      'master-data/tipologie-unita': 'transportUnitType'
+    };
+    const key = map[route] || '';
+    return key && defs[key] ? defs[key] : null;
+  }
+
   function renderPanel({ state, module, t }) {
     const defs = getEntityDefinitions(t);
     const moduleState = ensureModuleState(state);
@@ -280,6 +309,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const familyOptions = Object.values(defs);
     const MasterDataOverview = getMasterDataOverview();
     const ImportFoundation = getImportFoundation();
+    const routeEntityMeta = getRouteEntityMeta(state, defs);
     const overviewHtml = MasterDataOverview && typeof MasterDataOverview.renderSummary === 'function'
       ? MasterDataOverview.renderSummary({ state, activeEntity, i18n: t })
       : `<section class="panel master-data-active-context"><div class="panel-head compact"><div><h3 class="panel-title">${escapeHtml(t.t('ui.masterDataOverviewFallbackTitle', 'Fondazione anagrafiche'))}</h3><p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataOverviewFallbackDetail', 'Panoramica temporaneamente non disponibile: ricarica la schermata per inizializzare il riepilogo anagrafiche.'))}</p></div></div></section>`;
@@ -289,9 +319,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
     return `
       <section class="hero">
-        <div class="hero-meta">Master data</div>
-        <h2>${escapeHtml(module?.label || t.t('ui.masterDataTitle', 'Anagrafiche'))}</h2>
-        <p>${escapeHtml(t.t('ui.masterDataIntro', 'Gestisci anagrafiche e directory operative condivise tra pratiche e moduli collegati.'))}</p>
+        <div class="hero-meta">${escapeHtml(routeEntityMeta ? 'Master data · ' + routeEntityMeta.familyLabel : 'Master data')}</div>
+        <h2>${escapeHtml(routeEntityMeta ? routeEntityMeta.familyLabel : (module?.label || t.t('ui.masterDataTitle', 'Anagrafiche')))}</h2>
+        <p>${escapeHtml(routeEntityMeta ? 'Sottomodulo reale di Anagrafiche agganciato alla famiglia operativa già presente nel motore master-data.' : t.t('ui.masterDataIntro', 'Gestisci anagrafiche e directory operative condivise tra pratiche e moduli collegati.'))}</p>
       </section>
 
       ${overviewHtml}

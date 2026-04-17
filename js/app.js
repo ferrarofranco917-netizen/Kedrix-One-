@@ -2073,6 +2073,34 @@ function renderDocumentPreviewPanel() {
     sidebarNav.innerHTML = Templates.sidebar(visibleModules, currentRoute(), expandedModules());
   }
 
+  function resolveMasterDataEntityFromRoute(route) {
+    const normalized = safeRoute(route);
+    const map = {
+      'master-data/fornitori': 'supplier',
+      'master-data/clienti': 'client',
+      'master-data/importatori': 'importer',
+      'master-data/destinatari': 'consignee',
+      'master-data/mittenti': 'sender',
+      'master-data/compagnie-marittime': 'shippingCompany',
+      'master-data/compagnie-aeree': 'airline',
+      'master-data/vettori': 'carrier',
+      'master-data/navi': 'vessel',
+      'master-data/taric': 'taric',
+      'master-data/dogane': 'customsOffice',
+      'master-data/porti': 'seaPort',
+      'master-data/aeroporti': 'airport',
+      'master-data/terminal': 'terminal',
+      'master-data/origini': 'origin',
+      'master-data/destinazioni': 'destination',
+      'master-data/localita-logistiche': 'logisticsLocation',
+      'master-data/depositi': 'deposit',
+      'master-data/collega-a': 'warehouseLink',
+      'master-data/codici-articolo': 'articleCode',
+      'master-data/tipologie-unita': 'transportUnitType'
+    };
+    return map[normalized] || '';
+  }
+
   function renderMain() {
     const route = currentRoute();
     const routeMeta = currentRouteMeta();
@@ -2201,7 +2229,13 @@ function renderDocumentPreviewPanel() {
       return;
     }
 
-    if (route === 'master-data') {
+    if (route === 'master-data' || route.startsWith('master-data/')) {
+      const MasterDataQuickAdd = getMasterDataQuickAdd();
+      const targetEntity = resolveMasterDataEntityFromRoute(route);
+      if (targetEntity && MasterDataQuickAdd && typeof MasterDataQuickAdd.ensureModuleState === 'function') {
+        const moduleState = MasterDataQuickAdd.ensureModuleState(state);
+        if (!moduleState.quickAddContext) moduleState.activeEntity = targetEntity;
+      }
       main.innerHTML = Templates.contacts(state, module);
       bindMasterDataEvents();
       return;
