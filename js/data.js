@@ -89,7 +89,18 @@ window.KedrixOneData = (() => {
         sessions: []
       },
       remittanceDocumentRecords: [],
-      documentDispatchQueue: [],
+      quotationsWorkspace: {
+        activeSessionId: '',
+        sessions: []
+      },
+      quotationRecords: [],
+      quotationDispatchQueue: [],
+      quotationFeedbackFollowUps: [],
+      quotationFilters: {
+        quick: '',
+        serviceProfile: 'all',
+        status: 'all'
+      },
       practiceDuplicateSource: null,
       masterDataModule: {
         activeEntity: 'client',
@@ -125,6 +136,21 @@ window.KedrixOneData = (() => {
             countryDefault: String(IntegrationDefaults.vatLookupCountryDefault || 'IT').trim().toUpperCase() || 'IT',
             applyMode: String(IntegrationDefaults.vatLookupApplyMode || 'replace-all').trim() || 'replace-all',
             requestTimeoutMs: 8000
+          }
+        },
+        crmAutomation: {
+          quotationFeedback: {
+            enabled: true,
+            defaultDelayDays: 5,
+            defaultTemplateKey: 'quotation-feedback-standard',
+            templates: [
+              {
+                key: 'quotation-feedback-standard',
+                name: 'Feedback quotazione standard',
+                subject: 'Riscontro sulla quotazione {{quotation_number}}',
+                body: 'Buongiorno {{client_name}},\n\nLe scriviamo per avere un cortese riscontro sulla quotazione {{quotation_number}} inviata in data {{sent_date}}.\n\nRestiamo a disposizione per qualsiasi chiarimento o aggiornamento.\n\nCordiali saluti\n{{company_name}}'
+              }
+            ]
           }
         },
         documents: {

@@ -5185,6 +5185,21 @@ body.dialog-open {
   box-shadow: inset 0 0 0 1px rgba(161, 255, 148, 0.05);
 }
 
+.quotation-crm-card {
+  box-shadow: inset 0 0 0 1px rgba(140, 205, 255, 0.08);
+}
+
+.quotation-static-note {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(110, 170, 220, 0.18);
+  background: rgba(8, 20, 34, 0.78);
+  color: rgba(225, 240, 252, 0.94);
+}
+
 .quotation-editor-panel .module-company-banner {
   margin-bottom: 18px;
 }

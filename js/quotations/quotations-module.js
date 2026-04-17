@@ -30,8 +30,28 @@ window.KedrixOneQuotationsModule = (() => {
     Workspace?.ensureState?.(state);
     if (!Array.isArray(state.quotationRecords)) state.quotationRecords = [];
     if (!Array.isArray(state.quotationDispatchQueue)) state.quotationDispatchQueue = [];
+    if (!Array.isArray(state.quotationFeedbackFollowUps)) state.quotationFeedbackFollowUps = [];
     if (!state.quotationFilters || typeof state.quotationFilters !== 'object') {
       state.quotationFilters = { quick: '', serviceProfile: 'all', status: 'all' };
+    }
+    if (!state.companyConfig) state.companyConfig = {};
+    if (!state.companyConfig.crmAutomation || typeof state.companyConfig.crmAutomation !== 'object') {
+      state.companyConfig.crmAutomation = {};
+    }
+    if (!state.companyConfig.crmAutomation.quotationFeedback || typeof state.companyConfig.crmAutomation.quotationFeedback !== 'object') {
+      state.companyConfig.crmAutomation.quotationFeedback = {
+        enabled: true,
+        defaultDelayDays: 5,
+        defaultTemplateKey: 'quotation-feedback-standard',
+        templates: [
+          {
+            key: 'quotation-feedback-standard',
+            name: 'Feedback quotazione standard',
+            subject: 'Riscontro sulla quotazione {{quotation_number}}',
+            body: 'Buongiorno {{client_name}},\n\nLe scriviamo per avere un cortese riscontro sulla quotazione {{quotation_number}} inviata in data {{sent_date}}.\n\nRestiamo a disposizione per qualsiasi chiarimento o aggiornamento.\n\nCordiali saluti\n{{company_name}}'
+          }
+        ]
+      };
     }
     return state.quotationsWorkspace;
   }
@@ -72,6 +92,52 @@ window.KedrixOneQuotationsModule = (() => {
       String(draft?.quotationNumber || '').trim() || 'Nuova quotazione',
       Branding?.companyName?.(state) || String(state?.companyConfig?.name || 'Kedrix One').trim()
     ].filter(Boolean);
+  }
+
+
+  function packagingOptions() {
+    return [
+      { value: '', label: 'Seleziona' },
+      { value: 'container', label: 'Container' },
+      { value: 'pallet', label: 'Pallet' },
+      { value: 'cartoni', label: 'Cartoni' },
+      { value: 'casse', label: 'Casse' },
+      { value: 'big-bag', label: 'Big bag' },
+      { value: 'fusti', label: 'Fusti' },
+      { value: 'bobine', label: 'Bobine / rotoli' },
+      { value: 'sfuso', label: 'Sfuso' },
+      { value: 'altro', label: 'Altro' }
+    ];
+  }
+
+  function crmFeedbackConfig(state) {
+    return state?.companyConfig?.crmAutomation?.quotationFeedback || {
+      enabled: true,
+      defaultDelayDays: 5,
+      defaultTemplateKey: 'quotation-feedback-standard',
+      templates: []
+    };
+  }
+
+  function crmFeedbackTemplates(state) {
+    const templates = crmFeedbackConfig(state).templates;
+    return Array.isArray(templates) ? templates : [];
+  }
+
+  function crmFeedbackTemplateOptions(state) {
+    return crmFeedbackTemplates(state).map((template) => ({
+      value: String(template?.key || '').trim(),
+      label: String(template?.name || template?.key || '').trim()
+    })).filter((item) => item.value && item.label);
+  }
+
+  function getFeedbackTemplate(state, templateKey) {
+    const key = String(templateKey || '').trim();
+    return crmFeedbackTemplates(state).find((template) => String(template?.key || '').trim() === key) || null;
+  }
+
+  function followUpStatusLabel(value) {
+    return String(value || '').trim() === 'disabled' ? 'Disattivato' : 'Attivo';
   }
 
   function emptySpecificProfile(profile) {
@@ -133,6 +199,7 @@ window.KedrixOneQuotationsModule = (() => {
       carrier: '',
       supplier: '',
       goodsType: '',
+      packagingType: '',
       dangerousGoods: 'NO',
       pieces: '',
       dimensions: '',
@@ -144,6 +211,9 @@ window.KedrixOneQuotationsModule = (() => {
       currency: 'EUR',
       note: '',
       internalNote: '',
+      crmFollowUpEnabled: crmFeedbackConfig(state).enabled ? 'scheduled' : 'disabled',
+      crmFollowUpDelayDays: String(crmFeedbackConfig(state).defaultDelayDays || 5),
+      crmFollowUpTemplateKey: String(crmFeedbackConfig(state).defaultTemplateKey || ''),
       operatorName: currentOperatorName(state),
       lineItems: [Workspace?.defaultLineItem?.() || { id: `qli-${Date.now()}` }],
       attachments: [],
@@ -189,6 +259,7 @@ window.KedrixOneQuotationsModule = (() => {
       carrier: String(dynamic.carrier || dynamic.shippingCompany || '').trim(),
       supplier: String(dynamic.supplier || '').trim(),
       goodsType: String(dynamic.goodsType || dynamic.goodsDescription || '').trim(),
+      packagingType: String(dynamic.packagingType || dynamic.packaging || dynamic.transportUnitType || '').trim(),
       dangerousGoods: String(dynamic.dangerousGoods || 'NO').trim() || 'NO',
       pieces: String(dynamic.packages || dynamic.pieces || practice?.packageCount || '').trim(),
       dimensions: String(dynamic.dimensions || '').trim(),
@@ -414,7 +485,7 @@ window.KedrixOneQuotationsModule = (() => {
     const containerSizes = ['20', '40', '40HC', '45HC', 'LCL', 'Break bulk'].map((item) => ({ value: item, label: item }));
     return `
       <section class="quotation-service-card is-sea">
-        <div class="quotation-service-card-head"><h4>Profilo mare</h4><p>Sea profile con container, nave e viaggio.</p></div>
+        <div class="quotation-service-card-head"><h4>Profilo mare</h4><p>Sea profile con container, tipo imballo, nave e viaggio.</p></div>
         <div class="quotation-grid">
           ${renderField('Tipo di container', 'containerType', draft.containerType, { type: 'select', size: 'lg', items: [{ value: '', label: 'Seleziona tipo unità' }, ...transportUnitOptions()] })}
           ${renderField('Dimensione container', 'containerSize', draft.containerSize, { type: 'select', size: 'sm', items: [{ value: '', label: 'Seleziona' }, ...containerSizes] })}
@@ -534,6 +605,7 @@ window.KedrixOneQuotationsModule = (() => {
         ${renderSummary(draft)}
         ${renderServiceSpecificFields(draft, state)}
         ${renderCommonFields(draft, dirs, i18n)}
+        ${renderCrmFollowUpCard(draft, state)}
       </section>`;
   }
 
@@ -589,6 +661,21 @@ window.KedrixOneQuotationsModule = (() => {
           <div class="quotation-field quotation-field-full"><label>Nota</label><textarea rows="2" data-quotation-attachment-field="note" data-quotation-attachment-index="${index}">${U.escapeHtml(item.note || '')}</textarea></div>
           <div class="quotation-field quotation-field-sm"><label>&nbsp;</label><button class="btn secondary" type="button" data-quotation-remove-document="${index}">Rimuovi</button></div>
         </div></article>`).join('')}</div>
+      </section>`;
+  }
+
+  function renderCrmFollowUpCard(draft, state) {
+    const config = crmFeedbackConfig(state);
+    const templateOptions = crmFeedbackTemplateOptions(state);
+    return `
+      <section class="quotation-service-card quotation-crm-card">
+        <div class="quotation-service-card-head"><h4>CRM e follow-up feedback</h4><p>Preparazione del collegamento CRM: dopo l'invio, il sistema potrà schedulare la richiesta feedback con template preimpostato.</p></div>
+        <div class="quotation-grid">
+          ${renderField('Follow-up automatico', 'crmFollowUpEnabled', draft.crmFollowUpEnabled, { type: 'select', size: 'sm', items: [{ value: 'scheduled', label: 'Attivo' }, { value: 'disabled', label: 'Disattivato' }] })}
+          ${renderField('Invia dopo (giorni)', 'crmFollowUpDelayDays', draft.crmFollowUpDelayDays || String(config.defaultDelayDays || 5), { type: 'number', size: 'sm' })}
+          ${renderField('Template feedback', 'crmFollowUpTemplateKey', draft.crmFollowUpTemplateKey || String(config.defaultTemplateKey || ''), { type: 'select', size: 'lg', items: [{ value: '', label: 'Seleziona template' }, ...templateOptions] })}
+          <div class="quotation-field quotation-field-full quotation-followup-hint"><label>Stato CRM</label><div class="quotation-static-note">${U.escapeHtml(followUpStatusLabel(draft.crmFollowUpEnabled))} · template ${U.escapeHtml(getFeedbackTemplate(state, draft.crmFollowUpTemplateKey)?.name || 'non definito')}</div></div>
+        </div>
       </section>`;
   }
 
@@ -674,12 +761,35 @@ window.KedrixOneQuotationsModule = (() => {
   function saveCurrent(context, closeAfterSave = false, queueSend = false) {
     const sessionId = activeSessionId(context);
     if (!sessionId) return null;
+    const session = activeSession(context.state);
+    if (!session) return null;
     const operator = currentOperatorName(context.state);
+    if (queueSend) {
+      session.draft.status = 'sent';
+      if (!session.draft.validFrom) session.draft.validFrom = today();
+    }
     const record = Workspace?.saveRecord?.(context.state, sessionId, { updatedBy: operator }) || null;
     if (!record) return null;
     if (queueSend) {
-      Workspace?.queueDispatch?.(context.state, record, { recipient: record.client || '' });
-      Feedback?.success?.('Documento salvato e accodato al Centro invii automatici di Kedrix One.');
+      const dispatch = Workspace?.queueDispatch?.(context.state, record, { recipient: record.client || '' });
+      let followUp = null;
+      const followUpEnabled = String(record?.draft?.crmFollowUpEnabled || '').trim() !== 'disabled';
+      const delayDays = Math.max(0, Number(record?.draft?.crmFollowUpDelayDays || crmFeedbackConfig(context.state).defaultDelayDays || 5));
+      const template = getFeedbackTemplate(context.state, record?.draft?.crmFollowUpTemplateKey || crmFeedbackConfig(context.state).defaultTemplateKey || '');
+      if (followUpEnabled && template) {
+        followUp = Workspace?.scheduleFeedbackFollowUp?.(context.state, record, {
+          delayDays,
+          templateKey: template.key,
+          templateName: template.name,
+          templateSubject: template.subject,
+          templateBody: template.body,
+          recipient: record.client || dispatch?.recipient || ''
+        });
+      }
+      const feedbackMessage = followUp
+        ? `Quotazione inviata in staging e follow-up CRM schedulato tra ${delayDays} giorni.`
+        : 'Quotazione inviata in staging e accodata al Centro invii automatici.';
+      Feedback?.success?.(feedbackMessage);
     } else {
       Feedback?.success?.('Quotazione salvata correttamente.');
     }
@@ -706,6 +816,7 @@ window.KedrixOneQuotationsModule = (() => {
     const totalOffered = rows.reduce((sum, row) => sum + parseNumber(row.revenue) * parseNumber(row.quantity || 1), 0);
     const modeDetails = [];
     if (draft.serviceProfile === 'sea') {
+      modeDetails.push(['Tipo imballo', draft.packagingType || '—']);
       modeDetails.push(['Tipo container', draft.containerType || '—']);
       modeDetails.push(['Dimensione', draft.containerSize || '—']);
       modeDetails.push(['Nave / Viaggio', [draft.vesselName, draft.voyageNumber].filter(Boolean).join(' / ') || '—']);

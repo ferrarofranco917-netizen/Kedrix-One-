@@ -30,6 +30,7 @@ window.KedrixOneQuotationsWorkspace = (() => {
       currency: 'EUR',
       vat: '22',
       notes: '',
+      packagingType: '',
       ...overrides
     };
   }
@@ -60,6 +61,9 @@ window.KedrixOneQuotationsWorkspace = (() => {
     }
     if (!state.quotationDispatchQueue || !Array.isArray(state.quotationDispatchQueue)) {
       state.quotationDispatchQueue = [];
+    }
+    if (!state.quotationFeedbackFollowUps || !Array.isArray(state.quotationFeedbackFollowUps)) {
+      state.quotationFeedbackFollowUps = [];
     }
     if (!state.quotationsWorkspace.activeSessionId && state.quotationsWorkspace.sessions.length) {
       state.quotationsWorkspace.activeSessionId = String(state.quotationsWorkspace.sessions[0].id || '').trim();
@@ -205,6 +209,32 @@ window.KedrixOneQuotationsWorkspace = (() => {
     return entry;
   }
 
+
+  function scheduleFeedbackFollowUp(state, record, options = {}) {
+    ensureState(state);
+    const delayDays = Math.max(0, Number(options.delayDays || 0));
+    const dueAtDate = new Date();
+    dueAtDate.setDate(dueAtDate.getDate() + delayDays);
+    const entry = {
+      id: `QFU-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      moduleKey: 'quotations',
+      recordId: String(record?.id || '').trim(),
+      quotationNumber: String(record?.quotationNumber || '').trim(),
+      client: String(record?.client || '').trim(),
+      status: 'scheduled',
+      scheduledAt: new Date().toISOString(),
+      dueAt: dueAtDate.toISOString(),
+      delayDays,
+      templateKey: String(options.templateKey || '').trim(),
+      templateName: String(options.templateName || '').trim(),
+      templateSubject: String(options.templateSubject || '').trim(),
+      templateBody: String(options.templateBody || '').trim(),
+      recipient: String(options.recipient || record?.client || '').trim()
+    };
+    state.quotationFeedbackFollowUps.unshift(entry);
+    return entry;
+  }
+
   return {
     cloneDraft,
     defaultLineItem,
@@ -222,6 +252,7 @@ window.KedrixOneQuotationsWorkspace = (() => {
     nextQuotationNumber,
     saveRecord,
     queueDispatch,
+    scheduleFeedbackFollowUp,
     today
   };
 })();
