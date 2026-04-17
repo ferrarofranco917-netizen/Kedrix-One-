@@ -21,6 +21,34 @@ window.KedrixOneDocumentOperations = (() => {
     return String(candidates.find((entry) => String(entry || '').trim()) || '').trim();
   }
 
+  function cleanText(value) {
+    return String(value || '').trim();
+  }
+
+  function resolveClientBranding(state = null, draft = {}) {
+    const linkedClientId = cleanText(draft?.linkedEntities?.client?.recordId);
+    const directClientId = cleanText(draft?.clientId || draft?.customerId || draft?.recipientClientId);
+    const clientName = cleanText(
+      draft?.client || draft?.clientName || draft?.customer || draft?.customerName || draft?.principalParty || draft?.transitary || draft?.consignee || draft?.recipient || ''
+    );
+    const clients = Array.isArray(state?.clients) ? state.clients : [];
+    const matched = clients.find((entry) => {
+      const entryId = cleanText(entry?.id);
+      const entryName = cleanText(entry?.name);
+      return (linkedClientId && entryId === linkedClientId)
+        || (directClientId && entryId === directClientId)
+        || (clientName && entryName && entryName.toLowerCase() === clientName.toLowerCase());
+    }) || null;
+    return {
+      name: cleanText(
+        matched?.name || draft?.client || draft?.clientName || draft?.customer || draft?.customerName || draft?.principalParty || draft?.transitary || draft?.consignee || draft?.recipient || ''
+      ),
+      logoUrl: cleanText(
+        draft?.clientLogoUrl || draft?.customerLogoUrl || draft?.recipientLogoUrl || matched?.logoUrl || matched?.logoDataUrl || matched?.logoDataUri || ''
+      )
+    };
+  }
+
   function queueDispatch(state, payload = {}) {
     const queue = ensureDispatchQueue(state);
     const now = new Date().toISOString();
@@ -46,8 +74,10 @@ window.KedrixOneDocumentOperations = (() => {
     return entry;
   }
 
-  function buildPrintShell({ title = 'Documento', bodyHtml = '', companyConfig = null } = {}) {
+  function buildPrintShell({ title = 'Documento', bodyHtml = '', companyConfig = null, clientConfig = null } = {}) {
     const companyName = String(companyConfig?.name || 'Kedrix One').trim() || 'Kedrix One';
+    const clientName = cleanText(clientConfig?.name);
+    const clientLogoUrl = cleanText(clientConfig?.logoUrl);
     return `<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -78,17 +108,69 @@ window.KedrixOneDocumentOperations = (() => {
     }
     .print-header {
       display: grid;
-      grid-template-columns: 78px 1fr;
+      grid-template-columns: minmax(0, 1fr) 240px;
       gap: 18px;
-      align-items: center;
+      align-items: stretch;
       border-bottom: 2px solid var(--border);
       padding-bottom: 16px;
       margin-bottom: 20px;
+    }
+    .print-brand-panel {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      gap: 18px;
+      align-items: center;
+      min-height: 94px;
     }
     .print-logo {
       width: 78px;
       height: 78px;
       object-fit: contain;
+    }
+    .print-client-panel {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      min-height: 94px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+    }
+    .print-client-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      align-self: flex-start;
+    }
+    .print-client-logo,
+    .print-client-logo-slot {
+      width: 100%;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      object-fit: contain;
+    }
+    .print-client-logo-slot {
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: #fbfcfe;
+    }
+    .print-client-name {
+      width: 100%;
+      font-size: 12px;
+      text-align: center;
+      color: var(--text);
+      font-weight: 600;
+      min-height: 16px;
     }
     .print-brand-eyebrow {
       font-size: 11px;
@@ -167,11 +249,18 @@ window.KedrixOneDocumentOperations = (() => {
 <body>
   <div class="print-shell">
     <header class="print-header">
-      <img class="print-logo" src="./brand/kedrix-one-mark.svg" alt="Kedrix One">
-      <div>
-        <div class="print-brand-eyebrow">Kedrix One</div>
-        <h1 class="print-brand-title">${U.escapeHtml(title)}</h1>
-        <div class="print-brand-company">${U.escapeHtml(companyName)}</div>
+      <div class="print-brand-panel">
+        <img class="print-logo" src="./brand/kedrix-one-mark.svg" alt="Kedrix One">
+        <div>
+          <div class="print-brand-eyebrow">Kedrix One</div>
+          <h1 class="print-brand-title">${U.escapeHtml(title)}</h1>
+          <div class="print-brand-company">${U.escapeHtml(companyName)}</div>
+        </div>
+      </div>
+      <div class="print-client-panel">
+        <div class="print-client-label">Cliente</div>
+        ${clientLogoUrl ? `<img class="print-client-logo" src="${U.escapeHtml(clientLogoUrl)}" alt="${U.escapeHtml(clientName || 'Logo cliente')}">` : `<div class="print-client-logo-slot">Spazio logo cliente</div>`}
+        <div class="print-client-name">${U.escapeHtml(clientName || '')}</div>
       </div>
     </header>
     ${bodyHtml}
@@ -180,9 +269,9 @@ window.KedrixOneDocumentOperations = (() => {
 </html>`;
   }
 
-  function printHtmlDocument({ title = 'Documento', bodyHtml = '', companyConfig = null } = {}) {
+  function printHtmlDocument({ title = 'Documento', bodyHtml = '', companyConfig = null, clientConfig = null } = {}) {
     const normalizedBody = String(bodyHtml || '');
-    const html = /<html[\s>]/i.test(normalizedBody) ? normalizedBody : buildPrintShell({ title, bodyHtml: normalizedBody, companyConfig });
+    const html = /<html[\s>]/i.test(normalizedBody) ? normalizedBody : buildPrintShell({ title, bodyHtml: normalizedBody, companyConfig, clientConfig });
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
     iframe.style.position = 'fixed';
@@ -221,6 +310,7 @@ window.KedrixOneDocumentOperations = (() => {
     ensureDispatchQueue,
     queueDispatch,
     buildPrintShell,
+    resolveClientBranding,
     printHtmlDocument
   };
 })();

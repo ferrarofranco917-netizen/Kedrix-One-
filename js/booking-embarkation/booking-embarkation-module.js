@@ -262,8 +262,7 @@ window.KedrixOneBookingEmbarkationModule = (() => {
       <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.finalDestination', 'Destinazione finale'))}</h2><div class="print-block">${U.escapeHtml(draft.finalDestination || '—')}</div></section>
       <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.goods', 'Merce'))}</h2><div class="print-block">${U.escapeHtml(draft.goods || '—')}</div></section>
       <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.containers', 'Container'))}</h2><div class="print-block">${U.escapeHtml(draft.containers || '—')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.bookingEmbarkationCustomerText', 'Testo cliente'))}</h2><div class="print-block">${U.escapeHtml(draft.customerText || '').replace(/\n/g, '<br>')}</div></section>
-      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.bookingEmbarkationInternalText', 'Testo interno'))}</h2><div class="print-block">${U.escapeHtml(draft.internalText || '').replace(/\n/g, '<br>')}</div></section>`;
+      <section class="print-section"><h2>${U.escapeHtml(i18n?.t('ui.bookingEmbarkationCustomerText', 'Testo cliente'))}</h2><div class="print-block">${U.escapeHtml(draft.customerText || '').replace(/\n/g, '<br>')}</div></section>`;
   }
 
   function printDraft(draft, i18n, state) {
@@ -271,7 +270,8 @@ window.KedrixOneBookingEmbarkationModule = (() => {
       return DocumentOps.printHtmlDocument({
         title: i18n?.t('ui.bookingEmbarkationTitle', 'Booking d’imbarco') || 'Booking d’imbarco',
         bodyHtml: buildPrintableHtml(draft, i18n),
-        companyConfig: state?.companyConfig || null
+        companyConfig: state?.companyConfig || null,
+        clientConfig: DocumentOps?.resolveClientBranding ? DocumentOps.resolveClientBranding(state, draft) : { name: String(draft?.transitary || draft?.company || '').trim(), logoUrl: '' }
       });
     }
     return false;

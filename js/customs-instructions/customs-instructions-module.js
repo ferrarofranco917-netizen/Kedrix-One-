@@ -802,7 +802,8 @@ window.KedrixOneCustomsInstructionsModule = (() => {
       return DocumentOps.printHtmlDocument({
         title: i18n?.t('ui.customsInstructionsEditorTitle', 'Istruzioni di sdoganamento') || 'Istruzioni di sdoganamento',
         bodyHtml: buildPrintableHtml(draft, i18n),
-        companyConfig: state?.companyConfig || null
+        companyConfig: state?.companyConfig || null,
+        clientConfig: DocumentOps?.resolveClientBranding ? DocumentOps.resolveClientBranding(state, draft) : { name: String(draft?.principalParty || '').trim(), logoUrl: '' }
       });
     }
     return false;
