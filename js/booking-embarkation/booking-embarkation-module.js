@@ -3,6 +3,7 @@ window.KedrixOneBookingEmbarkationModule = (() => {
 
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneBookingEmbarkationWorkspace || null;
+  const Branding = window.KedrixOneModuleBranding || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -295,6 +296,7 @@ window.KedrixOneBookingEmbarkationModule = (() => {
     const kpis = buildKpis(state);
     const selectedPractice = typeof options.getSelectedPractice === 'function' ? options.getSelectedPractice() : null;
     return `
+      ${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale modulare Kedrix', meta: ['Documento operativo'] }) || ''}
       <section class="hero">
         <div class="hero-meta">${U.escapeHtml(i18n?.t('ui.bookingEmbarkationEyebrow', 'PRATICHE · BOOKING D’IMBARCO'))}</div>
         <h2>${U.escapeHtml(i18n?.t('practices/booking-d-imbarco', 'Booking d’imbarco'))}</h2>

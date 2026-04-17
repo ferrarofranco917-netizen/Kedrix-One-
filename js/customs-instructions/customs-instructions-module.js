@@ -5,8 +5,8 @@ window.KedrixOneCustomsInstructionsModule = (() => {
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneCustomsInstructionsWorkspace || null;
   const Relations = window.KedrixOneCustomsInstructionsRelations || null;
-  const ModuleFieldLinks = window.KedrixOneModuleFieldLinks || null;
   const Density = window.KedrixOneDensitySystem || null;
+  const Branding = window.KedrixOneModuleBranding || null;
 
   const SEA_COLUMNS = ['containerCode', 'transportUnitType', 'seals', 'loadingDate', 'taric', 'description', 'packageCount', 'netWeight', 'grossWeight', 'volume'];
   const AIR_ROAD_COLUMNS = ['marksNumbers', 'description', 'packageCount', 'netWeight', 'grossWeight'];
@@ -109,9 +109,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     if (Relations && typeof Relations.ensureDraftRelations === 'function') {
       Relations.ensureDraftRelations(nextDraft, state?.companyConfig || null);
     }
-    return ModuleFieldLinks?.seedDraftLinks
-      ? ModuleFieldLinks.seedDraftLinks({ state, moduleKey: 'customsInstructions', draft: nextDraft })
-      : nextDraft;
+    return nextDraft;
   }
 
   function modeLabel(mode, i18n) {
@@ -520,7 +518,7 @@ window.KedrixOneCustomsInstructionsModule = (() => {
 
   function renderHeader(state, i18n) {
     const kpis = buildKpis(state);
-    return `
+    return `${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale modulare Kedrix', meta: ['Istruzioni di sdoganamento'] }) || ''}
       <section class="hero">
         <div class="hero-meta">AQ21B · ${U.escapeHtml(i18n?.t('ui.customsInstructionsHeroEyebrow', 'Pratiche · consolidamento sottomodulo esistente'))}</div>
         <h2>${U.escapeHtml(i18n?.t('submodules.practices/istruzioni-di-sdoganamento', 'Istruzioni di sdoganamento'))} · Foundation</h2>
@@ -839,13 +837,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     const fieldName = String(target?.dataset?.customsField || '').trim();
     if (!fieldName) return;
     session.draft[fieldName] = target?.value ?? '';
-    ModuleFieldLinks?.syncDraftField?.({
-      state,
-      moduleKey: 'customsInstructions',
-      draft: session.draft,
-      fieldName,
-      value: target?.value ?? ''
-    });
     if (Relations && typeof Relations.ensureDraftRelations === 'function') {
       Relations.ensureDraftRelations(session.draft, state?.companyConfig || null);
     }
@@ -952,13 +943,6 @@ window.KedrixOneCustomsInstructionsModule = (() => {
     const state = helpers.state;
     if (!root || !state) return;
     ensureState(state);
-
-    ModuleFieldLinks?.enhanceFields?.({
-      root,
-      state,
-      moduleKey: 'customsInstructions',
-      draft: activeSession(state)?.draft || null
-    });
 
     root.querySelector('[data-customs-open-active-practice]')?.addEventListener('click', () => {
       const practice = helpers.getSelectedPractice?.() || getPracticeById(state, state.selectedPracticeId);

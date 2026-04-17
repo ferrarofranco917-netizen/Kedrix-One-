@@ -4,7 +4,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneArrivalNoticeWorkspace || null;
   const Feedback = window.KedrixOneAppFeedback || null;
-  const ModuleFieldLinks = window.KedrixOneModuleFieldLinks || null;
+  const Branding = window.KedrixOneModuleBranding || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -31,7 +31,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
   }
 
   function createEmptyDraft(state, overrides = {}) {
-    const draft = Workspace.cloneDraft({
+    return Workspace.cloneDraft({
       editingRecordId: '',
       practiceId: '',
       practiceReference: '',
@@ -71,9 +71,6 @@ window.KedrixOneArrivalNoticeModule = (() => {
       lineItems: [Workspace.defaultLineItem()],
       ...overrides
     });
-    return ModuleFieldLinks?.seedDraftLinks
-      ? ModuleFieldLinks.seedDraftLinks({ state, moduleKey: 'arrivalNotice', draft })
-      : draft;
   }
 
   function buildDraftFromPractice(state, practice) {
@@ -468,6 +465,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
     const selectedPractice = typeof options.getSelectedPractice === 'function' ? options.getSelectedPractice() : null;
     return `
       <div class="notice-module notice-module-arrival">
+      ${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale modulare Kedrix', meta: ['Documento operativo'] }) || ''}
       <section class="hero">
         <div class="hero-meta">${U.escapeHtml(i18n?.t('ui.arrivalNoticeEyebrow', 'PRATICHE · NOTIFICA ARRIVO MERCE'))}</div>
         <h2>${U.escapeHtml(i18n?.t('practices/notifica-arrivo-merce', 'Notifica arrivo merce'))}</h2>
@@ -618,17 +616,7 @@ window.KedrixOneArrivalNoticeModule = (() => {
       const handler = () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        const updatedSession = Workspace.setSessionField(state, session.id, field.dataset.arrivalNoticeField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
-        if (updatedSession && ModuleFieldLinks?.syncDraftField) {
-          ModuleFieldLinks.syncDraftField({
-            state,
-            moduleKey: 'arrivalNotice',
-            draft: updatedSession.draft,
-            fieldName: field.dataset.arrivalNoticeField,
-            value: field.value
-          });
-        }
-        ModuleFieldLinks?.enhanceFields?.({ root, state, moduleKey: 'arrivalNotice', draft: updatedSession?.draft || session.draft });
+        Workspace.setSessionField(state, session.id, field.dataset.arrivalNoticeField, field.value, { createEmptyDraft: () => createEmptyDraft(state) });
         save?.();
       };
       field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', handler);
@@ -662,13 +650,6 @@ window.KedrixOneArrivalNoticeModule = (() => {
       });
     });
 
-
-    ModuleFieldLinks?.enhanceFields?.({
-      root,
-      state,
-      moduleKey: 'arrivalNotice',
-      draft: Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) })?.draft || null
-    });
 
     root.querySelectorAll('[data-arrival-notice-session-close]').forEach((button) => {
       button.addEventListener('click', async (event) => {
