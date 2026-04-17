@@ -110,6 +110,34 @@ window.KedrixOneQuotationsModule = (() => {
     ];
   }
 
+  function lineTypeOptions() {
+    return [
+      { value: 'service', label: 'Voce di servizio' },
+      { value: 'container-20', label: 'Container 20 box' },
+      { value: 'container-40', label: 'Container 40 box' },
+      { value: 'transport', label: 'Trasporto' },
+      { value: 'customs', label: 'Operazione doganale' },
+      { value: 'warehouse', label: 'Movimentazione magazzino' },
+      { value: 'handling', label: 'Handling / terminal' },
+      { value: 'assistance', label: 'Assistenza / pratica' },
+      { value: 'documentation', label: 'Documentazione' },
+      { value: 'surcharge', label: 'Extra / surcharge' },
+      { value: 'other', label: 'Altro' }
+    ];
+  }
+
+  function lineTypeLabel(value) {
+    const key = String(value || '').trim();
+    const found = lineTypeOptions().find((item) => item.value === key);
+    return found ? found.label : 'Voce di servizio';
+  }
+
+  function lineDescriptionFallback(row) {
+    const explicit = String(row?.description || '').trim();
+    if (explicit) return explicit;
+    return lineTypeLabel(row?.lineType);
+  }
+
   function crmFeedbackConfig(state) {
     return state?.companyConfig?.crmAutomation?.quotationFeedback || {
       enabled: true,
@@ -613,14 +641,15 @@ window.KedrixOneQuotationsModule = (() => {
     const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
     return `
       <section class="panel quotation-editor-panel">
-        <div class="panel-head"><div><h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.detail', 'Dettaglio'))}</h3><p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.quotationDetailHint', 'Righe interne costo/ricavo per simulazione, marginalità e prezzo cliente.'))}</p></div><div class="action-row"><button class="btn secondary" type="button" data-quotation-add-line>${U.escapeHtml(i18n?.t('ui.addRow', 'Aggiungi riga'))}</button></div></div>
+        <div class="panel-head"><div><h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.detail', 'Dettaglio'))}</h3><p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.quotationDetailHint', 'La quotazione può contenere più righe operative per qualunque profilo: container 20/40, operazioni doganali, trasporto, magazzino, assistenza e altre voci commerciali.'))}</p></div><div class="action-row"><button class="btn secondary" type="button" data-quotation-add-line>${U.escapeHtml(i18n?.t('ui.addRow', 'Aggiungi riga'))}</button></div></div>
         <div class="quotation-line-table-wrap">
-          <table class="quotation-line-table"><thead><tr><th>Codice</th><th>Descrizione</th><th>Calc.</th><th>Q.tà</th><th>Unità</th><th>Fornitore</th><th>Costo</th><th>Prezzo cliente</th><th>Valuta</th><th>IVA</th><th>Op.</th></tr></thead><tbody>${rows.map((row, index) => `<tr>
-            <td><input type="text" data-quotation-line-field="code" data-quotation-line-index="${index}" value="${U.escapeHtml(row.code || '')}"></td>
-            <td><input type="text" data-quotation-line-field="description" data-quotation-line-index="${index}" value="${U.escapeHtml(row.description || '')}"></td>
+          <table class="quotation-line-table"><thead><tr><th>Voce</th><th>Codice</th><th>Descrizione</th><th>Calc.</th><th>Q.tà</th><th>Unità</th><th>Fornitore</th><th>Costo</th><th>Prezzo cliente</th><th>Valuta</th><th>IVA</th><th>Op.</th></tr></thead><tbody>${rows.map((row, index) => `<tr>
+            <td><select data-quotation-line-field="lineType" data-quotation-line-index="${index}">${lineTypeOptions().map((item) => `<option value="${U.escapeHtml(item.value)}"${String(row.lineType || 'service') === item.value ? ' selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></td>
+            <td><input type="text" data-quotation-line-field="code" data-quotation-line-index="${index}" value="${U.escapeHtml(row.code || '')}" placeholder="Es. MARE-20BX"></td>
+            <td><input type="text" data-quotation-line-field="description" data-quotation-line-index="${index}" value="${U.escapeHtml(row.description || '')}" placeholder="Es. Trasporto container 20 box"></td>
             <td><select data-quotation-line-field="calcType" data-quotation-line-index="${index}"><option value="fixed"${String(row.calcType || 'fixed') === 'fixed' ? ' selected' : ''}>Fixed</option><option value="per-unit"${String(row.calcType || '') === 'per-unit' ? ' selected' : ''}>Per unità</option></select></td>
             <td><input type="number" step="0.01" data-quotation-line-field="quantity" data-quotation-line-index="${index}" value="${U.escapeHtml(row.quantity || '')}"></td>
-            <td><input type="text" data-quotation-line-field="unit" data-quotation-line-index="${index}" value="${U.escapeHtml(row.unit || '')}"></td>
+            <td><input type="text" data-quotation-line-field="unit" data-quotation-line-index="${index}" value="${U.escapeHtml(row.unit || '')}" placeholder="flat / cad / pallet"></td>
             <td><input type="text" data-quotation-line-field="supplier" data-quotation-line-index="${index}" value="${U.escapeHtml(row.supplier || '')}"></td>
             <td><input type="number" step="0.01" data-quotation-line-field="cost" data-quotation-line-index="${index}" value="${U.escapeHtml(row.cost || '')}"></td>
             <td><input type="number" step="0.01" data-quotation-line-field="revenue" data-quotation-line-index="${index}" value="${U.escapeHtml(row.revenue || '')}"></td>
@@ -808,7 +837,7 @@ window.KedrixOneQuotationsModule = (() => {
     const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
     const publicRows = rows.filter((row) => String(row.description || row.code || '').trim() || parseNumber(row.revenue)).map((row) => ({
       code: row.code || '',
-      description: row.description || '',
+      description: lineDescriptionFallback(row),
       quantity: row.quantity || '',
       price: money(parseNumber(row.revenue) * parseNumber(row.quantity || 1) / Math.max(parseNumber(row.quantity || 1), 1)),
       currency: row.currency || draft.currency || 'EUR'

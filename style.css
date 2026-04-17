@@ -5214,3 +5214,23 @@ body.dialog-open {
     height: 72px;
   }
 }
+
+
+/* AQ58 quotation multiline detail refinement */
+.quotation-line-table {
+  min-width: 1280px;
+}
+
+.quotation-line-table td:nth-child(1),
+.quotation-line-table th:nth-child(1) {
+  min-width: 180px;
+}
+
+.quotation-line-table td:nth-child(3),
+.quotation-line-table th:nth-child(3) {
+  min-width: 220px;
+}
+
+.quotation-line-table .small-btn {
+  white-space: nowrap;
+}

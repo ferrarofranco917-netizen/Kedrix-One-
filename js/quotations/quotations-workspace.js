@@ -19,6 +19,7 @@ window.KedrixOneQuotationsWorkspace = (() => {
   function defaultLineItem(overrides = {}) {
     return {
       id: `qli-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      lineType: 'service',
       code: '',
       description: '',
       calcType: 'fixed',
