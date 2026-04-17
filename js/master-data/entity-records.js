@@ -434,14 +434,15 @@ window.KedrixOneMasterDataEntities = (() => {
     }
 
     const store = ensureRecordStore(state, entityKey);
-    if (store.length) return;
     const directory = ensureDirectory(state, def.directoryKey);
-    directory.forEach((entry, index) => {
+    directory.forEach((entry) => {
       const value = cleanText(entry && typeof entry === 'object' ? (entry.value || entry.name || entry.label || entry.displayValue || '') : entry);
       if (!value) return;
       const city = cleanText(entry && typeof entry === 'object' ? entry.city : '');
+      const exists = store.some((record) => cleanUpper(record && record.name) === cleanUpper(value));
+      if (exists) return;
       store.push({
-        id: `${def.idPrefix}${String(index + 1).padStart(3, '0')}`,
+        id: nextSequentialId(def.idPrefix, store),
         name: value,
         city,
         active: true,
