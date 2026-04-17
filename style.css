@@ -5234,3 +5234,114 @@ body.dialog-open {
 .quotation-line-table .small-btn {
   white-space: nowrap;
 }
+
+
+/* AQ59 quotations intelligent profile presets */
+.quotation-preset-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(110, 170, 220, 0.14);
+  border-radius: 18px;
+  background: rgba(10, 23, 37, 0.78);
+}
+
+.quotation-preset-toolbar-copy strong {
+  display: block;
+  color: #f4f9ff;
+  font-size: 15px;
+}
+
+.quotation-preset-toolbar-copy span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(198, 218, 238, 0.84);
+  font-size: 13px;
+}
+
+.quotation-preset-toolbar-actions,
+.quotation-preset-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quotation-preset-toolbar-actions {
+  justify-content: flex-end;
+}
+
+.quotation-preset-grid {
+  margin-bottom: 14px;
+}
+
+.quotation-preset-chip,
+.quotation-preset-card {
+  border: 1px solid rgba(110, 170, 220, 0.18);
+  background: rgba(11, 24, 39, 0.9);
+  color: #e5f2ff;
+}
+
+.quotation-preset-chip {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.quotation-preset-chip.is-bundle {
+  background: rgba(28, 54, 82, 0.9);
+}
+
+.quotation-preset-card {
+  min-width: 176px;
+  max-width: 220px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quotation-preset-card strong,
+.quotation-preset-card span,
+.quotation-preset-card em {
+  display: block;
+}
+
+.quotation-preset-card strong {
+  font-size: 14px;
+}
+
+.quotation-preset-card span {
+  margin-top: 6px;
+  color: rgba(198, 218, 238, 0.82);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.quotation-preset-card em {
+  margin-top: 8px;
+  color: rgba(112, 198, 255, 0.94);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quotation-preset-chip:hover,
+.quotation-preset-card:hover {
+  border-color: rgba(122, 207, 255, 0.34);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 960px) {
+  .quotation-preset-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .quotation-preset-toolbar-actions {
+    justify-content: flex-start;
+  }
+}

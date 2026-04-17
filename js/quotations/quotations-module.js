@@ -138,6 +138,119 @@ window.KedrixOneQuotationsModule = (() => {
     return lineTypeLabel(row?.lineType);
   }
 
+  function intelligentLinePresets(profile, draft = {}) {
+    const serviceProfile = String(profile || 'generic').trim() || 'generic';
+    const seaPackaging = String(draft?.packagingType || '').trim();
+    const seaContainerType = String(draft?.containerType || '').trim();
+    const seaContainerSize = String(draft?.containerSize || '').trim();
+    const seaContainerLabel = [seaPackaging || 'Container', seaContainerSize || '20'].filter(Boolean).join(' ');
+    const seaLineType = ['40', '40HC', '45HC'].includes(seaContainerSize) ? 'container-40' : 'container-20';
+    const seaLineCode = seaContainerSize ? `MARE-${seaContainerSize}` : 'MARE-BOX';
+    const seaDescription = (seaContainerType || seaPackaging)
+      ? `Nolo marittimo ${(seaPackaging || 'container')} ${seaContainerSize}`.trim()
+      : 'Nolo marittimo container';
+    const roadUnit = String(draft?.truckMode || '').trim() || 'viaggio';
+    const warehouseStorageUnit = String(draft?.palletCount || '').trim() ? 'pallet' : 'giorno';
+    const maps = {
+      generic: [
+        { key: 'generic-service', label: 'Voce servizio', lineType: 'service', code: 'SERV', description: 'Voce di servizio', unit: 'flat' },
+        { key: 'generic-transport', label: 'Trasporto', lineType: 'transport', code: 'TRASP', description: 'Trasporto', unit: 'servizio' },
+        { key: 'generic-customs', label: 'Dogana', lineType: 'customs', code: 'DOG', description: 'Operazione doganale', unit: 'operazione' },
+        { key: 'generic-warehouse', label: 'Magazzino', lineType: 'warehouse', code: 'WH', description: 'Movimentazione magazzino', unit: 'mov.' },
+        { key: 'generic-assistance', label: 'Assistenza', lineType: 'assistance', code: 'ASS', description: 'Assistenza pratica', unit: 'pratica' }
+      ],
+      sea: [
+        { key: 'sea-box-main', label: seaContainerLabel, lineType: seaLineType, code: seaLineCode, description: seaDescription, unit: seaPackaging === 'container' || !seaPackaging ? 'container' : 'collo' },
+        { key: 'sea-customs', label: 'Dogana', lineType: 'customs', code: 'DOG-MARE', description: 'Operazione doganale marittima', unit: 'operazione' },
+        { key: 'sea-handling', label: 'Handling', lineType: 'handling', code: 'HAND-MARE', description: 'Handling / terminal portuale', unit: 'mov.' },
+        { key: 'sea-warehouse', label: 'Magazzino', lineType: 'warehouse', code: 'WH-MARE', description: 'Spostamento / magazzino', unit: 'mov.' },
+        { key: 'sea-docs', label: 'Documenti', lineType: 'documentation', code: 'DOC-MARE', description: 'Documentazione export/import mare', unit: 'set' },
+        { key: 'sea-assistance', label: 'Assistenza', lineType: 'assistance', code: 'ASS-MARE', description: 'Assistenza operativa spedizione mare', unit: 'pratica' }
+      ],
+      air: [
+        { key: 'air-freight', label: 'Nolo aereo', lineType: 'transport', code: 'AIR-FRT', description: 'Nolo aereo', unit: 'kg tass.' },
+        { key: 'air-awb', label: 'AWB / docs', lineType: 'documentation', code: 'AIR-DOC', description: 'Emissione AWB / documentazione', unit: 'set' },
+        { key: 'air-customs', label: 'Dogana', lineType: 'customs', code: 'DOG-AIR', description: 'Operazione doganale aerea', unit: 'operazione' },
+        { key: 'air-delivery', label: 'Trasporto finale', lineType: 'transport', code: 'AIR-DEL', description: 'Trasporto finale / first-last mile', unit: 'servizio' },
+        { key: 'air-assistance', label: 'Assistenza', lineType: 'assistance', code: 'ASS-AIR', description: 'Assistenza operativa spedizione aerea', unit: 'pratica' }
+      ],
+      road: [
+        { key: 'road-linehaul', label: 'Linea strada', lineType: 'transport', code: 'ROAD-TR', description: 'Trasporto stradale', unit: roadUnit },
+        { key: 'road-pickup', label: 'Ritiro', lineType: 'transport', code: 'ROAD-PICK', description: 'Ritiro merce', unit: 'servizio' },
+        { key: 'road-customs', label: 'Dogana', lineType: 'customs', code: 'DOG-ROAD', description: 'Operazione doganale', unit: 'operazione' },
+        { key: 'road-warehouse', label: 'Magazzino', lineType: 'warehouse', code: 'WH-ROAD', description: 'Sosta / magazzino / cross docking', unit: 'mov.' },
+        { key: 'road-assistance', label: 'Assistenza', lineType: 'assistance', code: 'ASS-ROAD', description: 'Assistenza operativa trasporto terra', unit: 'pratica' }
+      ],
+      rail: [
+        { key: 'rail-main', label: 'Trasporto rail', lineType: 'transport', code: 'RAIL-TR', description: 'Trasporto ferroviario', unit: 'unità' },
+        { key: 'rail-terminal', label: 'Terminal', lineType: 'handling', code: 'RAIL-TERM', description: 'Handling terminal ferroviario', unit: 'mov.' },
+        { key: 'rail-customs', label: 'Dogana', lineType: 'customs', code: 'DOG-RAIL', description: 'Operazione doganale rail', unit: 'operazione' },
+        { key: 'rail-docs', label: 'Documenti', lineType: 'documentation', code: 'DOC-RAIL', description: 'Documentazione ferroviaria', unit: 'set' }
+      ],
+      agency: [
+        { key: 'agency-customs', label: 'Operazione doganale', lineType: 'customs', code: 'DOG-AG', description: 'Operazione doganale', unit: 'operazione' },
+        { key: 'agency-docs', label: 'Documentazione', lineType: 'documentation', code: 'DOC-AG', description: 'Gestione documentale', unit: 'set' },
+        { key: 'agency-booking', label: 'Booking', lineType: 'service', code: 'BOOK-AG', description: 'Gestione booking / coordinamento', unit: 'pratica' },
+        { key: 'agency-assistance', label: 'Assistenza', lineType: 'assistance', code: 'ASS-AG', description: 'Assistenza agenzia', unit: 'pratica' }
+      ],
+      warehouse: [
+        { key: 'warehouse-inbound', label: 'Ingresso', lineType: 'warehouse', code: 'WH-IN', description: 'Ricevimento / inbound', unit: 'mov.' },
+        { key: 'warehouse-storage', label: 'Giacenza', lineType: 'warehouse', code: 'WH-STO', description: 'Giacenza magazzino', unit: warehouseStorageUnit },
+        { key: 'warehouse-picking', label: 'Picking', lineType: 'warehouse', code: 'WH-PICK', description: 'Picking / preparazione ordine', unit: 'operazione' },
+        { key: 'warehouse-outbound', label: 'Uscita', lineType: 'warehouse', code: 'WH-OUT', description: 'Outbound / caricazione', unit: 'mov.' },
+        { key: 'warehouse-transport', label: 'Trasporto', lineType: 'transport', code: 'WH-TR', description: 'Trasporto da/per deposito', unit: 'servizio' }
+      ]
+    };
+    return maps[serviceProfile] || maps.generic;
+  }
+
+  function presetBundleByProfile(profile) {
+    const bundles = {
+      sea: ['sea-box-main', 'sea-customs', 'sea-handling', 'sea-assistance'],
+      air: ['air-freight', 'air-awb', 'air-customs', 'air-assistance'],
+      road: ['road-linehaul', 'road-pickup', 'road-assistance'],
+      rail: ['rail-main', 'rail-terminal', 'rail-docs'],
+      agency: ['agency-customs', 'agency-docs', 'agency-assistance'],
+      warehouse: ['warehouse-inbound', 'warehouse-storage', 'warehouse-outbound'],
+      generic: ['generic-service', 'generic-transport', 'generic-assistance']
+    };
+    const serviceProfile = String(profile || 'generic').trim() || 'generic';
+    return bundles[serviceProfile] || bundles.generic;
+  }
+
+  function presetByKey(profile, presetKey, draft = {}) {
+    return intelligentLinePresets(profile, draft).find((item) => String(item?.key || '') === String(presetKey || '')) || null;
+  }
+
+  function buildLineFromPreset(profile, presetKey, draft = {}) {
+    const preset = presetByKey(profile, presetKey, draft);
+    if (!preset) return Workspace?.defaultLineItem?.() || { id: `qli-${Date.now()}` };
+    return Workspace?.defaultLineItem?.({
+      lineType: preset.lineType || 'service',
+      code: preset.code || '',
+      description: preset.description || preset.label || '',
+      calcType: preset.calcType || 'fixed',
+      quantity: preset.quantity || '1',
+      unit: preset.unit || 'flat',
+      supplier: preset.supplier || '',
+      currency: preset.currency || draft.currency || 'EUR',
+      vat: preset.vat || '22',
+      packagingType: String(draft?.packagingType || '').trim()
+    }) || { id: `qli-${Date.now()}` };
+  }
+
+  function maybeHydrateLineFromPreset(line, draft) {
+    const currentType = String(line?.lineType || '').trim();
+    if (!currentType) return line;
+    const preset = intelligentLinePresets(draft?.serviceProfile, draft).find((item) => String(item?.lineType || '') === currentType);
+    if (!preset) return line;
+    if (!String(line.code || '').trim()) line.code = preset.code || '';
+    if (!String(line.description || '').trim()) line.description = preset.description || preset.label || '';
+    if (!String(line.unit || '').trim()) line.unit = preset.unit || 'flat';
+    if (!String(line.currency || '').trim()) line.currency = draft?.currency || preset.currency || 'EUR';
+    return line;
+  }
+
   function crmFeedbackConfig(state) {
     return state?.companyConfig?.crmAutomation?.quotationFeedback || {
       enabled: true,
@@ -637,11 +750,30 @@ window.KedrixOneQuotationsModule = (() => {
       </section>`;
   }
 
+  function renderPresetToolbar(draft) {
+    const presets = intelligentLinePresets(draft?.serviceProfile, draft);
+    const bundle = presetBundleByProfile(draft?.serviceProfile).map((key) => presetByKey(draft?.serviceProfile, key, draft)).filter(Boolean);
+    const bundleLabel = serviceProfileLabel(draft?.serviceProfile || 'generic');
+    return `
+      <div class="quotation-preset-toolbar">
+        <div class="quotation-preset-toolbar-copy">
+          <strong>Righe intelligenti per profilo</strong>
+          <span>Preset coerenti con ${U.escapeHtml(bundleLabel)} senza perdere la libertà multi-riga.</span>
+        </div>
+        <div class="quotation-preset-toolbar-actions">
+          <button class="btn secondary" type="button" data-quotation-apply-bundle>${U.escapeHtml(`Carica set ${bundleLabel}`)}</button>
+          ${bundle.map((preset) => `<button class="quotation-preset-chip is-bundle" type="button" data-quotation-add-preset="${U.escapeHtml(preset.key)}">${U.escapeHtml(preset.label)}</button>`).join('')}
+        </div>
+      </div>
+      <div class="quotation-preset-grid">${presets.map((preset) => `<button class="quotation-preset-card" type="button" data-quotation-add-preset="${U.escapeHtml(preset.key)}"><strong>${U.escapeHtml(preset.label)}</strong><span>${U.escapeHtml(preset.description || preset.label || '')}</span><em>${U.escapeHtml(preset.code || 'Preset')}</em></button>`).join('')}</div>`;
+  }
+
   function renderDetail(draft, i18n) {
     const rows = Array.isArray(draft.lineItems) ? draft.lineItems : [];
     return `
       <section class="panel quotation-editor-panel">
         <div class="panel-head"><div><h3 class="panel-title">${U.escapeHtml(i18n?.t('ui.detail', 'Dettaglio'))}</h3><p class="panel-subtitle">${U.escapeHtml(i18n?.t('ui.quotationDetailHint', 'La quotazione può contenere più righe operative per qualunque profilo: container 20/40, operazioni doganali, trasporto, magazzino, assistenza e altre voci commerciali.'))}</p></div><div class="action-row"><button class="btn secondary" type="button" data-quotation-add-line>${U.escapeHtml(i18n?.t('ui.addRow', 'Aggiungi riga'))}</button></div></div>
+        ${renderPresetToolbar(draft)}
         <div class="quotation-line-table-wrap">
           <table class="quotation-line-table"><thead><tr><th>Voce</th><th>Codice</th><th>Descrizione</th><th>Calc.</th><th>Q.tà</th><th>Unità</th><th>Fornitore</th><th>Costo</th><th>Prezzo cliente</th><th>Valuta</th><th>IVA</th><th>Op.</th></tr></thead><tbody>${rows.map((row, index) => `<tr>
             <td><select data-quotation-line-field="lineType" data-quotation-line-index="${index}">${lineTypeOptions().map((item) => `<option value="${U.escapeHtml(item.value)}"${String(row.lineType || 'service') === item.value ? ' selected' : ''}>${U.escapeHtml(item.label)}</option>`).join('')}</select></td>
@@ -1017,6 +1149,35 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         return;
       }
 
+      const addPresetButton = event.target.closest('[data-quotation-add-preset]');
+      if (addPresetButton) {
+        const session = activeSession(context.state);
+        if (session) {
+          const presetKey = String(addPresetButton.dataset.quotationAddPreset || '').trim();
+          session.draft.lineItems.push(buildLineFromPreset(session.draft.serviceProfile, presetKey, session.draft));
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
+      const applyBundleButton = event.target.closest('[data-quotation-apply-bundle]');
+      if (applyBundleButton) {
+        const session = activeSession(context.state);
+        if (session) {
+          const keys = presetBundleByProfile(session.draft.serviceProfile);
+          const existingSingleBlank = session.draft.lineItems.length === 1 && !String(session.draft.lineItems[0]?.description || session.draft.lineItems[0]?.code || session.draft.lineItems[0]?.cost || session.draft.lineItems[0]?.revenue || '').trim();
+          if (existingSingleBlank) session.draft.lineItems = [];
+          keys.forEach((key) => session.draft.lineItems.push(buildLineFromPreset(session.draft.serviceProfile, key, session.draft)));
+          if (!session.draft.lineItems.length) session.draft.lineItems.push(Workspace?.defaultLineItem?.() || { id: `qli-${Date.now()}` });
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
       const removeLineButton = event.target.closest('[data-quotation-remove-line]');
       if (removeLineButton) {
         const index = Number(removeLineButton.dataset.quotationRemoveLine);
@@ -1088,8 +1249,12 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         const session = activeSession(context.state);
         if (session && Number.isInteger(index) && session.draft.lineItems[index]) {
           session.draft.lineItems[index][fieldName] = lineField.value;
+          if (fieldName === 'lineType') {
+            maybeHydrateLineFromPreset(session.draft.lineItems[index], session.draft);
+          }
           session.isDirty = true;
           context.save?.();
+          if (fieldName === 'lineType') context.render?.();
         }
         return;
       }
