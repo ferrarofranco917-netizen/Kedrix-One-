@@ -4,7 +4,7 @@ window.KedrixOneDepartureNoticeModule = (() => {
   const U = window.KedrixOneUtils || { escapeHtml: (value) => String(value || '') };
   const Workspace = window.KedrixOneDepartureNoticeWorkspace || null;
   const Feedback = window.KedrixOneAppFeedback || null;
-  const Branding = window.KedrixOneModuleBranding || null;
+  const DocumentOps = window.KedrixOneDocumentOperations || null;
 
   function today() {
     return new Date().toISOString().slice(0, 10);
@@ -359,21 +359,22 @@ window.KedrixOneDepartureNoticeModule = (() => {
         ${renderField(i18n?.t('ui.departureNoticeCustomerText', 'Testo destinatario'), 'customerText', draft.customerText, { type: 'textarea', rows: 8, full: true })}
       </div>`;
   }
-
-
-  function buildMailtoHref(draft, i18n) {
-    const subject = `${i18n?.t('practices/notifica-arrivo-merce', 'Notifica partenza merce')} ${draft.practiceReference || ''}`.trim();
-    const lines = [
-      `${i18n?.t('ui.generatedNumber', 'Pratica')}: ${draft.practiceReference || '—'}`,
-      `${i18n?.t('ui.clientRequired', 'Cliente')}: ${draft.client || '—'}`,
-      `${i18n?.t('ui.bookingWord', 'Booking')}: ${draft.bookingReference || '—'}`,
-      `${i18n?.t('ui.policyNumber', 'Polizza')}: ${draft.policyReference || '—'}`,
-      `${i18n?.t('ui.departureNoticeLoadingPort', 'Porto imbarco')}: ${draft.loadingPort || '—'}`,
-      `${i18n?.t('ui.departureNoticeUnloadingPort', 'Porto destino')}: ${draft.unloadingPort || '—'}`,
-      '',
-      draft.customerText || draft.internalText || ''
-    ];
-    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
+  function queueDispatchForDraft(state, record, i18n) {
+    if (!DocumentOps || typeof DocumentOps.queueDispatch !== 'function') return null;
+    return DocumentOps.queueDispatch(state, {
+      moduleKey: 'departure-notice',
+      moduleLabel: i18n?.t('practices/notifica-partenza-merce', 'Notifica partenza merce') || 'Notifica partenza merce',
+      documentLabel: i18n?.t('practices/notifica-partenza-merce', 'Notifica partenza merce') || 'Notifica partenza merce',
+      recordId: String(record?.id || record?.editingRecordId || '').trim(),
+      practiceId: String(record?.practiceId || '').trim(),
+      practiceReference: String(record?.practiceReference || '').trim(),
+      recipientEmail: DocumentOps.deriveRecipientEmail(record),
+      subject: `${i18n?.t('practices/notifica-partenza-merce', 'Notifica partenza merce') || 'Notifica partenza merce'} ${String(record?.practiceReference || '').trim()}`.trim(),
+      snapshot: {
+        title: String(record?.practiceReference || record?.bookingReference || record?.reference || '').trim(),
+        client: String(record?.client || record?.transitary || '').trim()
+      }
+    });
   }
 
   function buildPrintableHtml(draft, i18n) {
@@ -381,14 +382,15 @@ window.KedrixOneDepartureNoticeModule = (() => {
     return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${U.escapeHtml(i18n?.t('practices/notifica-arrivo-merce', 'Notifica partenza merce'))}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 8px;font-size:24px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #cfd4dc;padding:8px;font-size:12px;text-align:left;vertical-align:top}.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}.meta div{border:1px solid #d8dde6;padding:10px}.block{margin-top:18px}.block h2{font-size:16px;margin:0 0 8px}</style></head><body><h1>${U.escapeHtml(i18n?.t('practices/notifica-arrivo-merce', 'Notifica partenza merce'))}</h1><div class="meta"><div><strong>${U.escapeHtml(i18n?.t('ui.generatedNumber', 'Pratica'))}</strong><br>${U.escapeHtml(draft.practiceReference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.clientRequired', 'Cliente'))}</strong><br>${U.escapeHtml(draft.client || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.bookingWord', 'Booking'))}</strong><br>${U.escapeHtml(draft.bookingReference || '—')}</div><div><strong>${U.escapeHtml(i18n?.t('ui.policyNumber', 'Polizza'))}</strong><br>${U.escapeHtml(draft.policyReference || '—')}</div></div><table><thead><tr><th>Container</th><th>Tipologia</th><th>Descrizione</th><th>Colli</th><th>Peso lordo</th><th>CBM</th></tr></thead><tbody>${rows.map((row)=>`<tr><td>${U.escapeHtml(row.containerCode || '')}</td><td>${U.escapeHtml(row.containerType || '')}</td><td>${U.escapeHtml(row.description || '')}</td><td>${U.escapeHtml(row.packageCount || '')}</td><td>${U.escapeHtml(row.grossWeight || '')}</td><td>${U.escapeHtml(row.cbm || '')}</td></tr>`).join('')}</tbody></table><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.departureNoticeCustomerText', 'Testo destinatario'))}</h2><div>${U.escapeHtml(draft.customerText || '').replace(/\n/g,'<br>')}</div></div><div class="block"><h2>${U.escapeHtml(i18n?.t('ui.departureNoticeInternalText', 'Testo operativo'))}</h2><div>${U.escapeHtml(draft.internalText || '').replace(/\n/g,'<br>')}</div></div></body></html>`;
   }
 
-  function printDraft(draft, i18n) {
-    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=800');
-    if (!popup) return false;
-    popup.document.write(buildPrintableHtml(draft, i18n));
-    popup.document.close();
-    popup.focus();
-    popup.print();
-    return true;
+  function printDraft(draft, i18n, state) {
+    if (DocumentOps && typeof DocumentOps.printHtmlDocument === 'function') {
+      return DocumentOps.printHtmlDocument({
+        title: i18n?.t('practices/notifica-partenza-merce', 'Notifica partenza merce') || 'Notifica partenza merce',
+        bodyHtml: buildPrintableHtml(draft, i18n),
+        companyConfig: state?.companyConfig || null
+      });
+    }
+    return false;
   }
 
   async function closeSessionWithGuard(state, sessionId, i18n) {
@@ -424,7 +426,7 @@ window.KedrixOneDepartureNoticeModule = (() => {
           </div>
           <div class="action-row">
             <button class="btn secondary" type="button" data-departure-notice-print>${U.escapeHtml(i18n?.t('ui.print', 'Stampa'))}</button>
-            <button class="btn secondary" type="button" data-departure-notice-email>${U.escapeHtml(i18n?.t('ui.sendEmail', 'Invia email'))}</button>
+            <button class="btn secondary" type="button" data-departure-notice-email>${U.escapeHtml(i18n?.t('ui.saveAndSend', 'Salva e invia'))}</button>
             <button class="btn secondary" type="button" data-departure-notice-save-continue>${U.escapeHtml(i18n?.t('ui.saveAndContinue', 'Salva e continua'))}</button>
             <button class="btn" type="button" data-departure-notice-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
@@ -465,7 +467,6 @@ window.KedrixOneDepartureNoticeModule = (() => {
     const selectedPractice = typeof options.getSelectedPractice === 'function' ? options.getSelectedPractice() : null;
     return `
       <div class="notice-module notice-module-departure">
-      ${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale modulare Kedrix', meta: ['Documento operativo'] }) || ''}
       <section class="hero">
         <div class="hero-meta">${U.escapeHtml(i18n?.t('ui.departureNoticeEyebrow', 'PRATICHE · NOTIFICA ARRIVO MERCE'))}</div>
         <h2>${U.escapeHtml(i18n?.t('practices/notifica-arrivo-merce', 'Notifica partenza merce'))}</h2>
@@ -666,7 +667,7 @@ window.KedrixOneDepartureNoticeModule = (() => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        printDraft(session.draft || {}, i18n);
+        printDraft(session.draft || {}, i18n, state);
       });
     });
 
@@ -674,7 +675,12 @@ window.KedrixOneDepartureNoticeModule = (() => {
       button.addEventListener('click', () => {
         const session = Workspace.getActiveSession(state, { createEmptyDraft: () => createEmptyDraft(state) });
         if (!session) return;
-        window.location.href = buildMailtoHref(session.draft || {}, i18n);
+        const savedRecord = upsertRecord(state, session);
+        save?.();
+        queueDispatchForDraft(state, savedRecord, i18n);
+        save?.();
+        render?.();
+        toast?.(i18n?.t('ui.documentQueuedForDispatch', 'Documento salvato e accodato al Centro invii automatici di Kedrix One.'), 'success');
       });
     });
 
