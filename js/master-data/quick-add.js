@@ -296,6 +296,43 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return key && defs[key] ? defs[key] : null;
   }
 
+  function renderSupplierOperationalPanel(state, formDraft, entries, t) {
+    const suppliers = Array.isArray(entries) ? entries : [];
+    const withModes = suppliers.filter((entry) => String(entry?.record?.serviceModes || '').trim()).length;
+    const withAreas = suppliers.filter((entry) => String(entry?.record?.servicedAreas || '').trim()).length;
+    const withTerms = suppliers.filter((entry) => String(entry?.record?.paymentTerms || '').trim()).length;
+    const currentTitle = String(formDraft?.value || '').trim() || t.t('ui.masterDataSupplierProfileEmpty', 'Nessun fornitore selezionato');
+    const currentModes = String(formDraft?.serviceModes || '').trim() || '—';
+    const currentAreas = String(formDraft?.servicedAreas || '').trim() || '—';
+    const currentTerms = String(formDraft?.paymentTerms || '').trim() || '—';
+    const currentContact = String(formDraft?.contactPerson || '').trim() || '—';
+    return `
+      <section class="panel master-data-supplier-panel">
+        <div class="panel-head compact">
+          <div>
+            <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataSupplierPanelTitle', 'Fornitori · profilo operativo'))}</h3>
+            <p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataSupplierPanelDetail', 'Consolida i dati minimi utili per quotazioni future, CRM fornitori e ricerca per servizio o tratta.'))}</p>
+          </div>
+        </div>
+        <div class="master-data-supplier-panel-grid">
+          <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(suppliers.length))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelCount', 'fornitori attivi in anagrafica'))}</span></article>
+          <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(withModes))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelModes', 'con servizi / modalità'))}</span></article>
+          <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(withAreas))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelAreas', 'con aree / tratte'))}</span></article>
+          <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(withTerms))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelTerms', 'con condizioni pagamento'))}</span></article>
+        </div>
+        <div class="master-data-supplier-current">
+          <div class="master-data-supplier-current-head">${escapeHtml(t.t('ui.masterDataSupplierPanelCurrent', 'Scheda corrente'))}</div>
+          <div class="master-data-supplier-current-title">${escapeHtml(currentTitle)}</div>
+          <div class="master-data-supplier-current-grid">
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierServiceModes', 'Servizi / modalità coperte'))}</span><strong>${escapeHtml(currentModes)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierServicedAreas', 'Aree / tratte servite'))}</span><strong>${escapeHtml(currentAreas)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierPaymentTerms', 'Condizioni pagamento'))}</span><strong>${escapeHtml(currentTerms)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierContactPerson', 'Referente operativo'))}</span><strong>${escapeHtml(currentContact)}</strong></div>
+          </div>
+        </div>
+      </section>`;
+  }
+
   function renderPanel({ state, module, t }) {
     const defs = getEntityDefinitions(t);
     const moduleState = ensureModuleState(state);
@@ -321,7 +358,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       <section class="hero">
         <div class="hero-meta">${escapeHtml(routeEntityMeta ? 'Master data · ' + routeEntityMeta.familyLabel : 'Master data')}</div>
         <h2>${escapeHtml(routeEntityMeta ? routeEntityMeta.familyLabel : (module?.label || t.t('ui.masterDataTitle', 'Anagrafiche')))}</h2>
-        <p>${escapeHtml(routeEntityMeta ? 'Sottomodulo reale di Anagrafiche agganciato alla famiglia operativa già presente nel motore master-data.' : t.t('ui.masterDataIntro', 'Gestisci anagrafiche e directory operative condivise tra pratiche e moduli collegati.'))}</p>
+        <p>${escapeHtml(routeEntityMeta ? t.t('ui.masterDataSubmoduleIntro', 'Sottomodulo reale di Anagrafiche agganciato alla famiglia operativa già presente nel motore master-data.') : t.t('ui.masterDataIntro', 'Gestisci anagrafiche e directory operative condivise tra pratiche e moduli collegati.'))}</p>
       </section>
 
       ${overviewHtml}
@@ -342,7 +379,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           <div class="form-grid two master-data-config-grid">
             <div class="field full">
               <label for="masterDataFamilySelect">${escapeHtml(t.t('ui.masterDataFamilyLabel', 'Famiglia anagrafica'))}</label>
-              <select id="masterDataFamilySelect" ${quickAddContext ? 'disabled' : ''}>
+              <select id="masterDataFamilySelect" ${(quickAddContext || routeEntityMeta) ? 'disabled' : ''}>
                 ${familyOptions.map((item) => `<option value="${escapeHtml(item.key)}" ${item.key === activeEntity ? 'selected' : ''}>${escapeHtml(item.familyLabel)}</option>`).join('')}
               </select>
             </div>
@@ -377,6 +414,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         </article>
       </section>
 
+      ${activeEntity === 'supplier' && !quickAddContext ? renderSupplierOperationalPanel(state, formDraft, entries, t) : ''}
       ${activeDef.structured && !quickAddContext && VatAutofill && typeof VatAutofill.renderConfigPanel === 'function' ? VatAutofill.renderConfigPanel(state, t) : ''}`;
   }
 

@@ -396,6 +396,10 @@ window.KedrixOneMasterDataEntities = (() => {
       country: cleanText(record.country || ''),
       email: cleanText(record.email || ''),
       phone: cleanText(record.phone || ''),
+      contactPerson: cleanText(record.contactPerson || ''),
+      serviceModes: cleanText(record.serviceModes || ''),
+      servicedAreas: cleanText(record.servicedAreas || ''),
+      paymentTerms: cleanText(record.paymentTerms || ''),
       pec: cleanText(record.pec || ''),
       sdiCode: cleanText(record.sdiCode || ''),
       notes: cleanText(record.notes || ''),
@@ -451,6 +455,10 @@ window.KedrixOneMasterDataEntities = (() => {
       country: '',
       email: '',
       phone: '',
+      contactPerson: '',
+      serviceModes: '',
+      servicedAreas: '',
+      paymentTerms: '',
       pec: '',
       sdiCode: '',
       notes: '',
@@ -521,6 +529,10 @@ window.KedrixOneMasterDataEntities = (() => {
       country: normalized.country,
       email: normalized.email,
       phone: normalized.phone,
+      contactPerson: normalized.contactPerson,
+      serviceModes: normalized.serviceModes,
+      servicedAreas: normalized.servicedAreas,
+      paymentTerms: normalized.paymentTerms,
       pec: normalized.pec,
       sdiCode: normalized.sdiCode,
       notes: normalized.notes,
@@ -557,7 +569,7 @@ window.KedrixOneMasterDataEntities = (() => {
     if (!def || !def.structured) return [];
 
     const companyLabel = def.valueLabel || t(i18n, 'ui.masterDataClientName', 'Ragione sociale');
-    return [
+    const baseFields = [
       { name: 'value', label: companyLabel, required: true, full: true },
       { name: 'shortName', label: t(i18n, 'ui.masterDataShortName', 'Nome breve') },
       { name: 'code', label: t(i18n, 'ui.masterDataInternalCode', 'Codice interno') },
@@ -569,7 +581,21 @@ window.KedrixOneMasterDataEntities = (() => {
       { name: 'province', label: t(i18n, 'ui.masterDataProvince', 'Provincia') },
       { name: 'country', label: t(i18n, 'ui.masterDataCountry', 'Nazione') },
       { name: 'email', label: t(i18n, 'ui.email', 'Email') },
-      { name: 'phone', label: t(i18n, 'ui.phone', 'Telefono') },
+      { name: 'phone', label: t(i18n, 'ui.phone', 'Telefono') }
+    ];
+
+    const supplierFields = entityKey === 'supplier'
+      ? [
+          { name: 'contactPerson', label: t(i18n, 'ui.masterDataSupplierContactPerson', 'Referente operativo') },
+          { name: 'serviceModes', label: t(i18n, 'ui.masterDataSupplierServiceModes', 'Servizi / modalità coperte'), full: true },
+          { name: 'servicedAreas', label: t(i18n, 'ui.masterDataSupplierServicedAreas', 'Aree / tratte servite'), full: true },
+          { name: 'paymentTerms', label: t(i18n, 'ui.masterDataSupplierPaymentTerms', 'Condizioni pagamento') }
+        ]
+      : [];
+
+    return [
+      ...baseFields,
+      ...supplierFields,
       { name: 'pec', label: t(i18n, 'ui.masterDataPec', 'PEC') },
       { name: 'sdiCode', label: t(i18n, 'ui.masterDataSdi', 'Codice SDI') },
       { name: 'notes', label: t(i18n, 'ui.notes', 'Note'), full: true, type: 'textarea' },
@@ -630,6 +656,10 @@ window.KedrixOneMasterDataEntities = (() => {
       country: payload.country,
       email: payload.email,
       phone: payload.phone,
+      contactPerson: payload.contactPerson,
+      serviceModes: payload.serviceModes,
+      servicedAreas: payload.servicedAreas,
+      paymentTerms: payload.paymentTerms,
       pec: payload.pec,
       sdiCode: payload.sdiCode,
       notes: payload.notes,
@@ -664,6 +694,10 @@ window.KedrixOneMasterDataEntities = (() => {
         country: normalized.country,
         email: normalized.email,
         phone: normalized.phone,
+        contactPerson: normalized.contactPerson,
+        serviceModes: normalized.serviceModes,
+        servicedAreas: normalized.servicedAreas,
+        paymentTerms: normalized.paymentTerms,
         pec: normalized.pec,
         sdiCode: normalized.sdiCode,
         notes: normalized.notes,
@@ -757,8 +791,12 @@ window.KedrixOneMasterDataEntities = (() => {
         .map((record) => ({
           id: record.id || record.name,
           primary: record.name,
-          secondary: [record.city, record.country].filter(Boolean).join(' · ') || '—',
-          tertiary: record.vatNumber || record.code || '—',
+          secondary: entityKey === 'supplier'
+            ? ([record.city, record.country, record.serviceModes].filter(Boolean).join(' · ') || '—')
+            : ([record.city, record.country].filter(Boolean).join(' · ') || '—'),
+          tertiary: entityKey === 'supplier'
+            ? ([record.paymentTerms, record.vatNumber || record.code].filter(Boolean).join(' · ') || '—')
+            : (record.vatNumber || record.code || '—'),
           value: record.name,
           record
         }));

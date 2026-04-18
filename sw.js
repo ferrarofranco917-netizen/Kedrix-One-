@@ -1,6 +1,6 @@
-// AQ59 quotations intelligent profile presets
-const STATIC_CACHE = 'kedrix-one-stepaq59-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq59-runtime-v1';
+// AQ62 anagrafiche fornitori operational profile
+const STATIC_CACHE = 'kedrix-one-stepaq62-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq62-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',

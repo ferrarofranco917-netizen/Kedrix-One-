@@ -49,6 +49,36 @@ window.KedrixOneMasterDataOverview = (() => {
     return MasterDataEntities.listEntityRecords(state, entityKey).length;
   }
 
+  function listStructuredRecords(state, entityKey) {
+    if (!MasterDataEntities || typeof MasterDataEntities.listEntityRecords !== 'function') return [];
+    return MasterDataEntities.listEntityRecords(state, entityKey)
+      .map((entry) => entry && entry.record ? entry.record : null)
+      .filter(Boolean);
+  }
+
+  function renderSupplierOperationalSnapshot(state, i18n) {
+    const suppliers = listStructuredRecords(state, 'supplier');
+    if (!suppliers.length) return '';
+    const withModes = suppliers.filter((record) => String(record.serviceModes || '').trim()).length;
+    const withAreas = suppliers.filter((record) => String(record.servicedAreas || '').trim()).length;
+    const withPaymentTerms = suppliers.filter((record) => String(record.paymentTerms || '').trim()).length;
+    return `
+      <section class="panel master-data-supplier-snapshot">
+        <div class="panel-head compact">
+          <div>
+            <h3 class="panel-title">${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotTitle', 'Fornitori · snapshot operativo'))}</h3>
+            <p class="panel-subtitle">${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotDetail', 'Verifica quanto la base fornitori è pronta per ricerche operative, quotazioni e CRM fornitori.'))}</p>
+          </div>
+        </div>
+        <div class="master-data-supplier-metrics">
+          <article class="master-data-supplier-metric"><strong>${escapeHtml(suppliers.length)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotRecords', 'fornitori strutturati'))}</span></article>
+          <article class="master-data-supplier-metric"><strong>${escapeHtml(withModes)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotModes', 'con servizi configurati'))}</span></article>
+          <article class="master-data-supplier-metric"><strong>${escapeHtml(withAreas)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotAreas', 'con aree / tratte'))}</span></article>
+          <article class="master-data-supplier-metric"><strong>${escapeHtml(withPaymentTerms)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotTerms', 'con pagamento definito'))}</span></article>
+        </div>
+      </section>`;
+  }
+
   function getStructuredFamilyMeta(state, entityKey, i18n) {
     const defs = MasterDataEntities && typeof MasterDataEntities.getEntityDefinitions === 'function'
       ? MasterDataEntities.getEntityDefinitions(i18n)
@@ -126,12 +156,16 @@ window.KedrixOneMasterDataOverview = (() => {
     if (!def) return '';
     const count = listCount(state, activeEntity);
     const structured = Boolean(def.structured);
-    const title = structured
-      ? t(i18n, 'ui.masterDataOverviewActiveStructuredTitle', 'Scheda entità completa')
-      : t(i18n, 'ui.masterDataOverviewActiveDirectoryTitle', 'Directory operativa');
-    const detail = structured
-      ? t(i18n, 'ui.masterDataOverviewActiveStructuredDetail', 'Questa famiglia salva schede complete con dati fiscali, contatti e riuso futuro in CRM, Quotazioni, Import e collegamenti forti.')
-      : t(i18n, 'ui.masterDataOverviewActiveDirectoryDetail', 'Questa famiglia resta una directory operativa leggera, utile come supporto e normalizzazione nei flussi.')
+    const title = activeEntity === 'supplier'
+      ? t(i18n, 'ui.masterDataOverviewActiveSupplierTitle', 'Scheda fornitore operativa')
+      : (structured
+        ? t(i18n, 'ui.masterDataOverviewActiveStructuredTitle', 'Scheda entità completa')
+        : t(i18n, 'ui.masterDataOverviewActiveDirectoryTitle', 'Directory operativa'));
+    const detail = activeEntity === 'supplier'
+      ? t(i18n, 'ui.masterDataOverviewActiveSupplierDetail', 'Questa famiglia è il ponte naturale verso quotazioni, CRM fornitori e ricerca del partner giusto per servizio, tratta e condizioni operative.')
+      : (structured
+        ? t(i18n, 'ui.masterDataOverviewActiveStructuredDetail', 'Questa famiglia salva schede complete con dati fiscali, contatti e riuso futuro in CRM, Quotazioni, Import e collegamenti forti.')
+        : t(i18n, 'ui.masterDataOverviewActiveDirectoryDetail', 'Questa famiglia resta una directory operativa leggera, utile come supporto e normalizzazione nei flussi.'));
     const metricLabel = structured
       ? t(i18n, 'ui.masterDataOverviewActiveStructuredMetric', 'schede complete')
       : t(i18n, 'ui.masterDataOverviewActiveDirectoryMetric', 'voci di directory');
@@ -165,7 +199,8 @@ window.KedrixOneMasterDataOverview = (() => {
         ${GROUPS.map((group) => renderGroupCard(state, group, i18n)).join('')}
       </section>
       ${logisticsHtml}
-      ${renderActiveFamilyContext(state, activeEntity, i18n)}`;
+      ${renderActiveFamilyContext(state, activeEntity, i18n)}
+      ${activeEntity === 'supplier' ? renderSupplierOperationalSnapshot(state, i18n) : ''}`;
   }
 
   return {
