@@ -472,11 +472,19 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const withModes = suppliers.filter((entry) => String(entry?.record?.serviceModes || '').trim()).length;
     const withAreas = suppliers.filter((entry) => String(entry?.record?.servicedAreas || '').trim()).length;
     const withTerms = suppliers.filter((entry) => String(entry?.record?.paymentTerms || '').trim()).length;
+    const withClassification = suppliers.filter((entry) => isSupplierClassified(entry?.record || {})).length;
+    const preferredSuppliers = suppliers.filter((entry) => isSupplierPreferred(entry?.record || {})).length;
+    const reliableSuppliers = suppliers.filter((entry) => isSupplierReliable(entry?.record || {})).length;
     const currentTitle = String(formDraft?.value || '').trim() || t.t('ui.masterDataSupplierProfileEmpty', 'Nessun fornitore selezionato');
+    const currentType = getSupplierOptionLabel('supplierType', formDraft?.supplierType, t) || '—';
+    const currentScope = getSupplierOptionLabel('serviceScope', formDraft?.serviceScope, t) || '—';
+    const currentPriority = getSupplierOptionLabel('priorityTier', formDraft?.priorityTier, t) || '—';
+    const currentReliability = getSupplierOptionLabel('reliabilityLevel', formDraft?.reliabilityLevel, t) || '—';
     const currentModes = String(formDraft?.serviceModes || '').trim() || '—';
     const currentAreas = String(formDraft?.servicedAreas || '').trim() || '—';
     const currentTerms = String(formDraft?.paymentTerms || '').trim() || '—';
     const currentContact = String(formDraft?.contactPerson || '').trim() || '—';
+    const currentInternalNote = String(formDraft?.internalOperationalNote || '').trim() || '—';
     return `
       <section class="panel master-data-supplier-panel">
         <div class="panel-head compact">
