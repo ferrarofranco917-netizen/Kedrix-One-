@@ -81,6 +81,76 @@ window.KedrixOneSupplierRoadRates = (() => {
     return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1).replace(/\.0$/, '');
   }
 
+  function startOfDay(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  function parseLooseDate(value) {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return startOfDay(value);
+    const raw = cleanText(value);
+    if (!raw) return null;
+    if (/^\d{5,6}$/.test(raw)) {
+      const serial = Number(raw);
+      if (Number.isFinite(serial)) {
+        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+        const parsed = new Date(excelEpoch.getTime() + (serial * 24 * 60 * 60 * 1000));
+        return startOfDay(parsed);
+      }
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      const parsed = new Date(`${raw}T00:00:00`);
+      return Number.isNaN(parsed.getTime()) ? null : startOfDay(parsed);
+    }
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(raw)) {
+      const normalized = raw.replace(/\//g, '-');
+      const parsed = new Date(`${normalized}T00:00:00`);
+      return Number.isNaN(parsed.getTime()) ? null : startOfDay(parsed);
+    }
+    const slashMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (slashMatch) {
+      const day = Number(slashMatch[1]);
+      const month = Number(slashMatch[2]);
+      const year = Number(slashMatch[3]);
+      const parsed = new Date(year, month - 1, day);
+      return Number.isNaN(parsed.getTime()) ? null : startOfDay(parsed);
+    }
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : startOfDay(parsed);
+  }
+
+  function formatDateIso(value) {
+    const parsed = parseLooseDate(value);
+    if (!parsed) return '';
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function buildValidityMeta(record, referenceDate = null) {
+    const fromDate = parseLooseDate(record && record.validityFrom || '');
+    const toDate = parseLooseDate(record && record.validityTo || '');
+    const refDate = startOfDay(referenceDate instanceof Date ? referenceDate : new Date()) || startOfDay(new Date());
+    let validityStatus = 'undated';
+    if (fromDate || toDate) {
+      if (fromDate && refDate < fromDate) validityStatus = 'scheduled';
+      else if (toDate && refDate > toDate) validityStatus = 'expired';
+      else validityStatus = 'current';
+    }
+    return {
+      active: record && record.active !== false,
+      validityStatus,
+      isCurrent: validityStatus === 'current',
+      isExpired: validityStatus === 'expired',
+      isScheduled: validityStatus === 'scheduled',
+      isUndated: validityStatus === 'undated',
+      validityFromIso: formatDateIso(record && record.validityFrom || ''),
+      validityToIso: formatDateIso(record && record.validityTo || ''),
+      referenceDateIso: formatDateIso(refDate)
+    };
+  }
+
   function resolveContractualDistanceKm(record) {
     return normalizeDistanceValue(record && (record.contractualDistanceKm || record.distanceKm) || '');
   }
@@ -433,11 +503,13 @@ window.KedrixOneSupplierRoadRates = (() => {
     return { score, matchType };
   }
 
-  function buildMatchPayload(record) {
+  function buildMatchPayload(record, referenceDate = null) {
     const normalized = normalizeRoadRate(record);
     if (!normalized) return null;
+    const validityMeta = buildValidityMeta(normalized, referenceDate);
     return {
       ...normalized,
+      ...validityMeta,
       resolvedContractualDistanceKm: formatDistanceNumber(normalized.contractualDistanceKm || normalized.distanceKm || ''),
       resolvedOperationalDistanceKm: formatDistanceNumber(normalized.operationalDistanceKm || normalized.contractualDistanceKm || normalized.distanceKm || ''),
       resolvedDeltaKm: calculateDistanceDelta(normalized.contractualDistanceKm || normalized.distanceKm || '', normalized.operationalDistanceKm || normalized.contractualDistanceKm || normalized.distanceKm || ''),
@@ -448,12 +520,13 @@ window.KedrixOneSupplierRoadRates = (() => {
   }
 
   function listRouteMatches(stateOrConfig, supplierRecord, query = {}, options = {}) {
-    const list = listForSupplier(stateOrConfig, supplierRecord).filter((item) => item.active !== false);
+    const list = listForSupplier(stateOrConfig, supplierRecord);
     if (!list.length) return { ok: false, reason: 'no-rates', matches: [] };
     const origin = cleanText(query.origin || '');
     const destination = cleanText(query.destination || '');
     if (!origin || !destination) return { ok: false, reason: 'missing-route', matches: [] };
     const limit = Math.max(1, Number(options.limit || 5));
+    const referenceDate = parseLooseDate(options.referenceDate || query.referenceDate || '') || startOfDay(new Date());
     const ranked = list
       .map((item) => ({ item, ...scoreMatch(item, query) }))
       .filter((entry) => entry.score > 0)
@@ -468,7 +541,7 @@ window.KedrixOneSupplierRoadRates = (() => {
       });
     if (!ranked.length) return { ok: false, reason: 'no-match', matches: [] };
     const matches = ranked.slice(0, limit).map((entry, index) => {
-      const record = buildMatchPayload(entry.item);
+      const record = buildMatchPayload(entry.item, referenceDate);
       return {
         rank: index + 1,
         matchType: entry.matchType,
