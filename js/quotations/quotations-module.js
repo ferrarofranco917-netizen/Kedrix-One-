@@ -118,12 +118,94 @@ window.KedrixOneQuotationsModule = (() => {
     return Number.isFinite(numeric) ? numeric : null;
   }
 
+  function todayIsoLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function parseLooseDate(value) {
+    const raw = cleanText(value);
+    if (!raw) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      const parsed = new Date(`${raw}T00:00:00`);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (/^\d{4}\/\d{2}\/\d{2}$/.test(raw)) {
+      const parsed = new Date(`${raw.replace(/\//g, '-')}T00:00:00`);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    const slashMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (slashMatch) {
+      const parsed = new Date(Number(slashMatch[3]), Number(slashMatch[2]) - 1, Number(slashMatch[1]));
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function formatDateIso(value) {
+    const parsed = value instanceof Date ? value : parseLooseDate(value);
+    if (!(parsed instanceof Date) || Number.isNaN(parsed.getTime())) return '';
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function normalizeRoadRateReferenceDate(value) {
+    return formatDateIso(value) || todayIsoLocal();
+  }
+
+  function evaluateRoadRateCandidateStatus(candidate, referenceDate) {
+    const refDate = parseLooseDate(referenceDate) || parseLooseDate(todayIsoLocal()) || new Date();
+    const fromDate = parseLooseDate(candidate?.validityFromIso || candidate?.validityFrom || '');
+    const toDate = parseLooseDate(candidate?.validityToIso || candidate?.validityTo || '');
+    const active = candidate?.active !== false;
+    let validityStatus = cleanText(candidate?.validityStatus || '');
+    if (!validityStatus) {
+      if (fromDate || toDate) {
+        if (fromDate && refDate < fromDate) validityStatus = 'scheduled';
+        else if (toDate && refDate > toDate) validityStatus = 'expired';
+        else validityStatus = 'current';
+      } else {
+        validityStatus = 'undated';
+      }
+    }
+    const validityLabel = validityStatus === 'expired'
+      ? 'Scaduta'
+      : validityStatus === 'scheduled'
+        ? 'Non ancora valida'
+        : validityStatus === 'current'
+          ? 'Valida alla data'
+          : 'Senza date';
+    const validityWindowLabel = [candidate?.validityFromIso || candidate?.validityFrom || '', candidate?.validityToIso || candidate?.validityTo || '']
+      .map((item) => formatDateIso(item) || cleanText(item))
+      .filter(Boolean)
+      .join(' → ') || 'Nessuna finestra';
+    return {
+      active,
+      validityStatus,
+      validityLabel,
+      validityWindowLabel,
+      isCurrent: validityStatus === 'current',
+      isExpired: validityStatus === 'expired',
+      isScheduled: validityStatus === 'scheduled',
+      isUndated: validityStatus === 'undated'
+    };
+  }
+
   function defaultRoadRateBridgeFilters() {
     return {
       commercialOnly: 'all',
       matchType: 'all',
       vehicleMode: 'all',
       serviceMode: 'all',
+      activeState: 'active-only',
+      validityMode: 'current-or-undated',
+      referenceDate: todayIsoLocal(),
       sortBy: 'best-score'
     };
   }
@@ -151,6 +233,8 @@ window.KedrixOneQuotationsModule = (() => {
     const rightOperational = parseLooseNumber(right?.operationalDistanceKm);
     const leftUpdated = cleanText(left?.updatedAt || left?.validityFrom || '');
     const rightUpdated = cleanText(right?.updatedAt || right?.validityFrom || '');
+    const leftValidityTo = cleanText(left?.validityToIso || left?.validityTo || '');
+    const rightValidityTo = cleanText(right?.validityToIso || right?.validityTo || '');
     switch (cleanText(sortBy || 'best-score')) {
       case 'lowest-tariff': {
         if (Number.isFinite(leftTariff) && Number.isFinite(rightTariff) && leftTariff !== rightTariff) return leftTariff - rightTariff;
@@ -170,6 +254,11 @@ window.KedrixOneQuotationsModule = (() => {
       case 'newest':
         if (rightUpdated !== leftUpdated) return rightUpdated.localeCompare(leftUpdated);
         break;
+      case 'earliest-expiry': {
+        if (leftValidityTo && rightValidityTo && leftValidityTo !== rightValidityTo) return leftValidityTo.localeCompare(rightValidityTo);
+        if (Boolean(leftValidityTo) !== Boolean(rightValidityTo)) return leftValidityTo ? -1 : 1;
+        break;
+      }
       default:
         break;
     }
@@ -180,8 +269,14 @@ window.KedrixOneQuotationsModule = (() => {
   }
 
   function getRoadRateBridgeCandidateView(bridge, query = {}, options = {}) {
-    const allCandidates = Array.isArray(bridge?.candidates) ? bridge.candidates.slice() : [];
     const filters = getRoadRateBridgeFilters(bridge);
+    filters.referenceDate = normalizeRoadRateReferenceDate(filters.referenceDate);
+    const referenceDate = filters.referenceDate;
+    const allCandidates = (Array.isArray(bridge?.candidates) ? bridge.candidates.slice() : []).map((candidate) => ({
+      ...candidate,
+      ...evaluateRoadRateCandidateStatus(candidate, referenceDate),
+      referenceDate
+    }));
     const queryVehicle = cleanUpper(query?.vehicleType || '');
     const queryService = cleanUpper(query?.serviceType || '');
     let filtered = allCandidates.filter((candidate) => {
@@ -189,6 +284,13 @@ window.KedrixOneQuotationsModule = (() => {
       if (filters.matchType !== 'all' && cleanText(candidate?.matchType) !== filters.matchType) return false;
       if (filters.vehicleMode === 'exact-only' && queryVehicle && cleanUpper(candidate?.vehicleType || '') !== queryVehicle) return false;
       if (filters.serviceMode === 'exact-only' && queryService && cleanUpper(candidate?.serviceType || '') !== queryService) return false;
+      if (filters.activeState === 'active-only' && candidate?.active === false) return false;
+      if (filters.activeState === 'inactive-only' && candidate?.active !== false) return false;
+      if (filters.validityMode === 'current-only' && !candidate?.isCurrent) return false;
+      if (filters.validityMode === 'current-or-undated' && !candidate?.isCurrent && !candidate?.isUndated) return false;
+      if (filters.validityMode === 'expired-only' && !candidate?.isExpired) return false;
+      if (filters.validityMode === 'scheduled-only' && !candidate?.isScheduled) return false;
+      if (filters.validityMode === 'undated-only' && !candidate?.isUndated) return false;
       return true;
     });
     filtered.sort((left, right) => compareRoadRateCandidates(filters.sortBy, left, right));
@@ -290,6 +392,11 @@ window.KedrixOneQuotationsModule = (() => {
     bridge.sourceType = cleanText(selected.sourceType || '');
     bridge.roadRateId = cleanText(selected.roadRateId || '');
     bridge.hasCommercialMatch = selected.hasCommercialMatch === true;
+    bridge.active = selected.active !== false;
+    bridge.validityStatus = cleanText(selected.validityStatus || '');
+    bridge.validityLabel = cleanText(selected.validityLabel || '');
+    bridge.validityWindowLabel = cleanText(selected.validityWindowLabel || '');
+    bridge.referenceDate = cleanText(selected.referenceDate || bridge.referenceDate || normalizeRoadRateReferenceDate(''));
     return bridge;
   }
 
@@ -335,6 +442,8 @@ window.KedrixOneQuotationsModule = (() => {
           <div class="stack-item"><strong>Km operativi</strong><span>${U.escapeHtml(bridge.operationalDistanceKm || '—')}</span></div>
           <div class="stack-item"><strong>Delta km</strong><span>${U.escapeHtml(bridge.deltaKm || '0')}</span></div>
           <div class="stack-item"><strong>Rif. commerciale</strong><span>${U.escapeHtml(bridge.commercialReference || bridge.matchBasis || '—')}</span></div>
+          <div class="stack-item"><strong>Stato tratta</strong><span>${U.escapeHtml(bridge.active === false ? 'Inattiva' : 'Attiva')} · ${U.escapeHtml(bridge.validityLabel || '—')}</span></div>
+          <div class="stack-item"><strong>Finestra validità</strong><span>${U.escapeHtml(bridge.validityWindowLabel || 'Nessuna finestra')}</span></div>
         </div>`
       : '';
     const filterControls = status === 'matched'
@@ -343,7 +452,10 @@ window.KedrixOneQuotationsModule = (() => {
           <div class="field quotation-field quotation-field-md quotation-road-rate-filter-matchType"><label for="quotation-road-rate-filter-matchType">Tipo match</label><select id="quotation-road-rate-filter-matchType" data-quotation-road-rate-filter="matchType"><option value="all"${filterView.filters.matchType === 'all' ? ' selected' : ''}>Tutti</option><option value="exact"${filterView.filters.matchType === 'exact' ? ' selected' : ''}>Esatto</option><option value="reverse"${filterView.filters.matchType === 'reverse' ? ' selected' : ''}>Inverso</option><option value="partial"${filterView.filters.matchType === 'partial' ? ' selected' : ''}>Parziale</option></select></div>
           <div class="field quotation-field quotation-field-md quotation-road-rate-filter-vehicleMode"><label for="quotation-road-rate-filter-vehicleMode">Mezzo</label><select id="quotation-road-rate-filter-vehicleMode" data-quotation-road-rate-filter="vehicleMode"><option value="all"${filterView.filters.vehicleMode === 'all' ? ' selected' : ''}>Tutti</option><option value="exact-only"${filterView.filters.vehicleMode === 'exact-only' ? ' selected' : ''}>Solo stesso mezzo</option></select></div>
           <div class="field quotation-field quotation-field-md quotation-road-rate-filter-serviceMode"><label for="quotation-road-rate-filter-serviceMode">Servizio</label><select id="quotation-road-rate-filter-serviceMode" data-quotation-road-rate-filter="serviceMode"><option value="all"${filterView.filters.serviceMode === 'all' ? ' selected' : ''}>Tutti</option><option value="exact-only"${filterView.filters.serviceMode === 'exact-only' ? ' selected' : ''}>Solo stesso servizio</option></select></div>
-          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-sortBy"><label for="quotation-road-rate-filter-sortBy">Ordina per</label><select id="quotation-road-rate-filter-sortBy" data-quotation-road-rate-filter="sortBy"><option value="best-score"${filterView.filters.sortBy === 'best-score' ? ' selected' : ''}>Miglior score</option><option value="lowest-tariff"${filterView.filters.sortBy === 'lowest-tariff' ? ' selected' : ''}>Tariffa minore</option><option value="shortest-contractual-km"${filterView.filters.sortBy === 'shortest-contractual-km' ? ' selected' : ''}>Km contrattuali minori</option><option value="shortest-operational-km"${filterView.filters.sortBy === 'shortest-operational-km' ? ' selected' : ''}>Km operativi minori</option><option value="newest"${filterView.filters.sortBy === 'newest' ? ' selected' : ''}>Più recente</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-activeState"><label for="quotation-road-rate-filter-activeState">Stato tratta</label><select id="quotation-road-rate-filter-activeState" data-quotation-road-rate-filter="activeState"><option value="all"${filterView.filters.activeState === 'all' ? ' selected' : ''}>Tutte</option><option value="active-only"${filterView.filters.activeState === 'active-only' ? ' selected' : ''}>Solo attive</option><option value="inactive-only"${filterView.filters.activeState === 'inactive-only' ? ' selected' : ''}>Solo inattive</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-validityMode"><label for="quotation-road-rate-filter-validityMode">Validità</label><select id="quotation-road-rate-filter-validityMode" data-quotation-road-rate-filter="validityMode"><option value="all"${filterView.filters.validityMode === 'all' ? ' selected' : ''}>Tutte</option><option value="current-or-undated"${filterView.filters.validityMode === 'current-or-undated' ? ' selected' : ''}>Valide oggi o senza date</option><option value="current-only"${filterView.filters.validityMode === 'current-only' ? ' selected' : ''}>Solo valide oggi</option><option value="expired-only"${filterView.filters.validityMode === 'expired-only' ? ' selected' : ''}>Solo scadute</option><option value="scheduled-only"${filterView.filters.validityMode === 'scheduled-only' ? ' selected' : ''}>Solo future</option><option value="undated-only"${filterView.filters.validityMode === 'undated-only' ? ' selected' : ''}>Solo senza date</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-referenceDate"><label for="quotation-road-rate-filter-referenceDate">Data riferimento</label><input id="quotation-road-rate-filter-referenceDate" type="date" value="${U.escapeHtml(filterView.filters.referenceDate || normalizeRoadRateReferenceDate(''))}" data-quotation-road-rate-filter="referenceDate"></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-sortBy"><label for="quotation-road-rate-filter-sortBy">Ordina per</label><select id="quotation-road-rate-filter-sortBy" data-quotation-road-rate-filter="sortBy"><option value="best-score"${filterView.filters.sortBy === 'best-score' ? ' selected' : ''}>Miglior score</option><option value="lowest-tariff"${filterView.filters.sortBy === 'lowest-tariff' ? ' selected' : ''}>Tariffa minore</option><option value="shortest-contractual-km"${filterView.filters.sortBy === 'shortest-contractual-km' ? ' selected' : ''}>Km contrattuali minori</option><option value="shortest-operational-km"${filterView.filters.sortBy === 'shortest-operational-km' ? ' selected' : ''}>Km operativi minori</option><option value="newest"${filterView.filters.sortBy === 'newest' ? ' selected' : ''}>Più recente</option><option value="earliest-expiry"${filterView.filters.sortBy === 'earliest-expiry' ? ' selected' : ''}>Scadenza più vicina</option></select></div>
           <div class="field quotation-field quotation-field-md quotation-road-rate-filter-reset"><label>&nbsp;</label><button class="btn secondary" type="button" data-quotation-road-rate-filters-reset>Azzera filtri</button></div>
         </div>`
       : '';
@@ -356,6 +468,8 @@ window.KedrixOneQuotationsModule = (() => {
             `#${index + 1}`,
             candidate.matchType ? `match ${candidate.matchType}` : '',
             `score ${candidate.score || 0}`,
+            candidate.active === false ? 'inattiva' : 'attiva',
+            candidate.validityLabel || '',
             candidate.contractualDistanceKm ? `km c. ${candidate.contractualDistanceKm}` : '',
             candidate.operationalDistanceKm ? `km o. ${candidate.operationalDistanceKm}` : '',
             candidate.deltaKm ? `Δ ${candidate.deltaKm}` : '',
@@ -365,6 +479,7 @@ window.KedrixOneQuotationsModule = (() => {
               <div><strong>${U.escapeHtml(routeLabel)}</strong></div>
               <div>${U.escapeHtml(summary)}</div>
               <div>${U.escapeHtml(tariffLabel)}</div>
+              <div>${U.escapeHtml(candidate.validityWindowLabel || 'Nessuna finestra')}</div>
               <div class="action-row"><button class="btn ${isSelected ? '' : 'secondary'}" type="button" data-quotation-road-rate-select="${U.escapeHtml(candidate.roadRateId || '')}">${isSelected ? 'Tratta selezionata' : 'Usa questa tratta'}</button></div>
             </div>`;
         }).join('')}</div>`
@@ -384,7 +499,8 @@ window.KedrixOneQuotationsModule = (() => {
       const hiddenInfo = filterView.hiddenByFilters > 0 && candidates.length
         ? `<div class="quotation-static-note">${U.escapeHtml(String(filterView.hiddenByFilters))} tratte compatibili sono state nascoste dai filtri avanzati.</div>`
         : '';
-      resultHtml = `${selectedSummary}${filterControls}<div class="quotation-static-note">${summaryNote}</div>${hiddenInfo}${tariffWarning}${filteredEmpty}${alternativesHtml}`;
+      const validityInfo = `<div class="quotation-static-note">Data di riferimento filtri validità: ${U.escapeHtml(filterView.filters.referenceDate || normalizeRoadRateReferenceDate(''))}.</div>`;
+      resultHtml = `${selectedSummary}${filterControls}<div class="quotation-static-note">${summaryNote}</div>${validityInfo}${hiddenInfo}${tariffWarning}${filteredEmpty}${alternativesHtml}`;
     } else if (status === 'error') {
       const reason = cleanText(bridge.reason || '');
       const guidance = reason === 'no-rates'
