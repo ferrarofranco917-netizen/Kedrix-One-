@@ -371,6 +371,7 @@ window.KedrixOneQuotationsModule = (() => {
 
   function applyRoadRateBridgeSelection(bridge, selectedRoadRateId = '') {
     if (!bridge || typeof bridge !== 'object') return bridge;
+    const previousRoadRateId = cleanText(bridge.selectedRoadRateId || bridge.roadRateId || '');
     const candidates = Array.isArray(bridge.candidates) ? bridge.candidates : [];
     const selected = candidates.find((candidate) => cleanText(candidate?.roadRateId) === cleanText(selectedRoadRateId)) || candidates[0] || null;
     if (!selected) return bridge;
@@ -397,7 +398,80 @@ window.KedrixOneQuotationsModule = (() => {
     bridge.validityLabel = cleanText(selected.validityLabel || '');
     bridge.validityWindowLabel = cleanText(selected.validityWindowLabel || '');
     bridge.referenceDate = cleanText(selected.referenceDate || bridge.referenceDate || normalizeRoadRateReferenceDate(''));
+    if (previousRoadRateId !== cleanText(bridge.selectedRoadRateId || '')) {
+      delete bridge.applyAcknowledgedForKey;
+    }
     return bridge;
+  }
+
+  function buildRoadRateApplyWarnings(bridge) {
+    if (!bridge || typeof bridge !== 'object') return [];
+    const warnings = [];
+    if (bridge.active === false) {
+      warnings.push({
+        code: 'inactive',
+        badge: 'Tratta inattiva',
+        severity: 'critical',
+        requiresConfirmation: true,
+        message: 'La tratta selezionata è marcata come inattiva nel listino del vettore.'
+      });
+    }
+    switch (cleanText(bridge.validityStatus || '')) {
+      case 'expired':
+        warnings.push({
+          code: 'expired',
+          badge: 'Tariffa scaduta',
+          severity: 'critical',
+          requiresConfirmation: true,
+          message: 'La tratta selezionata risulta scaduta rispetto alla data di riferimento impostata.'
+        });
+        break;
+      case 'scheduled':
+        warnings.push({
+          code: 'scheduled',
+          badge: 'Tariffa futura',
+          severity: 'warning',
+          requiresConfirmation: true,
+          message: 'La tratta selezionata non è ancora valida alla data di riferimento impostata.'
+        });
+        break;
+      case 'undated':
+        warnings.push({
+          code: 'undated',
+          badge: 'Senza date',
+          severity: 'info',
+          requiresConfirmation: false,
+          message: 'La tratta selezionata non ha una finestra di validità: verifica commercialmente se è ancora utilizzabile.'
+        });
+        break;
+      default:
+        break;
+    }
+    return warnings;
+  }
+
+  function roadRateApplyAcknowledgementKey(bridge) {
+    if (!bridge || typeof bridge !== 'object') return '';
+    return [
+      cleanText(bridge.selectedRoadRateId || bridge.roadRateId || ''),
+      bridge.active === false ? 'inactive' : 'active',
+      cleanText(bridge.validityStatus || ''),
+      cleanText(bridge.referenceDate || '')
+    ].join('|');
+  }
+
+  function roadRateApplyAcknowledgedForSelection(bridge) {
+    return cleanText(bridge?.applyAcknowledgedForKey || '') && cleanText(bridge?.applyAcknowledgedForKey || '') === roadRateApplyAcknowledgementKey(bridge);
+  }
+
+  function roadRateApplyWarningsRequireConfirmation(warnings = []) {
+    return warnings.some((warning) => warning?.requiresConfirmation);
+  }
+
+  function roadRateApplyWarningFeedbackMessage(warnings = []) {
+    const messages = warnings.filter((warning) => warning?.requiresConfirmation).map((warning) => cleanText(warning?.badge || warning?.message || '')).filter(Boolean);
+    if (!messages.length) return 'Verifica gli avvisi della tratta selezionata prima di applicarla.';
+    return `${messages.join(' · ')}. Premi di nuovo per applicarla comunque alla riga trasporto.`;
   }
 
   function selectRoadRateCandidate(draft, selectedRoadRateId = '') {
@@ -433,7 +507,13 @@ window.KedrixOneQuotationsModule = (() => {
     }
     const canLookup = query.supplierName && query.origin && query.destination;
     const canApply = status === 'matched' && candidates.length && cleanText(bridge.tariffAmount || '');
-    const actionRow = `<div class="action-row"><button class="btn secondary" type="button" data-quotation-road-rate-lookup ${canLookup ? '' : 'disabled'}>Leggi tratte commerciali compatibili</button>${canApply ? '<button class="btn" type="button" data-quotation-road-rate-apply>Applica a riga trasporto</button>' : ''}</div>`;
+    const selectedWarnings = status === 'matched' && candidates.length ? buildRoadRateApplyWarnings(bridge) : [];
+    const applyNeedsConfirmation = roadRateApplyWarningsRequireConfirmation(selectedWarnings);
+    const applyAcknowledged = roadRateApplyAcknowledgedForSelection(bridge);
+    const applyLabel = applyNeedsConfirmation
+      ? (applyAcknowledged ? 'Applica comunque a riga trasporto' : 'Conferma avvisi prima di applicare')
+      : 'Applica a riga trasporto';
+    const actionRow = `<div class="action-row"><button class="btn secondary" type="button" data-quotation-road-rate-lookup ${canLookup ? '' : 'disabled'}>Leggi tratte commerciali compatibili</button>${canApply ? `<button class="btn ${applyNeedsConfirmation && !applyAcknowledged ? 'secondary' : ''}" type="button" data-quotation-road-rate-apply>${U.escapeHtml(applyLabel)}</button>` : ''}</div>`;
     const selectedSummary = status === 'matched' && candidates.length
       ? `<div class="tag-grid quotation-summary-grid">
           <div class="stack-item"><strong>Match selezionato</strong><span>${U.escapeHtml(bridge.matchType || 'exact')} · score ${U.escapeHtml(String(bridge.score || ''))}</span></div>
@@ -458,6 +538,17 @@ window.KedrixOneQuotationsModule = (() => {
           <div class="field quotation-field quotation-field-md quotation-road-rate-filter-sortBy"><label for="quotation-road-rate-filter-sortBy">Ordina per</label><select id="quotation-road-rate-filter-sortBy" data-quotation-road-rate-filter="sortBy"><option value="best-score"${filterView.filters.sortBy === 'best-score' ? ' selected' : ''}>Miglior score</option><option value="lowest-tariff"${filterView.filters.sortBy === 'lowest-tariff' ? ' selected' : ''}>Tariffa minore</option><option value="shortest-contractual-km"${filterView.filters.sortBy === 'shortest-contractual-km' ? ' selected' : ''}>Km contrattuali minori</option><option value="shortest-operational-km"${filterView.filters.sortBy === 'shortest-operational-km' ? ' selected' : ''}>Km operativi minori</option><option value="newest"${filterView.filters.sortBy === 'newest' ? ' selected' : ''}>Più recente</option><option value="earliest-expiry"${filterView.filters.sortBy === 'earliest-expiry' ? ' selected' : ''}>Scadenza più vicina</option></select></div>
           <div class="field quotation-field quotation-field-md quotation-road-rate-filter-reset"><label>&nbsp;</label><button class="btn secondary" type="button" data-quotation-road-rate-filters-reset>Azzera filtri</button></div>
         </div>`
+      : '';
+    const warningHtml = status === 'matched' && selectedWarnings.length
+      ? `<div class="stack-list">${selectedWarnings.map((warning) => `<div class="quotation-static-note"><strong>${U.escapeHtml(warning.badge || 'Avviso commerciale')}</strong><div>${U.escapeHtml(warning.message || '')}</div></div>`).join('')}</div>`
+      : status === 'matched' && candidates.length
+        ? '<div class="quotation-static-note">La tratta selezionata è pronta per l’applicazione commerciale alla riga trasporto.</div>'
+        : '';
+    const confirmationHtml = status === 'matched' && applyNeedsConfirmation && !applyAcknowledged && candidates.length
+      ? '<div class="quotation-static-note">Prima dell’applicazione il sistema richiede una conferma esplicita perché la tratta selezionata presenta avvisi commerciali bloccanti.</div>'
+      : '';
+    const confirmedHtml = status === 'matched' && applyNeedsConfirmation && applyAcknowledged && candidates.length
+      ? '<div class="quotation-static-note">Conferma registrata per la tratta selezionata. Un nuovo cambio tratta o un nuovo lookup richiederanno una nuova conferma.</div>'
       : '';
     const alternativesHtml = status === 'matched' && candidates.length
       ? `<div class="stack-list">${candidates.map((candidate, index) => {
@@ -500,7 +591,7 @@ window.KedrixOneQuotationsModule = (() => {
         ? `<div class="quotation-static-note">${U.escapeHtml(String(filterView.hiddenByFilters))} tratte compatibili sono state nascoste dai filtri avanzati.</div>`
         : '';
       const validityInfo = `<div class="quotation-static-note">Data di riferimento filtri validità: ${U.escapeHtml(filterView.filters.referenceDate || normalizeRoadRateReferenceDate(''))}.</div>`;
-      resultHtml = `${selectedSummary}${filterControls}<div class="quotation-static-note">${summaryNote}</div>${validityInfo}${hiddenInfo}${tariffWarning}${filteredEmpty}${alternativesHtml}`;
+      resultHtml = `${selectedSummary}${warningHtml}${confirmationHtml}${confirmedHtml}${filterControls}<div class="quotation-static-note">${summaryNote}</div>${validityInfo}${hiddenInfo}${tariffWarning}${filteredEmpty}${alternativesHtml}`;
     } else if (status === 'error') {
       const reason = cleanText(bridge.reason || '');
       const guidance = reason === 'no-rates'
@@ -1718,6 +1809,18 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
       if (roadRateApplyButton) {
         const session = activeSession(context.state);
         if (session) {
+          const bridge = session.draft?.roadRateBridge;
+          const warnings = buildRoadRateApplyWarnings(bridge);
+          if (roadRateApplyWarningsRequireConfirmation(warnings) && !roadRateApplyAcknowledgedForSelection(bridge)) {
+            if (bridge && typeof bridge === 'object') {
+              bridge.applyAcknowledgedForKey = roadRateApplyAcknowledgementKey(bridge);
+            }
+            session.isDirty = true;
+            context.save?.();
+            context.render?.();
+            Feedback?.warning?.(roadRateApplyWarningFeedbackMessage(warnings));
+            return;
+          }
           const result = applyRoadRateMatchToDraft(session.draft || {});
           if (result.ok) {
             session.isDirty = true;
