@@ -1,6 +1,6 @@
-// AQ74 quotation road-rate saved preference
-const STATIC_CACHE = 'kedrix-one-stepaq74-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq74-runtime-v1';
+// AQ75 quotation road-rate fallback preferences
+const STATIC_CACHE = 'kedrix-one-stepaq75-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq75-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',

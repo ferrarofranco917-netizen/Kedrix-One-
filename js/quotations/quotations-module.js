@@ -280,14 +280,34 @@ window.KedrixOneQuotationsModule = (() => {
     bridge.filters = next;
   }
 
-  function buildRoadRatePreferenceScopeKey(query = {}) {
+  function buildRoadRatePreferenceScopeKey(query = {}, options = {}) {
+    const includeVehicle = options.includeVehicle !== false;
+    const includeService = options.includeService !== false;
     return [
       cleanUpper(query?.supplierName || ''),
       cleanUpper(query?.origin || ''),
       cleanUpper(query?.destination || ''),
-      cleanUpper(query?.vehicleType || ''),
-      cleanUpper(query?.serviceType || '')
+      includeVehicle ? cleanUpper(query?.vehicleType || '') : '*',
+      includeService ? cleanUpper(query?.serviceType || '') : '*'
     ].join('||');
+  }
+
+  function buildRoadRatePreferenceScopes(query = {}) {
+    const definitions = [
+      { level: 'exact', label: 'fornitore/percorso/mezzo/servizio', includeVehicle: true, includeService: true },
+      { level: 'vehicle', label: 'fornitore/percorso/mezzo', includeVehicle: true, includeService: false },
+      { level: 'service', label: 'fornitore/percorso/servizio', includeVehicle: false, includeService: true },
+      { level: 'lane', label: 'fornitore/percorso', includeVehicle: false, includeService: false }
+    ];
+    const seen = new Set();
+    return definitions.map((definition) => ({
+      ...definition,
+      scopeKey: buildRoadRatePreferenceScopeKey(query, definition)
+    })).filter((definition) => {
+      if (!definition.scopeKey || seen.has(definition.scopeKey)) return false;
+      seen.add(definition.scopeKey);
+      return true;
+    });
   }
 
   function getRoadRatePreferenceStore(draft) {
@@ -296,21 +316,51 @@ window.KedrixOneQuotationsModule = (() => {
     return draft.roadRatePreferences;
   }
 
+  function findRoadRatePreferenceByScopeKey(draft, scopeKey = '') {
+    const normalizedScopeKey = cleanText(scopeKey || '');
+    if (!normalizedScopeKey) return null;
+    return getRoadRatePreferenceStore(draft).find((item) => cleanText(item?.scopeKey || '') === normalizedScopeKey) || null;
+  }
+
   function getRoadRatePreference(draft, query = {}) {
-    const scopeKey = buildRoadRatePreferenceScopeKey(query);
-    if (!scopeKey) return null;
-    return getRoadRatePreferenceStore(draft).find((item) => cleanText(item?.scopeKey || '') === scopeKey) || null;
+    const exactScope = buildRoadRatePreferenceScopes(query)[0] || null;
+    return exactScope ? findRoadRatePreferenceByScopeKey(draft, exactScope.scopeKey) : null;
+  }
+
+  function resolveRoadRatePreference(draft, query = {}, candidates = []) {
+    const scopes = buildRoadRatePreferenceScopes(query);
+    const availableIds = new Set((Array.isArray(candidates) ? candidates : []).map((candidate) => cleanText(candidate?.roadRateId || '')).filter(Boolean));
+    let firstStored = null;
+    for (const scope of scopes) {
+      const preference = findRoadRatePreferenceByScopeKey(draft, scope.scopeKey);
+      if (!preference) continue;
+      const selectionAvailable = availableIds.has(cleanText(preference?.selectedRoadRateId || ''));
+      const resolved = {
+        ...preference,
+        resolvedScopeKey: scope.scopeKey,
+        resolvedScopeLevel: scope.level,
+        resolvedScopeLabel: scope.label,
+        fallbackUsed: scope.level !== 'exact',
+        selectionAvailable
+      };
+      if (!firstStored) firstStored = resolved;
+      if (selectionAvailable) return resolved;
+    }
+    return firstStored;
   }
 
   function saveRoadRatePreference(draft, bridge, query = {}) {
     if (!draft || typeof draft !== 'object' || !bridge || typeof bridge !== 'object') return { ok: false, reason: 'missing-context' };
     const selectedId = cleanText(bridge.selectedRoadRateId || '');
     if (!selectedId) return { ok: false, reason: 'missing-selection' };
-    const scopeKey = buildRoadRatePreferenceScopeKey(query);
+    const exactScope = buildRoadRatePreferenceScopes(query)[0] || null;
+    const scopeKey = cleanText(exactScope?.scopeKey || '');
     if (!scopeKey) return { ok: false, reason: 'missing-scope' };
     const store = getRoadRatePreferenceStore(draft);
     const payload = {
       scopeKey,
+      scopeLevel: cleanText(exactScope?.level || 'exact') || 'exact',
+      scopeLabel: cleanText(exactScope?.label || 'fornitore/percorso/mezzo/servizio') || 'fornitore/percorso/mezzo/servizio',
       supplierName: cleanText(query?.supplierName || bridge?.supplierName || ''),
       origin: cleanText(query?.origin || bridge?.origin || ''),
       destination: cleanText(query?.destination || bridge?.destination || ''),
@@ -328,8 +378,8 @@ window.KedrixOneQuotationsModule = (() => {
     return { ok: true, preference: payload };
   }
 
-  function clearRoadRatePreference(draft, query = {}) {
-    const scopeKey = buildRoadRatePreferenceScopeKey(query);
+  function clearRoadRatePreference(draft, query = {}, explicitScopeKey = '') {
+    const scopeKey = cleanText(explicitScopeKey || '') || buildRoadRatePreferenceScopeKey(query);
     if (!scopeKey) return { ok: false, reason: 'missing-scope' };
     const store = getRoadRatePreferenceStore(draft);
     const index = store.findIndex((item) => cleanText(item?.scopeKey || '') === scopeKey);
@@ -644,10 +694,11 @@ window.KedrixOneQuotationsModule = (() => {
     const applyNeedsConfirmation = roadRateApplyWarningsRequireConfirmation(selectedWarnings);
     const applyAcknowledged = roadRateApplyAcknowledgedForSelection(bridge);
     const preferenceSaved = Boolean(bridge?.savedPreferenceScopeKey && bridge?.savedPreferenceSelectedId && bridge?.savedPreferenceSelectedId === bridge?.selectedRoadRateId);
+    const preferenceScopeLabel = cleanText(bridge?.savedPreferenceScopeLabel || 'fornitore/percorso');
     const preferenceRestoreInfo = bridge?.preferenceMatched
-      ? `<div class="quotation-static-note">Preferenza commerciale ripristinata automaticamente per questo fornitore/percorso: ${U.escapeHtml(bridge.savedPreferenceLabel || 'tratta preferita')}.</div>`
+      ? `<div class="quotation-static-note">Preferenza commerciale ripristinata automaticamente ${bridge?.preferenceFallbackUsed ? `tramite fallback ${U.escapeHtml(preferenceScopeLabel)}` : `per ${U.escapeHtml(preferenceScopeLabel)}`}: ${U.escapeHtml(bridge.savedPreferenceLabel || 'tratta preferita')}.</div>`
       : bridge?.savedPreferenceScopeKey
-        ? `<div class="quotation-static-note">Esiste una preferenza salvata per questo fornitore/percorso${bridge?.savedPreferenceLabel ? ` (${U.escapeHtml(bridge.savedPreferenceLabel)})` : ''}. La tratta selezionata attuale è diversa: puoi aggiornarla o cancellarla.</div>`
+        ? `<div class="quotation-static-note">Esiste una preferenza salvata per ${U.escapeHtml(preferenceScopeLabel)}${bridge?.savedPreferenceLabel ? ` (${U.escapeHtml(bridge.savedPreferenceLabel)})` : ''}.${bridge?.preferenceSelectionAvailable === false ? ' La tratta preferita salvata non è più disponibile tra le corrispondenze correnti: il ponte sta usando il miglior fallback disponibile.' : ' La tratta selezionata attuale è diversa: puoi aggiornarla o cancellarla.'}</div>`
         : '';
     const applyLabel = applyNeedsConfirmation
       ? (applyAcknowledged ? 'Applica comunque a riga trasporto' : 'Conferma avvisi prima di applicare')
@@ -759,7 +810,7 @@ window.KedrixOneQuotationsModule = (() => {
     const candidates = (Array.isArray(result?.matches) ? result.matches : [])
       .map((match) => summarizeRoadRateCandidate(match, query))
       .filter((candidate) => cleanText(candidate.roadRateId || candidate.origin || candidate.destination));
-    const storedPreference = getRoadRatePreference(draft, query);
+    const storedPreference = resolveRoadRatePreference(draft, query, candidates);
     const bridge = {
       status: 'matched',
       lookedUpAt: new Date().toISOString(),
@@ -772,12 +823,16 @@ window.KedrixOneQuotationsModule = (() => {
       candidates,
       totalMatches: Number(result?.totalMatches || candidates.length || 0),
       totalCommercialMatches: Number(result?.totalCommercialMatches || candidates.filter((candidate) => candidate.hasCommercialMatch).length || 0),
-      savedPreferenceScopeKey: cleanText(storedPreference?.scopeKey || ''),
+      savedPreferenceScopeKey: cleanText(storedPreference?.resolvedScopeKey || storedPreference?.scopeKey || ''),
       savedPreferenceSelectedId: cleanText(storedPreference?.selectedRoadRateId || ''),
-      savedPreferenceLabel: cleanText(storedPreference?.selectedRouteLabel || '')
+      savedPreferenceLabel: cleanText(storedPreference?.selectedRouteLabel || ''),
+      savedPreferenceScopeLevel: cleanText(storedPreference?.resolvedScopeLevel || storedPreference?.scopeLevel || ''),
+      savedPreferenceScopeLabel: cleanText(storedPreference?.resolvedScopeLabel || storedPreference?.scopeLabel || ''),
+      preferenceFallbackUsed: Boolean(storedPreference?.fallbackUsed),
+      preferenceSelectionAvailable: storedPreference ? storedPreference.selectionAvailable !== false : null
     };
     const preferredView = getRoadRateBridgeCandidateView(bridge, query, { limit: 1 });
-    const hasStoredSelection = bridge.savedPreferenceSelectedId && candidates.some((candidate) => cleanText(candidate?.roadRateId || '') === bridge.savedPreferenceSelectedId);
+    const hasStoredSelection = Boolean(bridge.savedPreferenceSelectedId && bridge.preferenceSelectionAvailable !== false && candidates.some((candidate) => cleanText(candidate?.roadRateId || '') === bridge.savedPreferenceSelectedId));
     const preferredCandidateId = cleanText((hasStoredSelection ? bridge.savedPreferenceSelectedId : '') || preferredView?.visibleCandidates?.[0]?.roadRateId || candidates[0]?.roadRateId || '');
     bridge.preferenceMatched = Boolean(hasStoredSelection && preferredCandidateId === bridge.savedPreferenceSelectedId);
     return applyRoadRateBridgeSelection(bridge, preferredCandidateId);
@@ -1952,11 +2007,15 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
             session.draft.roadRateBridge.savedPreferenceScopeKey = cleanText(result.preference?.scopeKey || '');
             session.draft.roadRateBridge.savedPreferenceSelectedId = cleanText(result.preference?.selectedRoadRateId || '');
             session.draft.roadRateBridge.savedPreferenceLabel = cleanText(result.preference?.selectedRouteLabel || '');
+            session.draft.roadRateBridge.savedPreferenceScopeLevel = cleanText(result.preference?.scopeLevel || 'exact');
+            session.draft.roadRateBridge.savedPreferenceScopeLabel = cleanText(result.preference?.scopeLabel || 'fornitore/percorso/mezzo/servizio');
+            session.draft.roadRateBridge.preferenceFallbackUsed = false;
+            session.draft.roadRateBridge.preferenceSelectionAvailable = true;
             session.draft.roadRateBridge.preferenceMatched = session.draft.roadRateBridge.savedPreferenceSelectedId === session.draft.roadRateBridge.selectedRoadRateId;
             session.isDirty = true;
             context.save?.();
             context.render?.();
-            Feedback?.success?.('Preferenza commerciale salvata per questo fornitore/percorso.');
+            Feedback?.success?.('Preferenza commerciale salvata per questo fornitore/percorso/mezzo/servizio.');
           } else {
             Feedback?.warning?.('Seleziona prima una tratta commerciale da memorizzare come preferenza.');
           }
@@ -1969,11 +2028,15 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         const session = activeSession(context.state);
         if (session?.draft?.roadRateBridge) {
           const query = buildRoadRateQuery(session.draft || {});
-          const result = clearRoadRatePreference(session.draft || {}, query);
+          const result = clearRoadRatePreference(session.draft || {}, query, cleanText(session.draft.roadRateBridge?.savedPreferenceScopeKey || ''));
           if (result.ok) {
             session.draft.roadRateBridge.savedPreferenceScopeKey = '';
             session.draft.roadRateBridge.savedPreferenceSelectedId = '';
             session.draft.roadRateBridge.savedPreferenceLabel = '';
+            session.draft.roadRateBridge.savedPreferenceScopeLevel = '';
+            session.draft.roadRateBridge.savedPreferenceScopeLabel = '';
+            session.draft.roadRateBridge.preferenceFallbackUsed = false;
+            session.draft.roadRateBridge.preferenceSelectionAvailable = null;
             session.draft.roadRateBridge.preferenceMatched = false;
             session.isDirty = true;
             context.save?.();
