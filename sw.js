@@ -1,6 +1,6 @@
-// AQ68 quotation road-rate bridge
-const STATIC_CACHE = 'kedrix-one-stepaq68-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq68-runtime-v1';
+// AQ69 quotation road-rate multimatch
+const STATIC_CACHE = 'kedrix-one-stepaq69-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq69-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',

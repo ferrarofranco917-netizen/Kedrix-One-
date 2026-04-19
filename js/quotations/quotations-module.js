@@ -140,6 +140,69 @@ window.KedrixOneQuotationsModule = (() => {
     delete draft.roadMatchedCommercialReference;
   }
 
+  function summarizeRoadRateCandidate(match, query) {
+    const record = match?.record || {};
+    return {
+      roadRateId: cleanText(record.id || ''),
+      supplierName: cleanText(record.supplierName || query?.supplierName || ''),
+      origin: cleanText(record.origin || query?.origin || ''),
+      destination: cleanText(record.destination || query?.destination || ''),
+      vehicleType: cleanText(record.vehicleType || query?.vehicleType || ''),
+      serviceType: cleanText(record.serviceType || query?.serviceType || ''),
+      matchType: cleanText(match?.matchType || ''),
+      score: Number(match?.score || 0),
+      contractualDistanceKm: cleanText(match?.contractualDistanceKm || record.resolvedContractualDistanceKm || ''),
+      operationalDistanceKm: cleanText(match?.operationalDistanceKm || record.resolvedOperationalDistanceKm || ''),
+      deltaKm: cleanText(match?.deltaKm || record.resolvedDeltaKm || ''),
+      tariffAmount: cleanText(record.tariffAmount || ''),
+      currency: cleanText(record.currency || 'EUR') || 'EUR',
+      commercialReference: cleanText(record.commercialReference || ''),
+      matchBasis: cleanText(record.matchBasis || ''),
+      sourceType: cleanText(record.sourceType || ''),
+      hasCommercialMatch: match?.commercialMatch === true || Boolean(cleanText(record.tariffAmount || ''))
+    };
+  }
+
+  function applyRoadRateBridgeSelection(bridge, selectedRoadRateId = '') {
+    if (!bridge || typeof bridge !== 'object') return bridge;
+    const candidates = Array.isArray(bridge.candidates) ? bridge.candidates : [];
+    const selected = candidates.find((candidate) => cleanText(candidate?.roadRateId) === cleanText(selectedRoadRateId)) || candidates[0] || null;
+    if (!selected) return bridge;
+    bridge.selectedRoadRateId = cleanText(selected.roadRateId || '');
+    bridge.supplierName = cleanText(selected.supplierName || bridge.supplierName || '');
+    bridge.origin = cleanText(selected.origin || bridge.origin || '');
+    bridge.destination = cleanText(selected.destination || bridge.destination || '');
+    bridge.vehicleType = cleanText(selected.vehicleType || bridge.vehicleType || '');
+    bridge.serviceType = cleanText(selected.serviceType || bridge.serviceType || '');
+    bridge.matchType = cleanText(selected.matchType || '');
+    bridge.score = Number(selected.score || 0);
+    bridge.contractualDistanceKm = cleanText(selected.contractualDistanceKm || '');
+    bridge.operationalDistanceKm = cleanText(selected.operationalDistanceKm || '');
+    bridge.deltaKm = cleanText(selected.deltaKm || '');
+    bridge.tariffAmount = cleanText(selected.tariffAmount || '');
+    bridge.currency = cleanText(selected.currency || 'EUR') || 'EUR';
+    bridge.commercialReference = cleanText(selected.commercialReference || '');
+    bridge.matchBasis = cleanText(selected.matchBasis || '');
+    bridge.sourceType = cleanText(selected.sourceType || '');
+    bridge.roadRateId = cleanText(selected.roadRateId || '');
+    bridge.hasCommercialMatch = selected.hasCommercialMatch === true;
+    return bridge;
+  }
+
+  function selectRoadRateCandidate(draft, selectedRoadRateId = '') {
+    if (!draft || typeof draft !== 'object') return false;
+    if (!draft.roadRateBridge || typeof draft.roadRateBridge !== 'object') return false;
+    if (String(draft.roadRateBridge.status || '').trim() !== 'matched') return false;
+    applyRoadRateBridgeSelection(draft.roadRateBridge, selectedRoadRateId);
+    draft.roadMatchedContractualKm = cleanText(draft.roadRateBridge.contractualDistanceKm || '');
+    draft.roadMatchedOperationalKm = cleanText(draft.roadRateBridge.operationalDistanceKm || '');
+    draft.roadMatchedDeltaKm = cleanText(draft.roadRateBridge.deltaKm || '');
+    draft.roadMatchedTariff = cleanText(draft.roadRateBridge.tariffAmount || '');
+    draft.roadMatchedCurrency = cleanText(draft.roadRateBridge.currency || 'EUR');
+    draft.roadMatchedCommercialReference = cleanText(draft.roadRateBridge.commercialReference || '');
+    return true;
+  }
+
   function renderRoadRateBridgeCard(draft) {
     if (String(draft?.serviceProfile || '').trim() !== 'road') return '';
     const query = buildRoadRateQuery(draft);
@@ -153,54 +216,90 @@ window.KedrixOneQuotationsModule = (() => {
       ['Mezzo', query.vehicleType || '—']
     ];
     const canLookup = query.supplierName && query.origin && query.destination;
-    const actionRow = `<div class="action-row"><button class="btn secondary" type="button" data-quotation-road-rate-lookup ${canLookup ? '' : 'disabled'}>Leggi migliore tratta commerciale</button>${status === 'matched' ? '<button class="btn" type="button" data-quotation-road-rate-apply>Applica a riga trasporto</button>' : ''}</div>`;
-    const resultHtml = status === 'matched'
+    const canApply = status === 'matched' && cleanText(bridge.tariffAmount || '');
+    const actionRow = `<div class="action-row"><button class="btn secondary" type="button" data-quotation-road-rate-lookup ${canLookup ? '' : 'disabled'}>Leggi tratte commerciali compatibili</button>${canApply ? '<button class="btn" type="button" data-quotation-road-rate-apply>Applica a riga trasporto</button>' : ''}</div>`;
+    const selectedSummary = status === 'matched'
       ? `<div class="tag-grid quotation-summary-grid">
-          <div class="stack-item"><strong>Match</strong><span>${U.escapeHtml(bridge.matchType || 'exact')} · score ${U.escapeHtml(String(bridge.score || ''))}</span></div>
-          <div class="stack-item"><strong>Tariffa</strong><span>${U.escapeHtml([bridge.tariffAmount || '', bridge.currency || 'EUR'].filter(Boolean).join(' '))}</span></div>
+          <div class="stack-item"><strong>Match selezionato</strong><span>${U.escapeHtml(bridge.matchType || 'exact')} · score ${U.escapeHtml(String(bridge.score || ''))}</span></div>
+          <div class="stack-item"><strong>Tariffa</strong><span>${U.escapeHtml([bridge.tariffAmount || '', bridge.currency || 'EUR'].filter(Boolean).join(' ') || 'Non presente')}</span></div>
           <div class="stack-item"><strong>Km contrattuali</strong><span>${U.escapeHtml(bridge.contractualDistanceKm || '—')}</span></div>
           <div class="stack-item"><strong>Km operativi</strong><span>${U.escapeHtml(bridge.operationalDistanceKm || '—')}</span></div>
           <div class="stack-item"><strong>Delta km</strong><span>${U.escapeHtml(bridge.deltaKm || '0')}</span></div>
           <div class="stack-item"><strong>Rif. commerciale</strong><span>${U.escapeHtml(bridge.commercialReference || bridge.matchBasis || '—')}</span></div>
-        </div>
-        <div class="quotation-static-note">Fonte tratta letta dal fornitore stradale: ${U.escapeHtml(bridge.supplierName || query.supplierName || '')}. Puoi applicare il costo a una riga trasporto della quotazione.</div>`
-      : status === 'error'
-        ? `<div class="quotation-static-note">${U.escapeHtml(bridge.message || 'Nessuna tratta commerciale disponibile con i criteri correnti.')}</div>`
-        : `<div class="quotation-static-note">Usa questo ponte per leggere dal fornitore stradale la migliore tratta commerciale disponibile in base a fornitore, origine, destinazione, servizio e mezzo.</div>`;
+        </div>`
+      : '';
+    const candidates = Array.isArray(bridge.candidates) ? bridge.candidates : [];
+    const alternativesHtml = status === 'matched' && candidates.length
+      ? `<div class="stack-list">${candidates.map((candidate, index) => {
+          const isSelected = cleanText(candidate.roadRateId) === cleanText(bridge.selectedRoadRateId || bridge.roadRateId || '');
+          const routeLabel = [candidate.origin, candidate.destination].filter(Boolean).join(' → ') || 'Tratta senza etichetta';
+          const tariffLabel = [candidate.tariffAmount || '', candidate.currency || 'EUR'].filter(Boolean).join(' ').trim() || 'Tariffa non presente';
+          const summary = [
+            `#${index + 1}`,
+            candidate.matchType ? `match ${candidate.matchType}` : '',
+            `score ${candidate.score || 0}`,
+            candidate.contractualDistanceKm ? `km c. ${candidate.contractualDistanceKm}` : '',
+            candidate.operationalDistanceKm ? `km o. ${candidate.operationalDistanceKm}` : '',
+            candidate.deltaKm ? `Δ ${candidate.deltaKm}` : '',
+            candidate.commercialReference ? `rif. ${candidate.commercialReference}` : ''
+          ].filter(Boolean).join(' · ');
+          return `<div class="quotation-static-note">
+              <div><strong>${U.escapeHtml(routeLabel)}</strong></div>
+              <div>${U.escapeHtml(summary)}</div>
+              <div>${U.escapeHtml(tariffLabel)}</div>
+              <div class="action-row"><button class="btn ${isSelected ? '' : 'secondary'}" type="button" data-quotation-road-rate-select="${U.escapeHtml(candidate.roadRateId || '')}">${isSelected ? 'Tratta selezionata' : 'Usa questa tratta'}</button></div>
+            </div>`;
+        }).join('')}</div>`
+      : '';
+    let resultHtml = '';
+    if (status === 'matched') {
+      const totalMatches = Number(bridge.totalMatches || candidates.length || 0);
+      const totalCommercialMatches = Number(bridge.totalCommercialMatches || candidates.filter((candidate) => candidate.hasCommercialMatch).length || 0);
+      const summaryNote = totalMatches > 1
+        ? `Sono state trovate ${totalMatches} tratte compatibili (${totalCommercialMatches || 0} con tariffa commerciale). Seleziona quella da applicare alla riga trasporto.`
+        : `Fonte tratta letta dal fornitore stradale: ${U.escapeHtml(bridge.supplierName || query.supplierName || '')}. Puoi applicare il costo a una riga trasporto della quotazione.`;
+      const tariffWarning = canApply ? '' : '<div class="quotation-static-note">La tratta selezionata non ha ancora una tariffa commerciale valorizzata: puoi leggerla e confrontarla, ma non applicarla alla riga trasporto finché il costo non è compilato.</div>';
+      resultHtml = `${selectedSummary}<div class="quotation-static-note">${summaryNote}</div>${tariffWarning}${alternativesHtml}`;
+    } else if (status === 'error') {
+      const reason = cleanText(bridge.reason || '');
+      const guidance = reason === 'no-rates'
+        ? 'Per questo fornitore non risultano ancora tratte commerciali caricate. Vai in Anagrafiche > Fornitori > tratte/km foundation e inserisci o importa almeno una matrice CSV/Excel.'
+        : reason === 'no-match'
+          ? 'Il fornitore ha tratte caricate, ma nessuna corrisponde ai criteri correnti. Verifica origine, destinazione, servizio e mezzo oppure carica tratte aggiuntive.'
+          : 'Compila fornitore, origine e destinazione e poi rileggi le tratte compatibili.';
+      resultHtml = `<div class="quotation-static-note">${U.escapeHtml(bridge.message || 'Nessuna tratta commerciale disponibile con i criteri correnti.')}</div><div class="quotation-static-note">${U.escapeHtml(guidance)}</div>`;
+    } else {
+      resultHtml = '<div class="quotation-static-note">Usa questo ponte per leggere dal fornitore stradale le tratte commerciali compatibili in base a fornitore, origine, destinazione, servizio e mezzo. Se esistono più corrispondenze, potrai scegliere quale usare.</div>';
+    }
     return `
       <section class="quotation-service-card quotation-road-rate-bridge-card">
-        <div class="quotation-service-card-head"><h4>Ponte listino vettore</h4><p>Legge la migliore tratta commerciale dal listino chilometrico del fornitore stradale già censito in Anagrafiche.</p></div>
+        <div class="quotation-service-card-head"><h4>Ponte listino vettore</h4><p>Legge le tratte commerciali compatibili dal listino chilometrico del fornitore stradale già censito in Anagrafiche.</p></div>
         <div class="tag-grid quotation-summary-grid">${queryTags.map(([label, value]) => `<div class="stack-item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value)}</span></div>`).join('')}</div>
         ${resultHtml}
         ${actionRow}
       </section>`;
   }
 
-  function buildRoadRateBridgeSuccess(match, query) {
-    const record = match?.record || {};
-    return {
+  function buildRoadRateBridgeSuccess(result, query) {
+    const candidates = (Array.isArray(result?.matches) ? result.matches : [])
+      .map((match) => summarizeRoadRateCandidate(match, query))
+      .filter((candidate) => cleanText(candidate.roadRateId || candidate.origin || candidate.destination));
+    const bridge = {
       status: 'matched',
       lookedUpAt: new Date().toISOString(),
-      supplierName: cleanText(record.supplierName || query.supplierName || ''),
-      origin: cleanText(record.origin || query.origin || ''),
-      destination: cleanText(record.destination || query.destination || ''),
-      vehicleType: cleanText(record.vehicleType || query.vehicleType || ''),
-      serviceType: cleanText(record.serviceType || query.serviceType || ''),
-      matchType: cleanText(match?.matchType || ''),
-      score: Number(match?.score || 0),
-      contractualDistanceKm: cleanText(match?.contractualDistanceKm || record.resolvedContractualDistanceKm || ''),
-      operationalDistanceKm: cleanText(match?.operationalDistanceKm || record.resolvedOperationalDistanceKm || ''),
-      deltaKm: cleanText(match?.deltaKm || record.resolvedDeltaKm || ''),
-      tariffAmount: cleanText(record.tariffAmount || ''),
-      currency: cleanText(record.currency || 'EUR') || 'EUR',
-      commercialReference: cleanText(record.commercialReference || ''),
-      matchBasis: cleanText(record.matchBasis || ''),
-      sourceType: cleanText(record.sourceType || ''),
-      roadRateId: cleanText(record.id || '')
+      supplierName: cleanText(query?.supplierName || ''),
+      origin: cleanText(query?.origin || ''),
+      destination: cleanText(query?.destination || ''),
+      vehicleType: cleanText(query?.vehicleType || ''),
+      serviceType: cleanText(query?.serviceType || ''),
+      candidates,
+      totalMatches: Number(result?.totalMatches || candidates.length || 0),
+      totalCommercialMatches: Number(result?.totalCommercialMatches || candidates.filter((candidate) => candidate.hasCommercialMatch).length || 0)
     };
+    return applyRoadRateBridgeSelection(bridge, cleanText(candidates[0]?.roadRateId || ''));
   }
 
-  function buildRoadRateBridgeError(query, message) {
+  function buildRoadRateBridgeError(query, message, reason = '') {
     return {
       status: 'error',
       lookedUpAt: new Date().toISOString(),
@@ -209,6 +308,7 @@ window.KedrixOneQuotationsModule = (() => {
       destination: cleanText(query.destination || ''),
       vehicleType: cleanText(query.vehicleType || ''),
       serviceType: cleanText(query.serviceType || ''),
+      reason: cleanText(reason || ''),
       message: cleanText(message || 'Nessuna tratta commerciale disponibile con i criteri correnti.')
     };
   }
@@ -217,6 +317,7 @@ window.KedrixOneQuotationsModule = (() => {
     if (!draft || typeof draft !== 'object') return { ok: false, reason: 'missing-draft' };
     const bridge = draft.roadRateBridge;
     if (!bridge || String(bridge.status || '').trim() !== 'matched') return { ok: false, reason: 'missing-match' };
+    if (!cleanText(bridge.tariffAmount || '')) return { ok: false, reason: 'missing-tariff' };
     if (!Array.isArray(draft.lineItems)) draft.lineItems = [];
     let targetLine = draft.lineItems.find((row) => String(row?.lineType || '').trim() === 'transport' && !cleanText(row?.cost));
     if (!targetLine) targetLine = draft.lineItems.find((row) => String(row?.lineType || '').trim() === 'transport');
@@ -1302,44 +1403,57 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         if (session) {
           const query = buildRoadRateQuery(session.draft || {});
           if (!query.supplierName || !query.origin || !query.destination) {
-            session.draft.roadRateBridge = buildRoadRateBridgeError(query, 'Compila fornitore, origine e destinazione della quotazione per leggere la tratta commerciale.');
+            session.draft.roadRateBridge = buildRoadRateBridgeError(query, 'Compila fornitore, origine e destinazione della quotazione per leggere le tratte commerciali compatibili.', 'missing-route');
             session.isDirty = true;
             context.save?.();
             context.render?.();
             return;
           }
-          if (!SupplierRoadRates || typeof SupplierRoadRates.matchRoute !== 'function') {
-            session.draft.roadRateBridge = buildRoadRateBridgeError(query, 'Motore listino vettore non disponibile in questa build.');
+          const canListMatches = SupplierRoadRates && typeof SupplierRoadRates.listRouteMatches === 'function';
+          const canMatchSingle = SupplierRoadRates && typeof SupplierRoadRates.matchRoute === 'function';
+          if (!canListMatches && !canMatchSingle) {
+            session.draft.roadRateBridge = buildRoadRateBridgeError(query, 'Motore listino vettore non disponibile in questa build.', 'engine-missing');
             session.isDirty = true;
             context.save?.();
             context.render?.();
             return;
           }
-          const match = SupplierRoadRates.matchRoute(context.state, { name: query.supplierName, value: query.supplierName }, query);
-          if (match && match.ok) {
-            session.draft.roadRateBridge = buildRoadRateBridgeSuccess(match, query);
-            session.draft.roadMatchedContractualKm = cleanText(match.contractualDistanceKm || '');
-            session.draft.roadMatchedOperationalKm = cleanText(match.operationalDistanceKm || '');
-            session.draft.roadMatchedDeltaKm = cleanText(match.deltaKm || '');
-            session.draft.roadMatchedTariff = cleanText(match?.record?.tariffAmount || '');
-            session.draft.roadMatchedCurrency = cleanText(match?.record?.currency || 'EUR');
-            session.draft.roadMatchedCommercialReference = cleanText(match?.record?.commercialReference || '');
+          const result = canListMatches
+            ? SupplierRoadRates.listRouteMatches(context.state, { name: query.supplierName, value: query.supplierName }, query, { limit: 5 })
+            : SupplierRoadRates.matchRoute(context.state, { name: query.supplierName, value: query.supplierName }, query);
+          if (result && result.ok) {
+            session.draft.roadRateBridge = buildRoadRateBridgeSuccess(result, query);
+            selectRoadRateCandidate(session.draft || {}, cleanText(session.draft?.roadRateBridge?.selectedRoadRateId || ''));
             session.isDirty = true;
             context.save?.();
             context.render?.();
-            Feedback?.success?.('Tratta commerciale letta dal listino vettore.');
+            const candidateCount = Number(session.draft?.roadRateBridge?.totalMatches || (session.draft?.roadRateBridge?.candidates || []).length || 0);
+            Feedback?.success?.(candidateCount > 1 ? `Trovate ${candidateCount} tratte compatibili dal listino vettore.` : 'Tratta commerciale letta dal listino vettore.');
           } else {
+            const reason = String(result?.reason || '').trim();
             const reasonMap = {
               'no-rates': 'Il fornitore selezionato non ha tratte chilometriche disponibili.',
-              'missing-route': 'Compila origine e destinazione prima di cercare la tratta commerciale.',
+              'missing-route': 'Compila origine e destinazione prima di cercare le tratte commerciali.',
               'no-match': 'Nessuna tratta commerciale trovata con i criteri correnti.'
             };
-            session.draft.roadRateBridge = buildRoadRateBridgeError(query, reasonMap[String(match?.reason || '')] || 'Nessuna tratta commerciale disponibile con i criteri correnti.');
+            session.draft.roadRateBridge = buildRoadRateBridgeError(query, reasonMap[reason] || 'Nessuna tratta commerciale disponibile con i criteri correnti.', reason);
             session.isDirty = true;
             context.save?.();
             context.render?.();
-            Feedback?.warning?.('Nessuna tratta commerciale trovata.');
+            Feedback?.warning?.(reason === 'no-rates' ? 'Nessuna tratta caricata per il fornitore selezionato.' : 'Nessuna tratta commerciale trovata.');
           }
+        }
+        return;
+      }
+
+      const roadRateSelectButton = event.target.closest('[data-quotation-road-rate-select]');
+      if (roadRateSelectButton) {
+        const session = activeSession(context.state);
+        if (session && selectRoadRateCandidate(session.draft || {}, roadRateSelectButton.dataset.quotationRoadRateSelect || '')) {
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+          Feedback?.success?.('Tratta commerciale selezionata.');
         }
         return;
       }
@@ -1356,7 +1470,7 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
             context.render?.();
             Feedback?.success?.('Costo fornitore applicato alla riga trasporto della quotazione.');
           } else {
-            Feedback?.warning?.('Leggi prima una tratta commerciale valida dal listino vettore.');
+            Feedback?.warning?.(result.reason === 'missing-tariff' ? 'La tratta selezionata non ha una tariffa commerciale valorizzata.' : 'Leggi prima una tratta commerciale valida dal listino vettore.');
           }
         }
         return;

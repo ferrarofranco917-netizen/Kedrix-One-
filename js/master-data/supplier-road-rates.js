@@ -61,12 +61,53 @@ window.KedrixOneSupplierRoadRates = (() => {
     return defaultValue;
   }
 
+  function normalizeDistanceValue(value) {
+    return cleanText(value)
+      .replace(/,/g, '.')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function parseDistanceNumber(value) {
+    const clean = normalizeDistanceValue(value);
+    if (!clean) return null;
+    const numeric = Number(clean.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  function formatDistanceNumber(value) {
+    const numeric = parseDistanceNumber(value);
+    if (!Number.isFinite(numeric)) return '';
+    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1).replace(/\.0$/, '');
+  }
+
+  function resolveContractualDistanceKm(record) {
+    return normalizeDistanceValue(record && (record.contractualDistanceKm || record.distanceKm) || '');
+  }
+
+  function resolveOperationalDistanceKm(record) {
+    return normalizeDistanceValue(record && (record.operationalDistanceKm || record.contractualDistanceKm || record.distanceKm) || '');
+  }
+
+  function calculateDistanceDelta(contractualDistanceKm, operationalDistanceKm) {
+    const contractual = parseDistanceNumber(contractualDistanceKm);
+    const operational = parseDistanceNumber(operationalDistanceKm);
+    if (!Number.isFinite(contractual) || !Number.isFinite(operational)) return '';
+    const delta = operational - contractual;
+    if (Math.abs(delta) < 0.05) return '0';
+    const rounded = Number.isInteger(delta) ? String(delta) : delta.toFixed(1).replace(/\.0$/, '');
+    return delta > 0 ? `+${rounded}` : rounded;
+  }
+
   function normalizeRoadRate(record) {
     if (!record || typeof record !== 'object') return null;
     const supplierName = cleanText(record.supplierName || '');
     const origin = cleanText(record.origin || '');
     const destination = cleanText(record.destination || '');
     if (!supplierName || !origin || !destination) return null;
+    const contractualDistanceKm = resolveContractualDistanceKm(record);
+    const operationalDistanceKm = resolveOperationalDistanceKm(record);
+    const deltaKm = calculateDistanceDelta(contractualDistanceKm, operationalDistanceKm);
     return {
       id: cleanText(record.id || ''),
       supplierId: cleanText(record.supplierId || ''),
@@ -74,11 +115,16 @@ window.KedrixOneSupplierRoadRates = (() => {
       origin,
       destination,
       viaPoint: cleanText(record.viaPoint || ''),
-      distanceKm: cleanText(record.distanceKm || ''),
+      distanceKm: contractualDistanceKm,
+      contractualDistanceKm,
+      operationalDistanceKm,
+      deltaKm,
       tariffAmount: cleanText(record.tariffAmount || ''),
       currency: cleanText(record.currency || 'EUR') || 'EUR',
       vehicleType: cleanText(record.vehicleType || ''),
       serviceType: cleanText(record.serviceType || ''),
+      commercialReference: cleanText(record.commercialReference || ''),
+      distanceReferenceSource: cleanText(record.distanceReferenceSource || ''),
       validityFrom: cleanText(record.validityFrom || ''),
       validityTo: cleanText(record.validityTo || ''),
       paymentTerms: cleanText(record.paymentTerms || ''),
@@ -106,11 +152,15 @@ window.KedrixOneSupplierRoadRates = (() => {
       origin: cleanText(normalized.origin || ''),
       destination: cleanText(normalized.destination || ''),
       viaPoint: cleanText(normalized.viaPoint || ''),
-      distanceKm: cleanText(normalized.distanceKm || ''),
+      distanceKm: cleanText(normalized.contractualDistanceKm || normalized.distanceKm || ''),
+      contractualDistanceKm: cleanText(normalized.contractualDistanceKm || normalized.distanceKm || ''),
+      operationalDistanceKm: cleanText(normalized.operationalDistanceKm || normalized.contractualDistanceKm || normalized.distanceKm || ''),
       tariffAmount: cleanText(normalized.tariffAmount || ''),
       currency: cleanText(normalized.currency || 'EUR') || 'EUR',
       vehicleType: cleanText(normalized.vehicleType || ''),
       serviceType: cleanText(normalized.serviceType || ''),
+      commercialReference: cleanText(normalized.commercialReference || ''),
+      distanceReferenceSource: cleanText(normalized.distanceReferenceSource || ''),
       validityFrom: cleanText(normalized.validityFrom || ''),
       validityTo: cleanText(normalized.validityTo || ''),
       paymentTerms: cleanText(normalized.paymentTerms || (supplierRecord && supplierRecord.paymentTerms) || ''),
@@ -163,11 +213,15 @@ window.KedrixOneSupplierRoadRates = (() => {
       origin: payload.origin,
       destination: payload.destination,
       viaPoint: payload.viaPoint,
-      distanceKm: payload.distanceKm,
+      distanceKm: payload.contractualDistanceKm || payload.distanceKm,
+      contractualDistanceKm: payload.contractualDistanceKm || payload.distanceKm,
+      operationalDistanceKm: payload.operationalDistanceKm,
       tariffAmount: payload.tariffAmount,
       currency: payload.currency,
       vehicleType: payload.vehicleType,
       serviceType: payload.serviceType,
+      commercialReference: payload.commercialReference,
+      distanceReferenceSource: payload.distanceReferenceSource,
       validityFrom: payload.validityFrom,
       validityTo: payload.validityTo,
       paymentTerms: payload.paymentTerms,
@@ -225,11 +279,15 @@ window.KedrixOneSupplierRoadRates = (() => {
     origin: ['ORIGINE', 'ORIGIN', 'FROM', 'PARTENZA', 'CARICO', 'LOAD', 'LOADING PLACE'],
     destination: ['DESTINAZIONE', 'DESTINATION', 'TO', 'ARRIVO', 'SCARICO', 'DELIVERY', 'UNLOAD', 'UNLOADING PLACE'],
     viaPoint: ['VIA', 'TRANSITO', 'INTERMEDIO', 'VIA POINT'],
-    distanceKm: ['KM', 'KILOMETRI', 'CHILOMETRI', 'DISTANZA KM', 'DISTANCE KM', 'DISTANCE', 'KM TOTALI'],
+    distanceKm: ['KM', 'KILOMETRI', 'CHILOMETRI', 'DISTANZA KM', 'DISTANCE KM', 'DISTANCE', 'KM TOTALI', 'KM CONTRATTUALI'],
+    contractualDistanceKm: ['KM CONTRATTUALI', 'CONTRACTUAL KM', 'COMMERCIAL KM', 'KM COMMERCIALI', 'KM LISTINO'],
+    operationalDistanceKm: ['KM OPERATIVI', 'OPERATIONAL KM', 'TRUCK KM', 'ROAD KM', 'KM PERCORSO'],
     tariffAmount: ['TARIFFA', 'COSTO', 'NOLI', 'NOLI EUR', 'RATE', 'PRICE', 'AMOUNT', 'IMPORTO'],
     currency: ['VALUTA', 'CURRENCY'],
     vehicleType: ['TIPO MEZZO', 'MEZZO', 'VEHICLE TYPE', 'VEHICLE', 'EQUIPMENT'],
     serviceType: ['SERVIZIO', 'MODALITA', 'SERVICE', 'TRASPORTO'],
+    commercialReference: ['RIFERIMENTO COMMERCIALE', 'COMMERCIAL REFERENCE', 'QUOTE REF', 'REFERENCE'],
+    distanceReferenceSource: ['FONTE KM', 'DISTANCE SOURCE', 'RIFERIMENTO KM', 'DISTANCE REFERENCE'],
     validityFrom: ['VALIDITA DAL', 'VALID FROM', 'FROM DATE', 'START DATE'],
     validityTo: ['VALIDITA AL', 'VALID TO', 'TO DATE', 'END DATE'],
     paymentTerms: ['PAGAMENTO', 'PAYMENT', 'PAYMENT TERMS'],
@@ -270,17 +328,27 @@ window.KedrixOneSupplierRoadRates = (() => {
     let skipped = 0;
     const errors = [];
     rows.slice(1).forEach((row, index) => {
+      const contractualDistance = typeof mapping.contractualDistanceKm === 'number'
+        ? row[mapping.contractualDistanceKm]
+        : (mapping.distanceKm >= 0 ? row[mapping.distanceKm] : '');
+      const operationalDistance = typeof mapping.operationalDistanceKm === 'number'
+        ? row[mapping.operationalDistanceKm]
+        : contractualDistance;
       const payload = {
         supplierId,
         supplierName,
         origin: mapping.origin >= 0 ? row[mapping.origin] : '',
         destination: mapping.destination >= 0 ? row[mapping.destination] : '',
         viaPoint: mapping.viaPoint >= 0 ? row[mapping.viaPoint] : '',
-        distanceKm: mapping.distanceKm >= 0 ? row[mapping.distanceKm] : '',
+        distanceKm: contractualDistance,
+        contractualDistanceKm: contractualDistance,
+        operationalDistanceKm: operationalDistance,
         tariffAmount: mapping.tariffAmount >= 0 ? row[mapping.tariffAmount] : '',
         currency: mapping.currency >= 0 ? row[mapping.currency] : 'EUR',
         vehicleType: mapping.vehicleType >= 0 ? row[mapping.vehicleType] : '',
         serviceType: mapping.serviceType >= 0 ? row[mapping.serviceType] : '',
+        commercialReference: mapping.commercialReference >= 0 ? row[mapping.commercialReference] : '',
+        distanceReferenceSource: mapping.distanceReferenceSource >= 0 ? row[mapping.distanceReferenceSource] : '',
         validityFrom: mapping.validityFrom >= 0 ? row[mapping.validityFrom] : '',
         validityTo: mapping.validityTo >= 0 ? row[mapping.validityTo] : '',
         paymentTerms: mapping.paymentTerms >= 0 ? row[mapping.paymentTerms] : '',
@@ -325,6 +393,9 @@ window.KedrixOneSupplierRoadRates = (() => {
       total: list.length,
       active: list.filter((item) => item && item.active !== false).length,
       withDistance: list.filter((item) => cleanText(item && item.distanceKm)).length,
+      withContractualDistance: list.filter((item) => cleanText(item && item.contractualDistanceKm)).length,
+      withOperationalDistance: list.filter((item) => cleanText(item && item.operationalDistanceKm)).length,
+      withDelta: list.filter((item) => cleanText(item && item.deltaKm) && cleanText(item.deltaKm) !== '0').length,
       withTariff: list.filter((item) => cleanText(item && item.tariffAmount)).length,
       imported: list.filter((item) => cleanText(item && item.sourceType) === 'excel-import').length
     };
@@ -362,27 +433,80 @@ window.KedrixOneSupplierRoadRates = (() => {
     return { score, matchType };
   }
 
-  function matchRoute(stateOrConfig, supplierRecord, query = {}) {
+  function buildMatchPayload(record) {
+    const normalized = normalizeRoadRate(record);
+    if (!normalized) return null;
+    return {
+      ...normalized,
+      resolvedContractualDistanceKm: formatDistanceNumber(normalized.contractualDistanceKm || normalized.distanceKm || ''),
+      resolvedOperationalDistanceKm: formatDistanceNumber(normalized.operationalDistanceKm || normalized.contractualDistanceKm || normalized.distanceKm || ''),
+      resolvedDeltaKm: calculateDistanceDelta(normalized.contractualDistanceKm || normalized.distanceKm || '', normalized.operationalDistanceKm || normalized.contractualDistanceKm || normalized.distanceKm || ''),
+      hasCommercialMatch: Boolean(cleanText(normalized.tariffAmount)),
+      tariffLabel: [cleanText(normalized.tariffAmount), cleanText(normalized.currency || 'EUR') || 'EUR'].filter(Boolean).join(' ').trim(),
+      matchBasis: cleanText(normalized.commercialReference || normalized.distanceReferenceSource || normalized.sourceType || '')
+    };
+  }
+
+  function listRouteMatches(stateOrConfig, supplierRecord, query = {}, options = {}) {
     const list = listForSupplier(stateOrConfig, supplierRecord).filter((item) => item.active !== false);
-    if (!list.length) return { ok: false, reason: 'no-rates' };
+    if (!list.length) return { ok: false, reason: 'no-rates', matches: [] };
     const origin = cleanText(query.origin || '');
     const destination = cleanText(query.destination || '');
-    if (!origin || !destination) return { ok: false, reason: 'missing-route' };
+    if (!origin || !destination) return { ok: false, reason: 'missing-route', matches: [] };
+    const limit = Math.max(1, Number(options.limit || 5));
     const ranked = list
       .map((item) => ({ item, ...scoreMatch(item, query) }))
       .filter((entry) => entry.score > 0)
       .sort((left, right) => {
         if (right.score !== left.score) return right.score - left.score;
+        const rightHasTariff = cleanText(right.item && right.item.tariffAmount) ? 1 : 0;
+        const leftHasTariff = cleanText(left.item && left.item.tariffAmount) ? 1 : 0;
+        if (rightHasTariff !== leftHasTariff) return rightHasTariff - leftHasTariff;
         const a = cleanText(right.item.updatedAt || right.item.validityFrom || '');
         const b = cleanText(left.item.updatedAt || left.item.validityFrom || '');
         return a.localeCompare(b);
       });
-    if (!ranked.length) return { ok: false, reason: 'no-match' };
+    if (!ranked.length) return { ok: false, reason: 'no-match', matches: [] };
+    const matches = ranked.slice(0, limit).map((entry, index) => {
+      const record = buildMatchPayload(entry.item);
+      return {
+        rank: index + 1,
+        matchType: entry.matchType,
+        score: entry.score,
+        record,
+        commercialMatch: record && record.hasCommercialMatch === true,
+        contractualDistanceKm: record ? record.resolvedContractualDistanceKm : '',
+        operationalDistanceKm: record ? record.resolvedOperationalDistanceKm : '',
+        deltaKm: record ? record.resolvedDeltaKm : '',
+        tariffLabel: record ? record.tariffLabel : ''
+      };
+    });
     return {
       ok: true,
-      matchType: ranked[0].matchType,
-      score: ranked[0].score,
-      record: ranked[0].item
+      matches,
+      best: matches[0] || null,
+      totalMatches: ranked.length,
+      totalCommercialMatches: ranked.filter((entry) => cleanText(entry.item && entry.item.tariffAmount)).length
+    };
+  }
+
+  function matchRoute(stateOrConfig, supplierRecord, query = {}) {
+    const result = listRouteMatches(stateOrConfig, supplierRecord, query, { limit: 1 });
+    if (!result.ok) return result;
+    const best = result.best || null;
+    return {
+      ok: true,
+      matches: result.matches,
+      matchType: cleanText(best && best.matchType || ''),
+      score: Number(best && best.score || 0),
+      record: best ? best.record : null,
+      commercialMatch: Boolean(best && best.commercialMatch),
+      contractualDistanceKm: cleanText(best && best.contractualDistanceKm || ''),
+      operationalDistanceKm: cleanText(best && best.operationalDistanceKm || ''),
+      deltaKm: cleanText(best && best.deltaKm || ''),
+      tariffLabel: cleanText(best && best.tariffLabel || ''),
+      totalMatches: Number(result.totalMatches || 0),
+      totalCommercialMatches: Number(result.totalCommercialMatches || 0)
     };
   }
 
@@ -395,6 +519,7 @@ window.KedrixOneSupplierRoadRates = (() => {
     getById,
     importRoadRates,
     getMetrics,
+    listRouteMatches,
     matchRoute
   };
 })();
