@@ -56,12 +56,29 @@ window.KedrixOneMasterDataOverview = (() => {
       .filter(Boolean);
   }
 
+
+  function isSupplierPreferred(record) {
+    const priority = String(record && record.priorityTier || '').trim();
+    return priority === 'strategic' || priority === 'preferred';
+  }
+
+  function isSupplierReliable(record) {
+    return String(record && record.reliabilityLevel || '').trim() === 'validated';
+  }
+
+  function isSupplierClassified(record) {
+    return [record && record.supplierType, record && record.serviceScope, record && record.priorityTier, record && record.reliabilityLevel].some((value) => String(value || '').trim());
+  }
+
   function renderSupplierOperationalSnapshot(state, i18n) {
     const suppliers = listStructuredRecords(state, 'supplier');
     if (!suppliers.length) return '';
     const withModes = suppliers.filter((record) => String(record.serviceModes || '').trim()).length;
     const withAreas = suppliers.filter((record) => String(record.servicedAreas || '').trim()).length;
     const withPaymentTerms = suppliers.filter((record) => String(record.paymentTerms || '').trim()).length;
+    const classified = suppliers.filter((record) => isSupplierClassified(record)).length;
+    const preferred = suppliers.filter((record) => isSupplierPreferred(record)).length;
+    const reliable = suppliers.filter((record) => isSupplierReliable(record)).length;
     return `
       <section class="panel master-data-supplier-snapshot">
         <div class="panel-head compact">
@@ -75,6 +92,9 @@ window.KedrixOneMasterDataOverview = (() => {
           <article class="master-data-supplier-metric"><strong>${escapeHtml(withModes)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotModes', 'con servizi configurati'))}</span></article>
           <article class="master-data-supplier-metric"><strong>${escapeHtml(withAreas)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotAreas', 'con aree / tratte'))}</span></article>
           <article class="master-data-supplier-metric"><strong>${escapeHtml(withPaymentTerms)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotTerms', 'con pagamento definito'))}</span></article>
+          <article class="master-data-supplier-metric"><strong>${escapeHtml(classified)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotClassified', 'con classificazione interna'))}</span></article>
+          <article class="master-data-supplier-metric"><strong>${escapeHtml(preferred)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotPreferred', 'con priorità alta'))}</span></article>
+          <article class="master-data-supplier-metric"><strong>${escapeHtml(reliable)}</strong><span>${escapeHtml(t(i18n, 'ui.masterDataSupplierSnapshotReliable', 'con affidabilità validata'))}</span></article>
         </div>
       </section>`;
   }

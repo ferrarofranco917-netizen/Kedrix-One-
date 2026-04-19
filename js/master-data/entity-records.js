@@ -397,9 +397,14 @@ window.KedrixOneMasterDataEntities = (() => {
       email: cleanText(record.email || ''),
       phone: cleanText(record.phone || ''),
       contactPerson: cleanText(record.contactPerson || ''),
+      supplierType: cleanText(record.supplierType || ''),
+      serviceScope: cleanText(record.serviceScope || ''),
+      priorityTier: cleanText(record.priorityTier || ''),
+      reliabilityLevel: cleanText(record.reliabilityLevel || ''),
       serviceModes: cleanText(record.serviceModes || ''),
       servicedAreas: cleanText(record.servicedAreas || ''),
       paymentTerms: cleanText(record.paymentTerms || ''),
+      internalOperationalNote: cleanText(record.internalOperationalNote || ''),
       pec: cleanText(record.pec || ''),
       sdiCode: cleanText(record.sdiCode || ''),
       notes: cleanText(record.notes || ''),
@@ -456,9 +461,14 @@ window.KedrixOneMasterDataEntities = (() => {
       email: '',
       phone: '',
       contactPerson: '',
+      supplierType: '',
+      serviceScope: '',
+      priorityTier: '',
+      reliabilityLevel: '',
       serviceModes: '',
       servicedAreas: '',
       paymentTerms: '',
+      internalOperationalNote: '',
       pec: '',
       sdiCode: '',
       notes: '',
@@ -530,9 +540,14 @@ window.KedrixOneMasterDataEntities = (() => {
       email: normalized.email,
       phone: normalized.phone,
       contactPerson: normalized.contactPerson,
+      supplierType: normalized.supplierType,
+      serviceScope: normalized.serviceScope,
+      priorityTier: normalized.priorityTier,
+      reliabilityLevel: normalized.reliabilityLevel,
       serviceModes: normalized.serviceModes,
       servicedAreas: normalized.servicedAreas,
       paymentTerms: normalized.paymentTerms,
+      internalOperationalNote: normalized.internalOperationalNote,
       pec: normalized.pec,
       sdiCode: normalized.sdiCode,
       notes: normalized.notes,
@@ -563,6 +578,46 @@ window.KedrixOneMasterDataEntities = (() => {
     return def.structured ? buildDraftFromStructuredRecord(sourceRecord) : buildDraftFromDirectoryRecord(sourceRecord);
   }
 
+  function getSupplierSelectOptions(i18n, kind) {
+    const maps = {
+      type: [
+        { value: '', label: t(i18n, 'ui.masterDataSelectPlaceholder', 'Seleziona') },
+        { value: 'customs-broker', label: t(i18n, 'ui.masterDataSupplierTypeCustomsBroker', 'Broker doganale') },
+        { value: 'road-carrier', label: t(i18n, 'ui.masterDataSupplierTypeRoadCarrier', 'Vettore stradale') },
+        { value: 'sea-carrier', label: t(i18n, 'ui.masterDataSupplierTypeSeaCarrier', 'Compagnia marittima') },
+        { value: 'air-carrier', label: t(i18n, 'ui.masterDataSupplierTypeAirCarrier', 'Compagnia aerea') },
+        { value: 'warehouse', label: t(i18n, 'ui.masterDataSupplierTypeWarehouse', 'Magazzino / deposito') },
+        { value: 'terminal', label: t(i18n, 'ui.masterDataSupplierTypeTerminal', 'Terminal') },
+        { value: 'insurance', label: t(i18n, 'ui.masterDataSupplierTypeInsurance', 'Assicurazione') },
+        { value: 'mixed', label: t(i18n, 'ui.masterDataSupplierTypeMixed', 'Multiservizio') }
+      ],
+      scope: [
+        { value: '', label: t(i18n, 'ui.masterDataSelectPlaceholder', 'Seleziona') },
+        { value: 'customs', label: t(i18n, 'ui.masterDataSupplierScopeCustoms', 'Dogana') },
+        { value: 'sea', label: t(i18n, 'ui.masterDataSupplierScopeSea', 'Mare') },
+        { value: 'air', label: t(i18n, 'ui.masterDataSupplierScopeAir', 'Aereo') },
+        { value: 'road', label: t(i18n, 'ui.masterDataSupplierScopeRoad', 'Stradale') },
+        { value: 'warehouse', label: t(i18n, 'ui.masterDataSupplierScopeWarehouse', 'Magazzino') },
+        { value: 'multimodal', label: t(i18n, 'ui.masterDataSupplierScopeMultimodal', 'Multimodale') },
+        { value: 'special-projects', label: t(i18n, 'ui.masterDataSupplierScopeSpecialProjects', 'Progetti speciali') }
+      ],
+      priority: [
+        { value: '', label: t(i18n, 'ui.masterDataSelectPlaceholder', 'Seleziona') },
+        { value: 'strategic', label: t(i18n, 'ui.masterDataSupplierPriorityStrategic', 'Strategico') },
+        { value: 'preferred', label: t(i18n, 'ui.masterDataSupplierPriorityPreferred', 'Preferito') },
+        { value: 'standard', label: t(i18n, 'ui.masterDataSupplierPriorityStandard', 'Standard') },
+        { value: 'standby', label: t(i18n, 'ui.masterDataSupplierPriorityStandby', 'Stand-by') }
+      ],
+      reliability: [
+        { value: '', label: t(i18n, 'ui.masterDataSelectPlaceholder', 'Seleziona') },
+        { value: 'validated', label: t(i18n, 'ui.masterDataSupplierReliabilityValidated', 'Validato') },
+        { value: 'monitored', label: t(i18n, 'ui.masterDataSupplierReliabilityMonitored', 'Monitorato') },
+        { value: 'to-develop', label: t(i18n, 'ui.masterDataSupplierReliabilityToDevelop', 'Da sviluppare') }
+      ]
+    };
+    return maps[kind] || maps.type;
+  }
+
   function getFormFields(entityKey, i18n) {
     const defs = getEntityDefinitions(i18n);
     const def = defs[entityKey];
@@ -587,9 +642,14 @@ window.KedrixOneMasterDataEntities = (() => {
     const supplierFields = entityKey === 'supplier'
       ? [
           { name: 'contactPerson', label: t(i18n, 'ui.masterDataSupplierContactPerson', 'Referente operativo') },
+          { name: 'supplierType', label: t(i18n, 'ui.masterDataSupplierType', 'Tipo fornitore'), type: 'select', options: getSupplierSelectOptions(i18n, 'type') },
+          { name: 'serviceScope', label: t(i18n, 'ui.masterDataSupplierServiceScope', 'Ambito servizio'), type: 'select', options: getSupplierSelectOptions(i18n, 'scope') },
+          { name: 'priorityTier', label: t(i18n, 'ui.masterDataSupplierPriorityTier', 'Priorità interna'), type: 'select', options: getSupplierSelectOptions(i18n, 'priority') },
+          { name: 'reliabilityLevel', label: t(i18n, 'ui.masterDataSupplierReliabilityLevel', 'Affidabilità'), type: 'select', options: getSupplierSelectOptions(i18n, 'reliability') },
           { name: 'serviceModes', label: t(i18n, 'ui.masterDataSupplierServiceModes', 'Servizi / modalità coperte'), full: true },
           { name: 'servicedAreas', label: t(i18n, 'ui.masterDataSupplierServicedAreas', 'Aree / tratte servite'), full: true },
-          { name: 'paymentTerms', label: t(i18n, 'ui.masterDataSupplierPaymentTerms', 'Condizioni pagamento') }
+          { name: 'paymentTerms', label: t(i18n, 'ui.masterDataSupplierPaymentTerms', 'Condizioni pagamento') },
+          { name: 'internalOperationalNote', label: t(i18n, 'ui.masterDataSupplierInternalOperationalNote', 'Nota operativa interna'), full: true, type: 'textarea' }
         ]
       : [];
 
@@ -657,9 +717,14 @@ window.KedrixOneMasterDataEntities = (() => {
       email: payload.email,
       phone: payload.phone,
       contactPerson: payload.contactPerson,
+      supplierType: payload.supplierType,
+      serviceScope: payload.serviceScope,
+      priorityTier: payload.priorityTier,
+      reliabilityLevel: payload.reliabilityLevel,
       serviceModes: payload.serviceModes,
       servicedAreas: payload.servicedAreas,
       paymentTerms: payload.paymentTerms,
+      internalOperationalNote: payload.internalOperationalNote,
       pec: payload.pec,
       sdiCode: payload.sdiCode,
       notes: payload.notes,
@@ -748,6 +813,15 @@ window.KedrixOneMasterDataEntities = (() => {
       country: normalized.country,
       email: normalized.email,
       phone: normalized.phone,
+      contactPerson: normalized.contactPerson,
+      supplierType: normalized.supplierType,
+      serviceScope: normalized.serviceScope,
+      priorityTier: normalized.priorityTier,
+      reliabilityLevel: normalized.reliabilityLevel,
+      serviceModes: normalized.serviceModes,
+      servicedAreas: normalized.servicedAreas,
+      paymentTerms: normalized.paymentTerms,
+      internalOperationalNote: normalized.internalOperationalNote,
       pec: normalized.pec,
       sdiCode: normalized.sdiCode,
       notes: normalized.notes,
@@ -792,10 +866,10 @@ window.KedrixOneMasterDataEntities = (() => {
           id: record.id || record.name,
           primary: record.name,
           secondary: entityKey === 'supplier'
-            ? ([record.city, record.country, record.serviceModes].filter(Boolean).join(' · ') || '—')
+            ? ([record.supplierType, record.serviceScope, record.city || record.country].filter(Boolean).join(' · ') || [record.city, record.country, record.serviceModes].filter(Boolean).join(' · ') || '—')
             : ([record.city, record.country].filter(Boolean).join(' · ') || '—'),
           tertiary: entityKey === 'supplier'
-            ? ([record.paymentTerms, record.vatNumber || record.code].filter(Boolean).join(' · ') || '—')
+            ? ([record.priorityTier, record.reliabilityLevel, record.paymentTerms, record.vatNumber || record.code].filter(Boolean).join(' · ') || '—')
             : (record.vatNumber || record.code || '—'),
           value: record.name,
           record

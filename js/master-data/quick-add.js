@@ -17,6 +17,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       withModes: false,
       withAreas: false,
       withPaymentTerms: false,
+      classifiedOnly: false,
+      preferredOnly: false,
+      reliableOnly: false,
       activeOnly: false
     };
   }
@@ -208,6 +211,57 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       .replace(/'/g, '&#39;');
   }
 
+  function getSupplierOptionLabel(kind, value, t) {
+    const clean = String(value || '').trim();
+    if (!clean) return '';
+    const maps = {
+      supplierType: {
+        'customs-broker': t.t('ui.masterDataSupplierTypeCustomsBroker', 'Broker doganale'),
+        'road-carrier': t.t('ui.masterDataSupplierTypeRoadCarrier', 'Vettore stradale'),
+        'sea-carrier': t.t('ui.masterDataSupplierTypeSeaCarrier', 'Compagnia marittima'),
+        'air-carrier': t.t('ui.masterDataSupplierTypeAirCarrier', 'Compagnia aerea'),
+        warehouse: t.t('ui.masterDataSupplierTypeWarehouse', 'Magazzino / deposito'),
+        terminal: t.t('ui.masterDataSupplierTypeTerminal', 'Terminal'),
+        insurance: t.t('ui.masterDataSupplierTypeInsurance', 'Assicurazione'),
+        mixed: t.t('ui.masterDataSupplierTypeMixed', 'Multiservizio')
+      },
+      serviceScope: {
+        customs: t.t('ui.masterDataSupplierScopeCustoms', 'Dogana'),
+        sea: t.t('ui.masterDataSupplierScopeSea', 'Mare'),
+        air: t.t('ui.masterDataSupplierScopeAir', 'Aereo'),
+        road: t.t('ui.masterDataSupplierScopeRoad', 'Stradale'),
+        warehouse: t.t('ui.masterDataSupplierScopeWarehouse', 'Magazzino'),
+        multimodal: t.t('ui.masterDataSupplierScopeMultimodal', 'Multimodale'),
+        'special-projects': t.t('ui.masterDataSupplierScopeSpecialProjects', 'Progetti speciali')
+      },
+      priorityTier: {
+        strategic: t.t('ui.masterDataSupplierPriorityStrategic', 'Strategico'),
+        preferred: t.t('ui.masterDataSupplierPriorityPreferred', 'Preferito'),
+        standard: t.t('ui.masterDataSupplierPriorityStandard', 'Standard'),
+        standby: t.t('ui.masterDataSupplierPriorityStandby', 'Stand-by')
+      },
+      reliabilityLevel: {
+        validated: t.t('ui.masterDataSupplierReliabilityValidated', 'Validato'),
+        monitored: t.t('ui.masterDataSupplierReliabilityMonitored', 'Monitorato'),
+        'to-develop': t.t('ui.masterDataSupplierReliabilityToDevelop', 'Da sviluppare')
+      }
+    };
+    return maps[kind] && maps[kind][clean] ? maps[kind][clean] : clean;
+  }
+
+  function isSupplierPreferred(record) {
+    const priority = String(record && record.priorityTier || '').trim();
+    return priority === 'strategic' || priority === 'preferred';
+  }
+
+  function isSupplierReliable(record) {
+    return String(record && record.reliabilityLevel || '').trim() === 'validated';
+  }
+
+  function isSupplierClassified(record) {
+    return [record && record.supplierType, record && record.serviceScope, record && record.priorityTier, record && record.reliabilityLevel].some((value) => String(value || '').trim());
+  }
+
   function syncDraftFromForm(form, draft) {
     if (!form || !draft) return draft;
     const formData = new FormData(form);
@@ -230,9 +284,14 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           entry.record.code,
           entry.record.vatNumber,
           entry.record.contactPerson,
+          entry.record.supplierType,
+          entry.record.serviceScope,
+          entry.record.priorityTier,
+          entry.record.reliabilityLevel,
           entry.record.serviceModes,
           entry.record.servicedAreas,
           entry.record.paymentTerms,
+          entry.record.internalOperationalNote,
           entry.record.displayValue,
           entry.record.notes
         );
@@ -248,6 +307,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       if (filters.withModes && !String(record.serviceModes || '').trim()) return false;
       if (filters.withAreas && !String(record.servicedAreas || '').trim()) return false;
       if (filters.withPaymentTerms && !String(record.paymentTerms || '').trim()) return false;
+      if (filters.classifiedOnly && !isSupplierClassified(record)) return false;
+      if (filters.preferredOnly && !isSupplierPreferred(record)) return false;
+      if (filters.reliableOnly && !isSupplierReliable(record)) return false;
       if (filters.activeOnly && record.active === false) return false;
       return true;
     });
@@ -281,6 +343,10 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         if (field.type === 'checkbox') {
           return `<div class="field ${field.full ? 'full' : ''}"><label class="checkbox-chip master-data-checkbox"><input id="${fieldId}" name="${field.name}" type="checkbox" ${formDraft[field.name] !== false ? 'checked' : ''} /> ${escapeHtml(field.label)}</label></div>`;
         }
+        if (field.type === 'select') {
+          const options = Array.isArray(field.options) ? field.options : [];
+          return `<div class="field ${field.full ? 'full' : ''}"><label for="${fieldId}">${escapeHtml(field.label)}${requiredMark}</label><select id="${fieldId}" name="${field.name}">${options.map((option) => `<option value="${escapeHtml(option.value || '')}" ${String(formDraft[field.name] || '') === String(option.value || '') ? 'selected' : ''}>${escapeHtml(option.label || option.value || '')}</option>`).join('')}</select></div>`;
+        }
         if (field.lookupAction === 'vat-autofill') {
           const lookupStatus = VatAutofill && typeof VatAutofill.renderLookupStatus === 'function'
             ? VatAutofill.renderLookupStatus(formDraft, t)
@@ -311,11 +377,15 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const record = entry && entry.record ? entry.record : null;
     if (!record) return '';
     const tags = [
+      getSupplierOptionLabel('supplierType', record.supplierType, t),
+      getSupplierOptionLabel('serviceScope', record.serviceScope, t),
+      getSupplierOptionLabel('priorityTier', record.priorityTier, t),
+      getSupplierOptionLabel('reliabilityLevel', record.reliabilityLevel, t),
       String(record.serviceModes || '').trim(),
       String(record.servicedAreas || '').trim(),
       String(record.paymentTerms || '').trim(),
       String(record.contactPerson || '').trim()
-    ].filter(Boolean).slice(0, 4);
+    ].filter(Boolean).slice(0, 5);
     if (!tags.length) {
       return `<div class="master-data-row-tags"><span class="master-data-row-tag muted">${escapeHtml(t.t('ui.masterDataSupplierTagEmpty', 'profilo da completare'))}</span></div>`;
     }
@@ -342,8 +412,11 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const matchesModes = suppliers.filter((entry) => String(entry?.record?.serviceModes || '').trim()).length;
     const matchesAreas = suppliers.filter((entry) => String(entry?.record?.servicedAreas || '').trim()).length;
     const matchesTerms = suppliers.filter((entry) => String(entry?.record?.paymentTerms || '').trim()).length;
+    const matchesClassified = suppliers.filter((entry) => isSupplierClassified(entry?.record || {})).length;
+    const matchesPreferred = suppliers.filter((entry) => isSupplierPreferred(entry?.record || {})).length;
+    const matchesReliable = suppliers.filter((entry) => isSupplierReliable(entry?.record || {})).length;
     const matchesActive = suppliers.filter((entry) => entry?.record?.active !== false).length;
-    const activeCount = [filters.withModes, filters.withAreas, filters.withPaymentTerms, filters.activeOnly].filter(Boolean).length;
+    const activeCount = [filters.withModes, filters.withAreas, filters.withPaymentTerms, filters.classifiedOnly, filters.preferredOnly, filters.reliableOnly, filters.activeOnly].filter(Boolean).length;
     const modeButton = (key, count, label) => `<button type="button" class="master-data-filter-chip ${filters[key] ? 'active' : ''}" data-supplier-filter="${escapeHtml(key)}">${escapeHtml(label)} · ${escapeHtml(String(count))}</button>`;
     return `
       <div class="master-data-filter-toolbar supplier">
@@ -355,6 +428,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           ${modeButton('withModes', matchesModes, t.t('ui.masterDataSupplierFilterModes', 'con servizi / modalità'))}
           ${modeButton('withAreas', matchesAreas, t.t('ui.masterDataSupplierFilterAreas', 'con aree / tratte'))}
           ${modeButton('withPaymentTerms', matchesTerms, t.t('ui.masterDataSupplierFilterTerms', 'con condizioni pagamento'))}
+          ${modeButton('classifiedOnly', matchesClassified, t.t('ui.masterDataSupplierFilterClassified', 'profilo classificato'))}
+          ${modeButton('preferredOnly', matchesPreferred, t.t('ui.masterDataSupplierFilterPreferred', 'priorità alta'))}
+          ${modeButton('reliableOnly', matchesReliable, t.t('ui.masterDataSupplierFilterReliable', 'affidabilità alta'))}
           ${modeButton('activeOnly', matchesActive, t.t('ui.masterDataSupplierFilterActive', 'solo attivi'))}
           <button type="button" class="master-data-filter-chip secondary" data-supplier-filter-reset="true">${escapeHtml(t.t('ui.masterDataSupplierFilterReset', 'Azzera filtri'))}</button>
         </div>
@@ -414,15 +490,23 @@ window.KedrixOneMasterDataQuickAdd = (() => {
           <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(withModes))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelModes', 'con servizi / modalità'))}</span></article>
           <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(withAreas))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelAreas', 'con aree / tratte'))}</span></article>
           <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(withTerms))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelTerms', 'con condizioni pagamento'))}</span></article>
+          <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(withClassification))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelClassified', 'con classificazione interna'))}</span></article>
+          <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(preferredSuppliers))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelPreferred', 'con priorità alta'))}</span></article>
+          <article class="master-data-supplier-panel-card"><strong>${escapeHtml(String(reliableSuppliers))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPanelReliable', 'con affidabilità validata'))}</span></article>
         </div>
         <div class="master-data-supplier-current">
           <div class="master-data-supplier-current-head">${escapeHtml(t.t('ui.masterDataSupplierPanelCurrent', 'Scheda corrente'))}</div>
           <div class="master-data-supplier-current-title">${escapeHtml(currentTitle)}</div>
           <div class="master-data-supplier-current-grid">
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierType', 'Tipo fornitore'))}</span><strong>${escapeHtml(currentType)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierServiceScope', 'Ambito servizio'))}</span><strong>${escapeHtml(currentScope)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierPriorityTier', 'Priorità interna'))}</span><strong>${escapeHtml(currentPriority)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierReliabilityLevel', 'Affidabilità'))}</span><strong>${escapeHtml(currentReliability)}</strong></div>
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierServiceModes', 'Servizi / modalità coperte'))}</span><strong>${escapeHtml(currentModes)}</strong></div>
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierServicedAreas', 'Aree / tratte servite'))}</span><strong>${escapeHtml(currentAreas)}</strong></div>
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierPaymentTerms', 'Condizioni pagamento'))}</span><strong>${escapeHtml(currentTerms)}</strong></div>
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierContactPerson', 'Referente operativo'))}</span><strong>${escapeHtml(currentContact)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierInternalOperationalNote', 'Nota operativa interna'))}</span><strong>${escapeHtml(currentInternalNote)}</strong></div>
           </div>
         </div>
       </section>`;
@@ -484,7 +568,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
             </div>
             <div class="field full">
               <label for="masterDataSearchInput">${escapeHtml(t.t('ui.search', 'Cerca'))}</label>
-              <input id="masterDataSearchInput" type="search" value="${escapeHtml(moduleState.searchQuery || '')}" placeholder="${escapeHtml(activeEntity === 'supplier' ? t.t('ui.masterDataSupplierSearchPlaceholder', 'Cerca per fornitore, referente, servizio, tratta o pagamento') : t.t('ui.masterDataSearchPlaceholder', 'Cerca per nome, città, P.IVA o codice'))}" autocomplete="off" />
+              <input id="masterDataSearchInput" type="search" value="${escapeHtml(moduleState.searchQuery || '')}" placeholder="${escapeHtml(activeEntity === 'supplier' ? t.t('ui.masterDataSupplierSearchPlaceholder', 'Cerca per fornitore, referente, classificazione, servizio, tratta o pagamento') : t.t('ui.masterDataSearchPlaceholder', 'Cerca per nome, città, P.IVA o codice'))}" autocomplete="off" />
             </div>
           </div>
 
