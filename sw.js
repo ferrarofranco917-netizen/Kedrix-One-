@@ -1,6 +1,6 @@
-// AQ65 anagrafiche fornitori price lists foundation
-const STATIC_CACHE = 'kedrix-one-stepaq65-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq65-runtime-v1';
+// AQ66 road carriers km foundation
+const STATIC_CACHE = 'kedrix-one-stepaq66-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq66-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',

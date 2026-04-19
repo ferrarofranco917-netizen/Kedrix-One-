@@ -5596,3 +5596,45 @@ body.dialog-open {
     grid-template-columns: 1fr;
   }
 }
+
+.master-data-road-rates-layout {
+  grid-template-columns: minmax(320px, 1.05fr) minmax(380px, 1fr);
+}
+
+.master-data-road-import-block,
+.master-data-road-counter-block {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  padding-top: 1rem;
+}
+
+.master-data-road-import-hint,
+.master-data-road-import-status,
+.master-data-road-counter-result {
+  color: var(--text-muted, rgba(255,255,255,0.68));
+  font-size: 0.92rem;
+}
+
+.master-data-road-import-status,
+.master-data-road-counter-result {
+  margin-top: 0.75rem;
+  border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem;
+  background: rgba(255,255,255,0.02);
+}
+
+.master-data-road-import-status.error {
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+.master-data-road-counter-result.success {
+  display: grid;
+  gap: 0.35rem;
+}
+
+@media (max-width: 1100px) {
+  .master-data-road-rates-layout {
+    grid-template-columns: 1fr;
+  }
+}

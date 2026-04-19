@@ -405,6 +405,9 @@ window.KedrixOneMasterDataEntities = (() => {
       servicedAreas: cleanText(record.servicedAreas || ''),
       paymentTerms: cleanText(record.paymentTerms || ''),
       internalOperationalNote: cleanText(record.internalOperationalNote || ''),
+      roadPricingMode: cleanText(record.roadPricingMode || ''),
+      roadDistanceSource: cleanText(record.roadDistanceSource || ''),
+      truckProfiles: cleanText(record.truckProfiles || ''),
       pec: cleanText(record.pec || ''),
       sdiCode: cleanText(record.sdiCode || ''),
       notes: cleanText(record.notes || ''),
@@ -469,6 +472,9 @@ window.KedrixOneMasterDataEntities = (() => {
       servicedAreas: '',
       paymentTerms: '',
       internalOperationalNote: '',
+      roadPricingMode: '',
+      roadDistanceSource: '',
+      truckProfiles: '',
       pec: '',
       sdiCode: '',
       notes: '',
@@ -548,6 +554,12 @@ window.KedrixOneMasterDataEntities = (() => {
       servicedAreas: normalized.servicedAreas,
       paymentTerms: normalized.paymentTerms,
       internalOperationalNote: normalized.internalOperationalNote,
+      roadPricingMode: normalized.roadPricingMode,
+      roadDistanceSource: normalized.roadDistanceSource,
+      truckProfiles: normalized.truckProfiles,
+      roadPricingMode: normalized.roadPricingMode,
+      roadDistanceSource: normalized.roadDistanceSource,
+      truckProfiles: normalized.truckProfiles,
       pec: normalized.pec,
       sdiCode: normalized.sdiCode,
       notes: normalized.notes,
@@ -613,6 +625,19 @@ window.KedrixOneMasterDataEntities = (() => {
         { value: 'validated', label: t(i18n, 'ui.masterDataSupplierReliabilityValidated', 'Validato') },
         { value: 'monitored', label: t(i18n, 'ui.masterDataSupplierReliabilityMonitored', 'Monitorato') },
         { value: 'to-develop', label: t(i18n, 'ui.masterDataSupplierReliabilityToDevelop', 'Da sviluppare') }
+      ],
+      roadPricingMode: [
+        { value: '', label: t(i18n, 'ui.masterDataSelectPlaceholder', 'Seleziona') },
+        { value: 'manual', label: t(i18n, 'ui.masterDataSupplierRoadPricingManual', 'Voce manuale / spot') },
+        { value: 'matrix', label: t(i18n, 'ui.masterDataSupplierRoadPricingMatrix', 'Listino tratte / km') },
+        { value: 'hybrid', label: t(i18n, 'ui.masterDataSupplierRoadPricingHybrid', 'Ibrido') }
+      ],
+      roadDistanceSource: [
+        { value: '', label: t(i18n, 'ui.masterDataSelectPlaceholder', 'Seleziona') },
+        { value: 'manual', label: t(i18n, 'ui.masterDataSupplierRoadDistanceManual', 'Manuale') },
+        { value: 'supplier-matrix', label: t(i18n, 'ui.masterDataSupplierRoadDistanceMatrix', 'Matrice vettore') },
+        { value: 'truck-distancer', label: t(i18n, 'ui.masterDataSupplierRoadDistanceTruckDistancer', 'Distanziere mezzi pesanti') },
+        { value: 'hybrid', label: t(i18n, 'ui.masterDataSupplierRoadDistanceHybrid', 'Misto') }
       ]
     };
     return maps[kind] || maps.type;
@@ -649,6 +674,9 @@ window.KedrixOneMasterDataEntities = (() => {
           { name: 'serviceModes', label: t(i18n, 'ui.masterDataSupplierServiceModes', 'Servizi / modalità coperte'), full: true },
           { name: 'servicedAreas', label: t(i18n, 'ui.masterDataSupplierServicedAreas', 'Aree / tratte servite'), full: true },
           { name: 'paymentTerms', label: t(i18n, 'ui.masterDataSupplierPaymentTerms', 'Condizioni pagamento') },
+          { name: 'roadPricingMode', label: t(i18n, 'ui.masterDataSupplierRoadPricingMode', 'Tariffazione stradale'), type: 'select', options: getSupplierSelectOptions(i18n, 'roadPricingMode') },
+          { name: 'roadDistanceSource', label: t(i18n, 'ui.masterDataSupplierRoadDistanceSource', 'Fonte km / distanze'), type: 'select', options: getSupplierSelectOptions(i18n, 'roadDistanceSource') },
+          { name: 'truckProfiles', label: t(i18n, 'ui.masterDataSupplierTruckProfiles', 'Profili mezzi coperti'), full: true },
           { name: 'internalOperationalNote', label: t(i18n, 'ui.masterDataSupplierInternalOperationalNote', 'Nota operativa interna'), full: true, type: 'textarea' }
         ]
       : [];
@@ -725,6 +753,9 @@ window.KedrixOneMasterDataEntities = (() => {
       servicedAreas: payload.servicedAreas,
       paymentTerms: payload.paymentTerms,
       internalOperationalNote: payload.internalOperationalNote,
+      roadPricingMode: payload.roadPricingMode,
+      roadDistanceSource: payload.roadDistanceSource,
+      truckProfiles: payload.truckProfiles,
       pec: payload.pec,
       sdiCode: payload.sdiCode,
       notes: payload.notes,
@@ -822,6 +853,12 @@ window.KedrixOneMasterDataEntities = (() => {
       servicedAreas: normalized.servicedAreas,
       paymentTerms: normalized.paymentTerms,
       internalOperationalNote: normalized.internalOperationalNote,
+      roadPricingMode: normalized.roadPricingMode,
+      roadDistanceSource: normalized.roadDistanceSource,
+      truckProfiles: normalized.truckProfiles,
+      roadPricingMode: normalized.roadPricingMode,
+      roadDistanceSource: normalized.roadDistanceSource,
+      truckProfiles: normalized.truckProfiles,
       pec: normalized.pec,
       sdiCode: normalized.sdiCode,
       notes: normalized.notes,
@@ -866,10 +903,10 @@ window.KedrixOneMasterDataEntities = (() => {
           id: record.id || record.name,
           primary: record.name,
           secondary: entityKey === 'supplier'
-            ? ([record.supplierType, record.serviceScope, record.city || record.country].filter(Boolean).join(' · ') || [record.city, record.country, record.serviceModes].filter(Boolean).join(' · ') || '—')
+            ? ([record.supplierType, record.serviceScope, record.city || record.country].filter(Boolean).join(' · ') || [record.city, record.country, record.serviceModes || record.truckProfiles].filter(Boolean).join(' · ') || '—')
             : ([record.city, record.country].filter(Boolean).join(' · ') || '—'),
           tertiary: entityKey === 'supplier'
-            ? ([record.priorityTier, record.reliabilityLevel, record.paymentTerms, record.vatNumber || record.code].filter(Boolean).join(' · ') || '—')
+            ? ([record.priorityTier, record.reliabilityLevel, record.roadPricingMode, record.paymentTerms, record.vatNumber || record.code].filter(Boolean).join(' · ') || '—')
             : (record.vatNumber || record.code || '—'),
           value: record.name,
           record

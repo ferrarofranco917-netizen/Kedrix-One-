@@ -4,6 +4,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const VatAutofill = window.KedrixOneVatAutofill || null;
   const SupplierPriceLists = window.KedrixOneSupplierPriceLists || null;
+  const SupplierRoadRates = window.KedrixOneSupplierRoadRates || null;
+  const CsvReader = window.KedrixOneImportCsvReader || null;
+  const ExcelReader = window.KedrixOneImportExcelReader || null;
 
   function getImportFoundation() {
     return window.KedrixOneImportFoundation || null;
@@ -79,13 +82,61 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return draft;
   }
 
+  function buildDefaultRoadLookupDraft() {
+    return { origin: '', destination: '', vehicleType: '', serviceType: '' };
+  }
+
+  function buildDefaultRoadImportStatus() {
+    return { status: 'idle', imported: 0, updated: 0, skipped: 0, fileName: '', batchId: '', message: '' };
+  }
+
+  function ensureSupplierRoadRateDraft(moduleState, supplierRecord = null) {
+    const supplierId = String(supplierRecord && supplierRecord.id || '').trim();
+    const supplierName = String(supplierRecord && (supplierRecord.name || supplierRecord.value) || '').trim();
+    if (!supplierId || !supplierName || !SupplierRoadRates || typeof SupplierRoadRates.createDraft !== 'function') {
+      moduleState.supplierRoadRateOwnerId = '';
+      moduleState.supplierRoadRateDraft = SupplierRoadRates && typeof SupplierRoadRates.createDraft === 'function'
+        ? SupplierRoadRates.createDraft()
+        : { id: '', supplierId: '', supplierName: '', origin: '', destination: '', viaPoint: '', distanceKm: '', tariffAmount: '', currency: 'EUR', vehicleType: '', serviceType: '', validityFrom: '', validityTo: '', paymentTerms: '', tollIncluded: false, fuelIncluded: false, notes: '', active: true, sourceType: 'manual', importBatchId: '', importSourceName: '' };
+      return moduleState.supplierRoadRateDraft;
+    }
+    if (moduleState.supplierRoadRateOwnerId !== supplierId || !moduleState.supplierRoadRateDraft || typeof moduleState.supplierRoadRateDraft !== 'object') {
+      moduleState.supplierRoadRateOwnerId = supplierId;
+      moduleState.supplierRoadRateDraft = SupplierRoadRates.createDraft(null, supplierRecord);
+      return moduleState.supplierRoadRateDraft;
+    }
+    moduleState.supplierRoadRateDraft.supplierId = supplierId;
+    moduleState.supplierRoadRateDraft.supplierName = supplierName;
+    return moduleState.supplierRoadRateDraft;
+  }
+
+  function resetSupplierRoadRateDraft(state, supplierRecord = null) {
+    const moduleState = ensureModuleState(state);
+    moduleState.supplierRoadRateDraft = SupplierRoadRates && typeof SupplierRoadRates.createDraft === 'function'
+      ? SupplierRoadRates.createDraft(null, supplierRecord)
+      : { id: '', supplierId: '', supplierName: '', origin: '', destination: '', viaPoint: '', distanceKm: '', tariffAmount: '', currency: 'EUR', vehicleType: '', serviceType: '', validityFrom: '', validityTo: '', paymentTerms: '', tollIncluded: false, fuelIncluded: false, notes: '', active: true, sourceType: 'manual', importBatchId: '', importSourceName: '' };
+    moduleState.supplierRoadRateOwnerId = String(supplierRecord && supplierRecord.id || '').trim();
+    return moduleState.supplierRoadRateDraft;
+  }
+
+  function syncSupplierRoadRateDraftFromForm(form, draft) {
+    if (!form || !draft) return draft;
+    const formData = new FormData(form);
+    Array.from(form.querySelectorAll('[name]')).forEach((node) => {
+      if (!node.name) return;
+      if (node.type === 'checkbox') draft[node.name] = Boolean(node.checked);
+      else draft[node.name] = String(formData.get(node.name) || '').trim();
+    });
+    return draft;
+  }
+
   function ensureModuleState(state) {
     if (!state || typeof state !== 'object') {
-      const fallback = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters(), supplierPriceListDraft: null, supplierPriceListOwnerId: '' };
+      const fallback = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters(), supplierPriceListDraft: null, supplierPriceListOwnerId: '', supplierRoadRateDraft: null, supplierRoadRateOwnerId: '', supplierRoadLookupDraft: buildDefaultRoadLookupDraft(), supplierRoadLookupResult: null, supplierRoadImportStatus: buildDefaultRoadImportStatus() };
       return fallback;
     }
     if (!state.masterDataModule || typeof state.masterDataModule !== 'object') {
-      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters(), supplierPriceListDraft: null, supplierPriceListOwnerId: '' };
+      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters(), supplierPriceListDraft: null, supplierPriceListOwnerId: '', supplierRoadRateDraft: null, supplierRoadRateOwnerId: '', supplierRoadLookupDraft: buildDefaultRoadLookupDraft(), supplierRoadLookupResult: null, supplierRoadImportStatus: buildDefaultRoadImportStatus() };
     }
     if (!state.masterDataModule.formDrafts || typeof state.masterDataModule.formDrafts !== 'object') {
       state.masterDataModule.formDrafts = {};
@@ -94,6 +145,8 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     if (typeof state.masterDataModule.selectedRecordId !== 'string') state.masterDataModule.selectedRecordId = '';
     if (typeof state.masterDataModule.searchQuery !== 'string') state.masterDataModule.searchQuery = '';
     ensureSupplierFilters(state.masterDataModule);
+    if (!state.masterDataModule.supplierRoadLookupDraft || typeof state.masterDataModule.supplierRoadLookupDraft !== 'object') state.masterDataModule.supplierRoadLookupDraft = buildDefaultRoadLookupDraft();
+    if (!state.masterDataModule.supplierRoadImportStatus || typeof state.masterDataModule.supplierRoadImportStatus !== 'object') state.masterDataModule.supplierRoadImportStatus = buildDefaultRoadImportStatus();
     return state.masterDataModule;
   }
 
@@ -152,6 +205,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     moduleState.selectedRecordId = '';
     moduleState.searchQuery = '';
     moduleState.supplierFilters = buildDefaultSupplierFilters();
+    moduleState.supplierRoadLookupDraft = buildDefaultRoadLookupDraft();
+    moduleState.supplierRoadLookupResult = null;
+    moduleState.supplierRoadImportStatus = buildDefaultRoadImportStatus();
     getFormDraft(state, entityKey);
   }
 
@@ -286,6 +342,17 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         validated: t.t('ui.masterDataSupplierReliabilityValidated', 'Validato'),
         monitored: t.t('ui.masterDataSupplierReliabilityMonitored', 'Monitorato'),
         'to-develop': t.t('ui.masterDataSupplierReliabilityToDevelop', 'Da sviluppare')
+      },
+      roadPricingMode: {
+        manual: t.t('ui.masterDataSupplierRoadPricingManual', 'Voce manuale / spot'),
+        matrix: t.t('ui.masterDataSupplierRoadPricingMatrix', 'Listino tratte / km'),
+        hybrid: t.t('ui.masterDataSupplierRoadPricingHybrid', 'Ibrido')
+      },
+      roadDistanceSource: {
+        manual: t.t('ui.masterDataSupplierRoadDistanceManual', 'Manuale'),
+        'supplier-matrix': t.t('ui.masterDataSupplierRoadDistanceMatrix', 'Matrice vettore'),
+        'truck-distancer': t.t('ui.masterDataSupplierRoadDistanceTruckDistancer', 'Distanziere mezzi pesanti'),
+        hybrid: t.t('ui.masterDataSupplierRoadDistanceHybrid', 'Misto')
       }
     };
     return maps[kind] && maps[kind][clean] ? maps[kind][clean] : clean;
@@ -313,6 +380,28 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
   function isSupplierClassified(record) {
     return [record && record.supplierType, record && record.serviceScope, record && record.priorityTier, record && record.reliabilityLevel].some((value) => String(value || '').trim());
+  }
+
+
+
+  function isRoadCarrierRecord(record) {
+    const supplierType = String(record && record.supplierType || '').trim();
+    const serviceScope = String(record && record.serviceScope || '').trim();
+    return supplierType === 'road-carrier' || serviceScope === 'road';
+  }
+
+  function getRoadRateSourceLabel(value, t) {
+    const clean = String(value || '').trim();
+    if (clean === 'excel-import') return 'Excel / CSV';
+    if (clean === 'manual') return t.t('ui.masterDataSupplierRoadDistanceManual', 'Manuale');
+    return clean || '—';
+  }
+
+  function getRoadRateMatchLabel(value, t) {
+    const clean = String(value || '').trim();
+    if (clean === 'exact') return t.t('ui.masterDataSupplierRoadRatesCounterExact', 'Match esatto');
+    if (clean === 'reverse') return t.t('ui.masterDataSupplierRoadRatesCounterReverse', 'Match inverso');
+    return t.t('ui.masterDataSupplierRoadRatesCounterPartial', 'Match parziale');
   }
 
   function syncDraftFromForm(form, draft) {
@@ -436,9 +525,12 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       getSupplierOptionLabel('reliabilityLevel', record.reliabilityLevel, t),
       String(record.serviceModes || '').trim(),
       String(record.servicedAreas || '').trim(),
+      getSupplierOptionLabel('roadPricingMode', record.roadPricingMode, t),
+      getSupplierOptionLabel('roadDistanceSource', record.roadDistanceSource, t),
+      String(record.truckProfiles || '').trim(),
       String(record.paymentTerms || '').trim(),
       String(record.contactPerson || '').trim()
-    ].filter(Boolean).slice(0, 5);
+    ].filter(Boolean).slice(0, 6);
     if (!tags.length) {
       return `<div class="master-data-row-tags"><span class="master-data-row-tag muted">${escapeHtml(t.t('ui.masterDataSupplierTagEmpty', 'profilo da completare'))}</span></div>`;
     }
@@ -538,6 +630,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const currentTerms = String(formDraft?.paymentTerms || '').trim() || '—';
     const currentContact = String(formDraft?.contactPerson || '').trim() || '—';
     const currentInternalNote = String(formDraft?.internalOperationalNote || '').trim() || '—';
+    const currentRoadPricing = getSupplierOptionLabel('roadPricingMode', formDraft?.roadPricingMode, t) || '—';
+    const currentRoadDistance = getSupplierOptionLabel('roadDistanceSource', formDraft?.roadDistanceSource, t) || '—';
+    const currentTruckProfiles = String(formDraft?.truckProfiles || '').trim() || '—';
     return `
       <section class="panel master-data-supplier-panel">
         <div class="panel-head compact">
@@ -567,6 +662,9 @@ window.KedrixOneMasterDataQuickAdd = (() => {
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierServicedAreas', 'Aree / tratte servite'))}</span><strong>${escapeHtml(currentAreas)}</strong></div>
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierPaymentTerms', 'Condizioni pagamento'))}</span><strong>${escapeHtml(currentTerms)}</strong></div>
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierContactPerson', 'Referente operativo'))}</span><strong>${escapeHtml(currentContact)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierRoadPricingMode', 'Tariffazione stradale'))}</span><strong>${escapeHtml(currentRoadPricing)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierRoadDistanceSource', 'Fonte km / distanze'))}</span><strong>${escapeHtml(currentRoadDistance)}</strong></div>
+            <div><span>${escapeHtml(t.t('ui.masterDataSupplierTruckProfiles', 'Profili mezzi coperti'))}</span><strong>${escapeHtml(currentTruckProfiles)}</strong></div>
             <div><span>${escapeHtml(t.t('ui.masterDataSupplierInternalOperationalNote', 'Nota operativa interna'))}</span><strong>${escapeHtml(currentInternalNote)}</strong></div>
           </div>
         </div>
@@ -663,6 +761,154 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       </section>`;
   }
 
+  function renderSupplierRoadRatesPanel(state, formDraft, t) {
+    if (!SupplierRoadRates || typeof SupplierRoadRates.listForSupplier !== 'function' || typeof SupplierRoadRates.createDraft !== 'function') return '';
+    const supplierRecord = formDraft && formDraft.id && formDraft.value
+      ? { id: formDraft.id, name: formDraft.value, paymentTerms: formDraft.paymentTerms }
+      : null;
+    if (!supplierRecord) {
+      return `
+        <section class="panel master-data-price-list-panel">
+          <div class="panel-head compact">
+            <div>
+              <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesTitle', 'Fornitori stradali · tratte/km foundation'))}</h3>
+              <p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataSupplierPriceListsSaveSupplierFirst', 'Salva prima la scheda fornitore: lo storico listini viene agganciato a un fornitore strutturato reale.'))}</p>
+            </div>
+          </div>
+        </section>`;
+    }
+    if (!isRoadCarrierRecord(formDraft)) {
+      return `
+        <section class="panel master-data-price-list-panel">
+          <div class="panel-head compact">
+            <div>
+              <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesTitle', 'Fornitori stradali · tratte/km foundation'))}</h3>
+              <p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesNotRoad', 'Questo blocco si attiva per fornitori classificati come vettori stradali o con ambito stradale.'))}</p>
+            </div>
+          </div>
+        </section>`;
+    }
+    const moduleState = ensureModuleState(state);
+    const draft = ensureSupplierRoadRateDraft(moduleState, supplierRecord);
+    const rows = SupplierRoadRates.listForSupplier(state, supplierRecord);
+    const metrics = typeof SupplierRoadRates.getMetrics === 'function' ? SupplierRoadRates.getMetrics(rows) : { total: rows.length, active: 0, withDistance: 0, withTariff: 0, imported: 0 };
+    const importStatus = moduleState.supplierRoadImportStatus || buildDefaultRoadImportStatus();
+    const lookupDraft = moduleState.supplierRoadLookupDraft || buildDefaultRoadLookupDraft();
+    const lookupResult = moduleState.supplierRoadLookupResult || null;
+    const draftTitle = String(draft && draft.id || '').trim()
+      ? t.t('ui.masterDataSupplierRoadRatesEditDraft', 'Modifica tratta chilometrica')
+      : t.t('ui.masterDataSupplierRoadRatesNewDraft', 'Nuova tratta / riga chilometrica');
+    const cards = rows.length
+      ? rows.map((item) => {
+          const lineA = [`${item.origin} → ${item.destination}`, item.vehicleType || '', item.serviceType || ''].filter(Boolean).join(' · ');
+          const lineB = [item.distanceKm ? `${item.distanceKm} km` : '', item.tariffAmount ? `${item.tariffAmount} ${item.currency || 'EUR'}` : '', item.paymentTerms || ''].filter(Boolean).join(' · ') || '—';
+          const lineC = [item.validityFrom, item.validityTo].filter(Boolean).join(' → ') || '';
+          return `
+            <article class="master-data-price-list-card ${item.active === false ? 'is-inactive' : ''}">
+              <div class="master-data-price-list-card-head">
+                <div>
+                  <h4>${escapeHtml(lineA)}</h4>
+                  <div class="master-data-price-list-card-price">${escapeHtml(lineB)}</div>
+                </div>
+                <button type="button" class="btn secondary small" data-supplier-road-rate-id="${escapeHtml(item.id)}">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesOpen', 'Apri'))}</button>
+              </div>
+              ${lineC ? `<div class="master-data-price-list-card-meta">${escapeHtml(lineC)}</div>` : ''}
+              <div class="master-data-price-list-card-meta">${escapeHtml(getRoadRateSourceLabel(item.sourceType, t))}</div>
+              ${item.notes ? `<div class="master-data-price-list-card-note">${escapeHtml(item.notes)}</div>` : ''}
+            </article>`;
+        }).join('')
+      : `<div class="master-data-price-list-empty">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesEmpty', 'Nessuna tratta chilometrica registrata per questo vettore.'))}</div>`;
+
+    const importStatusText = importStatus.status === 'done'
+      ? t.t('ui.masterDataSupplierRoadRatesImportStatusDone', 'Ultimo import: {count} righe nuove, {updated} aggiornate, {skipped} scartate.')
+          .replace('{count}', String(importStatus.imported || 0))
+          .replace('{updated}', String(importStatus.updated || 0))
+          .replace('{skipped}', String(importStatus.skipped || 0))
+      : importStatus.status === 'failed'
+        ? (importStatus.message || t.t('ui.masterDataSupplierRoadRatesImportStatusFailed', 'Import non completato: controlla file e mapping colonne.'))
+        : t.t('ui.masterDataSupplierRoadRatesImportStatusIdle', 'Nessun import eseguito in questa sessione.');
+
+    const lookupHtml = lookupResult && lookupResult.ok && lookupResult.record
+      ? `<div class="master-data-road-counter-result success"><strong>${escapeHtml(getRoadRateMatchLabel(lookupResult.matchType, t))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesCounterResultKm', 'Km stimati'))}: ${escapeHtml(String(lookupResult.record.distanceKm || '—'))}</span><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesCounterResultTariff', 'Tariffa disponibile'))}: ${escapeHtml([lookupResult.record.tariffAmount, lookupResult.record.currency].filter(Boolean).join(' ') || '—')}</span><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesCounterResultSource', 'Fonte'))}: ${escapeHtml(getRoadRateSourceLabel(lookupResult.record.sourceType, t))}</span></div>`
+      : (lookupResult && lookupResult.ok === false
+        ? `<div class="master-data-road-counter-result">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesCounterNoMatch', 'Nessuna tratta trovata nella matrice attuale del vettore.'))}</div>`
+        : '');
+
+    return `
+      <section class="panel master-data-price-list-panel master-data-road-rates-panel">
+        <div class="panel-head compact">
+          <div>
+            <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesTitle', 'Fornitori stradali · tratte/km foundation'))}</h3>
+            <p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesDetail', 'Gestisci tratte chilometriche del vettore stradale con inserimento singolo, import CSV/Excel e distanziere interno agganciato alla matrice fornitore.'))}</p>
+          </div>
+        </div>
+        <div class="master-data-price-list-metrics">
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.total))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesMetricTotal', 'tratte/km collegate'))}</span></article>
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.active))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesMetricActive', 'righe attive'))}</span></article>
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.withDistance))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesMetricDistance', 'con km valorizzati'))}</span></article>
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.withTariff))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesMetricTariff', 'con tariffa valorizzata'))}</span></article>
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.imported))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierRoadRatesMetricImported', 'importate da file'))}</span></article>
+        </div>
+        <div class="master-data-price-list-layout master-data-road-rates-layout">
+          <div class="master-data-price-list-history">${cards}</div>
+          <div class="master-data-price-list-editor">
+            <div class="master-data-price-list-editor-head">${escapeHtml(draftTitle)}</div>
+            <form id="supplierRoadRateForm" class="master-data-form-stack">
+              <input type="hidden" name="id" value="${escapeHtml(draft.id || '')}" />
+              <input type="hidden" name="supplierId" value="${escapeHtml(draft.supplierId || '')}" />
+              <input type="hidden" name="supplierName" value="${escapeHtml(draft.supplierName || '')}" />
+              <input type="hidden" name="sourceType" value="${escapeHtml(draft.sourceType || 'manual')}" />
+              <div class="form-grid two master-data-price-list-grid">
+                <div class="field"><label for="supplierRoadOrigin">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesOrigin', 'Origine'))}</label><input id="supplierRoadOrigin" name="origin" type="text" value="${escapeHtml(draft.origin || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierRoadDestination">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesDestination', 'Destinazione'))}</label><input id="supplierRoadDestination" name="destination" type="text" value="${escapeHtml(draft.destination || '')}" autocomplete="off" /></div>
+                <div class="field full"><label for="supplierRoadVia">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesVia', 'Via / intermedio'))}</label><input id="supplierRoadVia" name="viaPoint" type="text" value="${escapeHtml(draft.viaPoint || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierRoadKm">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesDistanceKm', 'Km'))}</label><input id="supplierRoadKm" name="distanceKm" type="text" value="${escapeHtml(draft.distanceKm || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierRoadTariff">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesTariffAmount', 'Tariffa'))}</label><input id="supplierRoadTariff" name="tariffAmount" type="text" value="${escapeHtml(draft.tariffAmount || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierRoadCurrency">${escapeHtml(t.t('ui.masterDataSupplierPriceListsCurrency', 'Valuta'))}</label><input id="supplierRoadCurrency" name="currency" type="text" value="${escapeHtml(draft.currency || 'EUR')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierRoadVehicleType">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesVehicleType', 'Tipo mezzo'))}</label><input id="supplierRoadVehicleType" name="vehicleType" type="text" value="${escapeHtml(draft.vehicleType || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierRoadServiceType">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesServiceType', 'Servizio'))}</label><input id="supplierRoadServiceType" name="serviceType" type="text" value="${escapeHtml(draft.serviceType || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierRoadValidityFrom">${escapeHtml(t.t('ui.masterDataSupplierPriceListsValidityFrom', 'Validità dal'))}</label><input id="supplierRoadValidityFrom" name="validityFrom" type="date" value="${escapeHtml(draft.validityFrom || '')}" /></div>
+                <div class="field"><label for="supplierRoadValidityTo">${escapeHtml(t.t('ui.masterDataSupplierPriceListsValidityTo', 'Validità al'))}</label><input id="supplierRoadValidityTo" name="validityTo" type="date" value="${escapeHtml(draft.validityTo || '')}" /></div>
+                <div class="field full"><label for="supplierRoadPaymentTerms">${escapeHtml(t.t('ui.masterDataSupplierPriceListsPaymentTerms', 'Pagamento listino'))}</label><input id="supplierRoadPaymentTerms" name="paymentTerms" type="text" value="${escapeHtml(draft.paymentTerms || '')}" autocomplete="off" /></div>
+                <div class="field"><label class="checkbox-chip master-data-checkbox"><input name="tollIncluded" type="checkbox" ${draft.tollIncluded === true ? 'checked' : ''} /> ${escapeHtml(t.t('ui.masterDataSupplierRoadRatesTollIncluded', 'Pedaggio incluso'))}</label></div>
+                <div class="field"><label class="checkbox-chip master-data-checkbox"><input name="fuelIncluded" type="checkbox" ${draft.fuelIncluded === true ? 'checked' : ''} /> ${escapeHtml(t.t('ui.masterDataSupplierRoadRatesFuelIncluded', 'Fuel incluso'))}</label></div>
+                <div class="field full"><label for="supplierRoadNotes">${escapeHtml(t.t('ui.masterDataSupplierPriceListsNotes', 'Note listino'))}</label><textarea id="supplierRoadNotes" name="notes" rows="3">${escapeHtml(draft.notes || '')}</textarea></div>
+                <div class="field full"><label class="checkbox-chip master-data-checkbox"><input name="active" type="checkbox" ${draft.active !== false ? 'checked' : ''} /> ${escapeHtml(t.t('ui.masterDataSupplierPriceListsActive', 'Listino attivo'))}</label></div>
+              </div>
+              <div class="form-actions master-data-actions">
+                <button class="btn" type="submit">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesSave', 'Salva tratta'))}</button>
+                <button class="btn secondary" id="supplierRoadRateResetButton" type="button">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesReset', 'Nuova tratta'))}</button>
+              </div>
+            </form>
+            <div class="master-data-road-import-block">
+              <div class="master-data-price-list-editor-head">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesImportTitle', 'Import CSV / Excel tratte chilometriche'))}</div>
+              <p class="master-data-road-import-hint">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesImportHint', 'Header consigliati: origine, destinazione, km, tariffa, tipo mezzo, servizio, validità dal/al. Excel attivo con parser XLSX disponibile in build.'))}</p>
+              <label class="btn secondary" for="supplierRoadImportInput">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesImportButton', 'Importa file'))}</label>
+              <input id="supplierRoadImportInput" class="visually-hidden" type="file" accept=".csv,.txt,.xlsx,.xls,.xlsm" />
+              <div class="master-data-road-import-status ${importStatus.status === 'failed' ? 'error' : ''}">${escapeHtml(importStatusText)}</div>
+            </div>
+            <div class="master-data-road-counter-block">
+              <div class="master-data-price-list-editor-head">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesCounterTitle', 'Distanziere foundation interno'))}</div>
+              <p class="master-data-road-import-hint">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesCounterDetail', 'Contatore agganciato alla matrice del vettore: cerca la migliore corrispondenza per origine/destinazione e restituisce km e tariffa disponibili.'))}</p>
+              <form id="supplierRoadLookupForm" class="master-data-form-stack">
+                <div class="form-grid two master-data-price-list-grid">
+                  <div class="field"><label for="supplierRoadLookupOrigin">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesOrigin', 'Origine'))}</label><input id="supplierRoadLookupOrigin" name="origin" type="text" value="${escapeHtml(lookupDraft.origin || '')}" autocomplete="off" /></div>
+                  <div class="field"><label for="supplierRoadLookupDestination">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesDestination', 'Destinazione'))}</label><input id="supplierRoadLookupDestination" name="destination" type="text" value="${escapeHtml(lookupDraft.destination || '')}" autocomplete="off" /></div>
+                  <div class="field"><label for="supplierRoadLookupVehicleType">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesVehicleType', 'Tipo mezzo'))}</label><input id="supplierRoadLookupVehicleType" name="vehicleType" type="text" value="${escapeHtml(lookupDraft.vehicleType || '')}" autocomplete="off" /></div>
+                  <div class="field"><label for="supplierRoadLookupServiceType">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesServiceType', 'Servizio'))}</label><input id="supplierRoadLookupServiceType" name="serviceType" type="text" value="${escapeHtml(lookupDraft.serviceType || '')}" autocomplete="off" /></div>
+                </div>
+                <div class="form-actions master-data-actions">
+                  <button class="btn secondary" type="submit">${escapeHtml(t.t('ui.masterDataSupplierRoadRatesCounterSearch', 'Cerca tratta'))}</button>
+                </div>
+              </form>
+              ${lookupHtml}
+            </div>
+          </div>
+        </div>
+      </section>`;
+  }
+
+
   function renderPanel({ state, module, t }) {
     const defs = getEntityDefinitions(t);
     const moduleState = ensureModuleState(state);
@@ -751,6 +997,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
       ${activeEntity === 'supplier' && !quickAddContext ? renderSupplierOperationalPanel(state, formDraft, entries, t) : ''}
       ${activeEntity === 'supplier' && !quickAddContext ? renderSupplierPriceListsPanel(state, formDraft, t) : ''}
+      ${activeEntity === 'supplier' && !quickAddContext ? renderSupplierRoadRatesPanel(state, formDraft, t) : ''}
       ${activeDef.structured && !quickAddContext && VatAutofill && typeof VatAutofill.renderConfigPanel === 'function' ? VatAutofill.renderConfigPanel(state, t) : ''}`;
   }
 
@@ -894,6 +1141,161 @@ window.KedrixOneMasterDataQuickAdd = (() => {
         'success'
       );
     });
+
+    root.querySelectorAll('[data-supplier-road-rate-id]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!SupplierRoadRates || typeof SupplierRoadRates.getById !== 'function' || typeof SupplierRoadRates.createDraft !== 'function') return;
+        const supplierDraft = getFormDraft(state, activeEntity);
+        const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+          ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+          : null;
+        const selected = SupplierRoadRates.getById(state, button.dataset.supplierRoadRateId || '');
+        if (!selected || !supplierRecord) return;
+        moduleState.supplierRoadRateOwnerId = supplierRecord.id;
+        moduleState.supplierRoadRateDraft = SupplierRoadRates.createDraft(selected, supplierRecord);
+        save();
+        render();
+      });
+    });
+
+    const supplierRoadRateForm = root.querySelector('#supplierRoadRateForm');
+    const supplierRoadRateResetButton = root.querySelector('#supplierRoadRateResetButton');
+    const supplierRoadImportInput = root.querySelector('#supplierRoadImportInput');
+    const supplierRoadLookupForm = root.querySelector('#supplierRoadLookupForm');
+
+    supplierRoadRateResetButton?.addEventListener('click', () => {
+      const supplierDraft = getFormDraft(state, activeEntity);
+      const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+        ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+        : null;
+      resetSupplierRoadRateDraft(state, supplierRecord);
+      save();
+      render();
+    });
+
+    supplierRoadRateForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!SupplierRoadRates || typeof SupplierRoadRates.saveRoadRate !== 'function') return;
+      const supplierDraft = getFormDraft(state, activeEntity);
+      const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+        ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+        : null;
+      if (!supplierRecord) {
+        toast(i18n.t('ui.masterDataSupplierPriceListsSaveSupplierFirst', 'Salva prima la scheda fornitore: lo storico listini viene agganciato a un fornitore strutturato reale.'), 'warning');
+        return;
+      }
+      const draft = ensureSupplierRoadRateDraft(moduleState, supplierRecord);
+      syncSupplierRoadRateDraftFromForm(supplierRoadRateForm, draft);
+      const result = SupplierRoadRates.saveRoadRate(state, draft);
+      if (!result.ok) {
+        toast(i18n.t('ui.masterDataSupplierRoadRatesMissingValue', 'Compila almeno origine, destinazione e vettore collegato.'), 'warning');
+        return;
+      }
+      resetSupplierRoadRateDraft(state, supplierRecord);
+      save();
+      render();
+      toast(
+        result.updated
+          ? i18n.t('ui.masterDataSupplierRoadRatesUpdated', 'Tratta chilometrica aggiornata correttamente.')
+          : i18n.t('ui.masterDataSupplierRoadRatesSaved', 'Tratta chilometrica salvata correttamente.'),
+        'success'
+      );
+    });
+
+    supplierRoadImportInput?.addEventListener('change', async (event) => {
+      const file = event.target && event.target.files ? event.target.files[0] : null;
+      if (!file) return;
+      const supplierDraft = getFormDraft(state, activeEntity);
+      const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+        ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+        : null;
+      if (!supplierRecord) {
+        toast(i18n.t('ui.masterDataSupplierPriceListsSaveSupplierFirst', 'Salva prima la scheda fornitore: lo storico listini viene agganciato a un fornitore strutturato reale.'), 'warning');
+        event.target.value = '';
+        return;
+      }
+      const extension = String(file.name || '').split('.').pop().toLowerCase();
+      let parsed = { ok: false };
+      if (['csv', 'txt'].includes(extension)) {
+        parsed = CsvReader && typeof CsvReader.readCsvFile === 'function' ? await CsvReader.readCsvFile(file) : { ok: false, reason: 'csv-engine-missing' };
+      } else if (['xlsx', 'xls', 'xlsm'].includes(extension)) {
+        parsed = ExcelReader && typeof ExcelReader.readWorkbook === 'function' ? await ExcelReader.readWorkbook(file) : { ok: false, reason: 'excel-engine-missing' };
+      } else {
+        parsed = { ok: false, reason: 'unsupported-format' };
+      }
+      if (!parsed.ok || !Array.isArray(parsed.matrix)) {
+        moduleState.supplierRoadImportStatus = {
+          status: 'failed',
+          imported: 0,
+          updated: 0,
+          skipped: 0,
+          fileName: file.name || '',
+          batchId: '',
+          message: parsed.reason === 'missing-columns'
+            ? i18n.t('ui.masterDataSupplierRoadRatesImportMissingColumns', 'Colonne minime mancanti: servono almeno origine e destinazione.')
+            : (parsed.messageFallback || i18n.t('ui.masterDataSupplierRoadRatesImportError', 'Import tratte non riuscito.'))
+        };
+        save();
+        render();
+        toast(moduleState.supplierRoadImportStatus.message, 'warning');
+        event.target.value = '';
+        return;
+      }
+      const imported = SupplierRoadRates && typeof SupplierRoadRates.importRoadRates === 'function'
+        ? SupplierRoadRates.importRoadRates(state, supplierRecord, parsed.matrix, { sourceFormat: parsed.sourceFormat || extension, fileName: file.name || '' })
+        : { ok: false, reason: 'importer-missing' };
+      if (!imported.ok) {
+        moduleState.supplierRoadImportStatus = {
+          status: 'failed',
+          imported: 0,
+          updated: 0,
+          skipped: 0,
+          fileName: file.name || '',
+          batchId: '',
+          message: imported.reason === 'missing-columns'
+            ? i18n.t('ui.masterDataSupplierRoadRatesImportMissingColumns', 'Colonne minime mancanti: servono almeno origine e destinazione.')
+            : i18n.t('ui.masterDataSupplierRoadRatesImportError', 'Import tratte non riuscito.')
+        };
+        save();
+        render();
+        toast(moduleState.supplierRoadImportStatus.message, 'warning');
+        event.target.value = '';
+        return;
+      }
+      moduleState.supplierRoadImportStatus = {
+        status: 'done',
+        imported: imported.imported || 0,
+        updated: imported.updated || 0,
+        skipped: imported.skipped || 0,
+        fileName: file.name || '',
+        batchId: imported.batchId || '',
+        message: ''
+      };
+      save();
+      render();
+      toast(i18n.t('ui.masterDataSupplierRoadRatesImportSuccess', 'Import tratte completato.'), 'success');
+      event.target.value = '';
+    });
+
+    supplierRoadLookupForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const supplierDraft = getFormDraft(state, activeEntity);
+      const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+        ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+        : null;
+      const lookupDraft = moduleState.supplierRoadLookupDraft || buildDefaultRoadLookupDraft();
+      const formData = new FormData(supplierRoadLookupForm);
+      lookupDraft.origin = String(formData.get('origin') || '').trim();
+      lookupDraft.destination = String(formData.get('destination') || '').trim();
+      lookupDraft.vehicleType = String(formData.get('vehicleType') || '').trim();
+      lookupDraft.serviceType = String(formData.get('serviceType') || '').trim();
+      moduleState.supplierRoadLookupResult = SupplierRoadRates && typeof SupplierRoadRates.matchRoute === 'function' && supplierRecord
+        ? SupplierRoadRates.matchRoute(state, supplierRecord, lookupDraft)
+        : { ok: false, reason: 'no-match' };
+      save();
+      render();
+    });
+
 
     vatLookupButton?.addEventListener('click', async () => {
       const targetEntity = moduleState.quickAddContext?.entityKey || activeEntity;
