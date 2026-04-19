@@ -1,6 +1,6 @@
-// AQ62 anagrafiche fornitori operational profile
-const STATIC_CACHE = 'kedrix-one-stepaq62-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq62-runtime-v1';
+// AQ63 anagrafiche fornitori operational filters
+const STATIC_CACHE = 'kedrix-one-stepaq63-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq63-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',

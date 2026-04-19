@@ -5415,3 +5415,79 @@ body.dialog-open {
     justify-content: flex-start;
   }
 }
+
+
+.master-data-filter-toolbar {
+  border: 1px solid rgba(138, 180, 248, 0.16);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(138, 180, 248, 0.05);
+  margin-bottom: 12px;
+}
+
+.master-data-filter-toolbar-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.master-data-filter-toolbar-head strong {
+  font-size: 13px;
+}
+
+.master-data-filter-toolbar-head span,
+.master-data-filter-toolbar-meta {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.master-data-filter-chip-row,
+.master-data-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.master-data-filter-chip {
+  appearance: none;
+  border: 1px solid rgba(138, 180, 248, 0.2);
+  background: rgba(17, 26, 35, 0.8);
+  color: var(--text-primary);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.master-data-filter-chip.active {
+  border-color: rgba(86, 156, 214, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(86, 156, 214, 0.4);
+  background: rgba(86, 156, 214, 0.14);
+}
+
+.master-data-filter-chip.secondary {
+  border-style: dashed;
+}
+
+.master-data-row-tags {
+  margin-top: 6px;
+}
+
+.master-data-row-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  background: rgba(138, 180, 248, 0.08);
+  border: 1px solid rgba(138, 180, 248, 0.14);
+  color: var(--text-secondary);
+}
+
+.master-data-row-tag.muted {
+  opacity: 0.8;
+  border-style: dashed;
+}

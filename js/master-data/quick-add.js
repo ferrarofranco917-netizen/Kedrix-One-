@@ -12,12 +12,35 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return window.KedrixOneMasterDataOverview || null;
   }
 
+  function buildDefaultSupplierFilters() {
+    return {
+      withModes: false,
+      withAreas: false,
+      withPaymentTerms: false,
+      activeOnly: false
+    };
+  }
+
+  function ensureSupplierFilters(moduleState) {
+    if (!moduleState.supplierFilters || typeof moduleState.supplierFilters !== 'object') {
+      moduleState.supplierFilters = buildDefaultSupplierFilters();
+    }
+    const defaults = buildDefaultSupplierFilters();
+    Object.keys(defaults).forEach((key) => {
+      if (typeof moduleState.supplierFilters[key] !== 'boolean') {
+        moduleState.supplierFilters[key] = defaults[key];
+      }
+    });
+    return moduleState.supplierFilters;
+  }
+
   function ensureModuleState(state) {
     if (!state || typeof state !== 'object') {
-      return { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '' };
+      const fallback = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters() };
+      return fallback;
     }
     if (!state.masterDataModule || typeof state.masterDataModule !== 'object') {
-      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '' };
+      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters() };
     }
     if (!state.masterDataModule.formDrafts || typeof state.masterDataModule.formDrafts !== 'object') {
       state.masterDataModule.formDrafts = {};
@@ -25,6 +48,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     if (!state.masterDataModule.activeEntity) state.masterDataModule.activeEntity = 'client';
     if (typeof state.masterDataModule.selectedRecordId !== 'string') state.masterDataModule.selectedRecordId = '';
     if (typeof state.masterDataModule.searchQuery !== 'string') state.masterDataModule.searchQuery = '';
+    ensureSupplierFilters(state.masterDataModule);
     return state.masterDataModule;
   }
 
@@ -82,6 +106,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     moduleState.activeEntity = entityKey;
     moduleState.selectedRecordId = '';
     moduleState.searchQuery = '';
+    moduleState.supplierFilters = buildDefaultSupplierFilters();
     getFormDraft(state, entityKey);
   }
 
@@ -194,10 +219,38 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return draft;
   }
 
-  function getFilteredEntries(entries, query) {
+  function getFilteredEntries(entries, query, entityKey = '') {
     const clean = String(query || '').trim().toLowerCase();
     if (!clean) return entries;
-    return entries.filter((entry) => [entry.primary, entry.secondary, entry.tertiary, entry.value].some((part) => String(part || '').toLowerCase().includes(clean)));
+    return entries.filter((entry) => {
+      const baseParts = [entry.primary, entry.secondary, entry.tertiary, entry.value];
+      if (entityKey === 'supplier' && entry && entry.record) {
+        baseParts.push(
+          entry.record.shortName,
+          entry.record.code,
+          entry.record.vatNumber,
+          entry.record.contactPerson,
+          entry.record.serviceModes,
+          entry.record.servicedAreas,
+          entry.record.paymentTerms,
+          entry.record.displayValue,
+          entry.record.notes
+        );
+      }
+      return baseParts.some((part) => String(part || '').toLowerCase().includes(clean));
+    });
+  }
+
+  function applySupplierOperationalFilters(entries, filters = {}) {
+    const rows = Array.isArray(entries) ? entries : [];
+    return rows.filter((entry) => {
+      const record = entry && entry.record ? entry.record : {};
+      if (filters.withModes && !String(record.serviceModes || '').trim()) return false;
+      if (filters.withAreas && !String(record.servicedAreas || '').trim()) return false;
+      if (filters.withPaymentTerms && !String(record.paymentTerms || '').trim()) return false;
+      if (filters.activeOnly && record.active === false) return false;
+      return true;
+    });
   }
 
   function openExistingRecord(state, entityKey, recordId) {
@@ -254,7 +307,22 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return `<div class="master-data-meta-strip">${chips.join('')}</div>`;
   }
 
-  function renderList(entries, filteredEntries, activeRecordId, t) {
+  function renderSupplierRowMeta(entry, t) {
+    const record = entry && entry.record ? entry.record : null;
+    if (!record) return '';
+    const tags = [
+      String(record.serviceModes || '').trim(),
+      String(record.servicedAreas || '').trim(),
+      String(record.paymentTerms || '').trim(),
+      String(record.contactPerson || '').trim()
+    ].filter(Boolean).slice(0, 4);
+    if (!tags.length) {
+      return `<div class="master-data-row-tags"><span class="master-data-row-tag muted">${escapeHtml(t.t('ui.masterDataSupplierTagEmpty', 'profilo da completare'))}</span></div>`;
+    }
+    return `<div class="master-data-row-tags">${tags.map((tag) => `<span class="master-data-row-tag">${escapeHtml(tag)}</span>`).join('')}</div>`;
+  }
+
+  function renderList(entries, filteredEntries, activeRecordId, t, activeEntity = '') {
     if (!entries.length) {
       return `<div class="master-data-empty-state">${escapeHtml(t.t('ui.masterDataNoEntries', 'Nessun valore presente in questa anagrafica.'))}</div>`;
     }
@@ -263,8 +331,35 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     }
     return `<div class="master-data-list">${filteredEntries.map((entry) => {
       const active = String(activeRecordId || '') === String(entry.id || '');
-      return `<button type="button" class="master-data-row ${active ? 'active' : ''}" data-master-record-id="${escapeHtml(entry.id || '')}"><span class="master-data-row-main"><strong>${escapeHtml(entry.primary)}</strong><small>${escapeHtml(entry.secondary || '—')}</small></span><span class="master-data-row-side">${escapeHtml(entry.tertiary || '—')}</span></button>`;
+      const supplierMeta = activeEntity === 'supplier' ? renderSupplierRowMeta(entry, t) : '';
+      return `<button type="button" class="master-data-row ${active ? 'active' : ''}" data-master-record-id="${escapeHtml(entry.id || '')}"><span class="master-data-row-main"><strong>${escapeHtml(entry.primary)}</strong><small>${escapeHtml(entry.secondary || '—')}</small>${supplierMeta}</span><span class="master-data-row-side">${escapeHtml(entry.tertiary || '—')}</span></button>`;
     }).join('')}</div>`;
+  }
+
+  function renderSupplierFilterToolbar(moduleState, entries, queryFilteredEntries, t) {
+    const filters = ensureSupplierFilters(moduleState);
+    const suppliers = Array.isArray(entries) ? entries : [];
+    const matchesModes = suppliers.filter((entry) => String(entry?.record?.serviceModes || '').trim()).length;
+    const matchesAreas = suppliers.filter((entry) => String(entry?.record?.servicedAreas || '').trim()).length;
+    const matchesTerms = suppliers.filter((entry) => String(entry?.record?.paymentTerms || '').trim()).length;
+    const matchesActive = suppliers.filter((entry) => entry?.record?.active !== false).length;
+    const activeCount = [filters.withModes, filters.withAreas, filters.withPaymentTerms, filters.activeOnly].filter(Boolean).length;
+    const modeButton = (key, count, label) => `<button type="button" class="master-data-filter-chip ${filters[key] ? 'active' : ''}" data-supplier-filter="${escapeHtml(key)}">${escapeHtml(label)} · ${escapeHtml(String(count))}</button>`;
+    return `
+      <div class="master-data-filter-toolbar supplier">
+        <div class="master-data-filter-toolbar-head">
+          <strong>${escapeHtml(t.t('ui.masterDataSupplierFilterTitle', 'Filtro operativo fornitori'))}</strong>
+          <span>${escapeHtml(t.t('ui.masterDataSupplierFilterDetail', 'Restringi la base fornitori per servizio, tratta, condizioni e stato attivo.'))}</span>
+        </div>
+        <div class="master-data-filter-chip-row">
+          ${modeButton('withModes', matchesModes, t.t('ui.masterDataSupplierFilterModes', 'con servizi / modalità'))}
+          ${modeButton('withAreas', matchesAreas, t.t('ui.masterDataSupplierFilterAreas', 'con aree / tratte'))}
+          ${modeButton('withPaymentTerms', matchesTerms, t.t('ui.masterDataSupplierFilterTerms', 'con condizioni pagamento'))}
+          ${modeButton('activeOnly', matchesActive, t.t('ui.masterDataSupplierFilterActive', 'solo attivi'))}
+          <button type="button" class="master-data-filter-chip secondary" data-supplier-filter-reset="true">${escapeHtml(t.t('ui.masterDataSupplierFilterReset', 'Azzera filtri'))}</button>
+        </div>
+        <div class="master-data-filter-toolbar-meta">${escapeHtml(queryFilteredEntries.length)} ${escapeHtml(t.t('ui.masterDataSupplierFilterVisibleBefore', 'record dopo la ricerca'))} · ${escapeHtml(activeCount)} ${escapeHtml(t.t('ui.masterDataSupplierFilterActiveCount', 'filtri attivi'))}</div>
+      </div>`;
   }
 
   function getRouteEntityMeta(state, defs) {
@@ -340,7 +435,11 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const activeEntity = quickAddContext?.entityKey || moduleState.activeEntity || 'client';
     const activeDef = defs[activeEntity] || defs.client;
     const entries = getEntries(state, activeEntity);
-    const filteredEntries = getFilteredEntries(entries, moduleState.searchQuery);
+    const supplierFilters = ensureSupplierFilters(moduleState);
+    const queryFilteredEntries = getFilteredEntries(entries, moduleState.searchQuery, activeEntity);
+    const filteredEntries = activeEntity === 'supplier' && !quickAddContext
+      ? applySupplierOperationalFilters(queryFilteredEntries, supplierFilters)
+      : queryFilteredEntries;
     const formDraft = getFormDraft(state, activeEntity);
     const isEditing = Boolean(formDraft.id);
     const familyOptions = Object.values(defs);
@@ -385,12 +484,13 @@ window.KedrixOneMasterDataQuickAdd = (() => {
             </div>
             <div class="field full">
               <label for="masterDataSearchInput">${escapeHtml(t.t('ui.search', 'Cerca'))}</label>
-              <input id="masterDataSearchInput" type="search" value="${escapeHtml(moduleState.searchQuery || '')}" placeholder="${escapeHtml(t.t('ui.masterDataSearchPlaceholder', 'Cerca per nome, città, P.IVA o codice'))}" autocomplete="off" />
+              <input id="masterDataSearchInput" type="search" value="${escapeHtml(moduleState.searchQuery || '')}" placeholder="${escapeHtml(activeEntity === 'supplier' ? t.t('ui.masterDataSupplierSearchPlaceholder', 'Cerca per fornitore, referente, servizio, tratta o pagamento') : t.t('ui.masterDataSearchPlaceholder', 'Cerca per nome, città, P.IVA o codice'))}" autocomplete="off" />
             </div>
           </div>
 
+          ${activeEntity === 'supplier' && !quickAddContext ? renderSupplierFilterToolbar(moduleState, entries, queryFilteredEntries, t) : ''}
           <div class="master-data-list-summary">${escapeHtml(`${filteredEntries.length} / ${entries.length}`)} ${escapeHtml(t.t('ui.masterDataVisibleRecords', 'schede visibili'))}</div>
-          ${renderList(entries, filteredEntries, moduleState.selectedRecordId, t)}
+          ${renderList(entries, filteredEntries, moduleState.selectedRecordId, t, activeEntity)}
         </article>
 
         <article class="panel">
@@ -441,6 +541,25 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       moduleState.searchQuery = String(event.target.value || '');
       save();
       render();
+    });
+
+    root.querySelectorAll('[data-supplier-filter]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const key = String(button.dataset.supplierFilter || '').trim();
+        if (!key) return;
+        const filters = ensureSupplierFilters(moduleState);
+        filters[key] = !filters[key];
+        save();
+        render();
+      });
+    });
+
+    root.querySelectorAll('[data-supplier-filter-reset]').forEach((button) => {
+      button.addEventListener('click', () => {
+        moduleState.supplierFilters = buildDefaultSupplierFilters();
+        save();
+        render();
+      });
     });
 
     root.querySelectorAll('[data-master-record-id]').forEach((button) => {
