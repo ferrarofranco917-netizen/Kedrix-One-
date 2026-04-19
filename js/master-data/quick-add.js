@@ -1297,6 +1297,19 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     });
 
 
+
+    const supplierReactivePanelFields = new Set(['supplierType', 'serviceScope', 'roadPricingMode', 'roadDistanceSource', 'truckProfiles', 'paymentTerms', 'value']);
+
+    form?.addEventListener('change', (event) => {
+      if (activeEntity !== 'supplier') return;
+      const target = event.target;
+      if (!target || !target.name || !supplierReactivePanelFields.has(String(target.name || '').trim())) return;
+      const currentDraft = getFormDraft(state, activeEntity);
+      syncDraftFromForm(form, currentDraft);
+      save();
+      render();
+    });
+
     vatLookupButton?.addEventListener('click', async () => {
       const targetEntity = moduleState.quickAddContext?.entityKey || activeEntity;
       const currentDraft = getFormDraft(state, targetEntity);
