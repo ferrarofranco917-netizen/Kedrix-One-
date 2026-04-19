@@ -1,6 +1,6 @@
-// AQ64 anagrafiche fornitori classification and persistence hardening
-const STATIC_CACHE = 'kedrix-one-stepaq64-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq64-runtime-v1';
+// AQ65 anagrafiche fornitori price lists foundation
+const STATIC_CACHE = 'kedrix-one-stepaq65-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq65-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',

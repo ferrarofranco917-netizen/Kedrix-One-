@@ -5491,3 +5491,108 @@ body.dialog-open {
   opacity: 0.8;
   border-style: dashed;
 }
+
+.master-data-price-list-panel {
+  margin-top: 1rem;
+}
+
+.master-data-price-list-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.master-data-price-list-metric,
+.master-data-price-list-card,
+.master-data-price-list-editor {
+  border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  border-radius: 16px;
+  background: var(--panel-elevated, rgba(255,255,255,0.02));
+}
+
+.master-data-price-list-metric {
+  padding: 0.85rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.master-data-price-list-metric strong {
+  font-size: 1.25rem;
+}
+
+.master-data-price-list-metric span,
+.master-data-price-list-card-meta,
+.master-data-price-list-card-note {
+  color: var(--text-muted, rgba(255,255,255,0.65));
+}
+
+.master-data-price-list-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.1fr) minmax(360px, 1fr);
+  gap: 1rem;
+}
+
+.master-data-price-list-history {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.master-data-price-list-card {
+  padding: 0.85rem 0.95rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.master-data-price-list-card.is-inactive {
+  opacity: 0.72;
+}
+
+.master-data-price-list-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.master-data-price-list-card-head h4 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.master-data-price-list-card-price {
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.master-data-price-list-card-note {
+  font-size: 0.92rem;
+}
+
+.master-data-price-list-empty {
+  border: 1px dashed var(--border-color, rgba(255,255,255,0.12));
+  border-radius: 16px;
+  padding: 1rem;
+  color: var(--text-muted, rgba(255,255,255,0.65));
+}
+
+.master-data-price-list-editor {
+  padding: 0.95rem;
+}
+
+.master-data-price-list-editor-head {
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+}
+
+.master-data-price-list-grid .field.full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1100px) {
+  .master-data-price-list-layout {
+    grid-template-columns: 1fr;
+  }
+}

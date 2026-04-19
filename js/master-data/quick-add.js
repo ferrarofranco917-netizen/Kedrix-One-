@@ -3,6 +3,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
 
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
   const VatAutofill = window.KedrixOneVatAutofill || null;
+  const SupplierPriceLists = window.KedrixOneSupplierPriceLists || null;
 
   function getImportFoundation() {
     return window.KedrixOneImportFoundation || null;
@@ -37,13 +38,54 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     return moduleState.supplierFilters;
   }
 
+
+  function ensureSupplierPriceListDraft(moduleState, supplierRecord = null) {
+    const supplierId = String(supplierRecord && supplierRecord.id || '').trim();
+    const supplierName = String(supplierRecord && (supplierRecord.name || supplierRecord.value) || '').trim();
+    if (!supplierId || !supplierName || !SupplierPriceLists || typeof SupplierPriceLists.createDraft !== 'function') {
+      moduleState.supplierPriceListOwnerId = '';
+      moduleState.supplierPriceListDraft = SupplierPriceLists && typeof SupplierPriceLists.createDraft === 'function'
+        ? SupplierPriceLists.createDraft()
+        : { id: '', supplierId: '', supplierName: '', serviceLabel: '', routeScope: '', validityFrom: '', validityTo: '', currency: 'EUR', unitPrice: '', unitType: '', leadTime: '', paymentTerms: '', notes: '', active: true };
+      return moduleState.supplierPriceListDraft;
+    }
+    if (moduleState.supplierPriceListOwnerId !== supplierId || !moduleState.supplierPriceListDraft || typeof moduleState.supplierPriceListDraft !== 'object') {
+      moduleState.supplierPriceListOwnerId = supplierId;
+      moduleState.supplierPriceListDraft = SupplierPriceLists.createDraft(null, supplierRecord);
+      return moduleState.supplierPriceListDraft;
+    }
+    moduleState.supplierPriceListDraft.supplierId = supplierId;
+    moduleState.supplierPriceListDraft.supplierName = supplierName;
+    return moduleState.supplierPriceListDraft;
+  }
+
+  function resetSupplierPriceListDraft(state, supplierRecord = null) {
+    const moduleState = ensureModuleState(state);
+    moduleState.supplierPriceListDraft = SupplierPriceLists && typeof SupplierPriceLists.createDraft === 'function'
+      ? SupplierPriceLists.createDraft(null, supplierRecord)
+      : { id: '', supplierId: '', supplierName: '', serviceLabel: '', routeScope: '', validityFrom: '', validityTo: '', currency: 'EUR', unitPrice: '', unitType: '', leadTime: '', paymentTerms: '', notes: '', active: true };
+    moduleState.supplierPriceListOwnerId = String(supplierRecord && supplierRecord.id || '').trim();
+    return moduleState.supplierPriceListDraft;
+  }
+
+  function syncSupplierPriceListDraftFromForm(form, draft) {
+    if (!form || !draft) return draft;
+    const formData = new FormData(form);
+    Array.from(form.querySelectorAll('[name]')).forEach((node) => {
+      if (!node.name) return;
+      if (node.type === 'checkbox') draft[node.name] = Boolean(node.checked);
+      else draft[node.name] = String(formData.get(node.name) || '').trim();
+    });
+    return draft;
+  }
+
   function ensureModuleState(state) {
     if (!state || typeof state !== 'object') {
-      const fallback = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters() };
+      const fallback = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters(), supplierPriceListDraft: null, supplierPriceListOwnerId: '' };
       return fallback;
     }
     if (!state.masterDataModule || typeof state.masterDataModule !== 'object') {
-      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters() };
+      state.masterDataModule = { activeEntity: 'client', quickAddContext: null, formDrafts: {}, selectedRecordId: '', searchQuery: '', supplierFilters: buildDefaultSupplierFilters(), supplierPriceListDraft: null, supplierPriceListOwnerId: '' };
     }
     if (!state.masterDataModule.formDrafts || typeof state.masterDataModule.formDrafts !== 'object') {
       state.masterDataModule.formDrafts = {};
@@ -247,6 +289,17 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       }
     };
     return maps[kind] && maps[kind][clean] ? maps[kind][clean] : clean;
+  }
+
+
+  function getSupplierPriceListMetrics(priceLists = []) {
+    const rows = Array.isArray(priceLists) ? priceLists : [];
+    return {
+      total: rows.length,
+      active: rows.filter((row) => row && row.active !== false).length,
+      withValidity: rows.filter((row) => String(row && (row.validityFrom || row.validityTo) || '').trim()).length,
+      withPrice: rows.filter((row) => String(row && row.unitPrice || '').trim()).length
+    };
   }
 
   function isSupplierPreferred(record) {
@@ -520,6 +573,96 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       </section>`;
   }
 
+
+  function renderSupplierPriceListsPanel(state, formDraft, t) {
+    if (!SupplierPriceLists || typeof SupplierPriceLists.listForSupplier !== 'function' || typeof SupplierPriceLists.createDraft !== 'function') return '';
+    const supplierRecord = formDraft && formDraft.id && formDraft.value
+      ? { id: formDraft.id, name: formDraft.value, paymentTerms: formDraft.paymentTerms }
+      : null;
+    if (!supplierRecord) {
+      return `
+        <section class="panel master-data-price-list-panel">
+          <div class="panel-head compact">
+            <div>
+              <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataSupplierPriceListsTitle', 'Fornitori · storico / listini foundation'))}</h3>
+              <p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataSupplierPriceListsSaveSupplierFirst', 'Salva prima la scheda fornitore: lo storico listini viene agganciato a un fornitore strutturato reale.'))}</p>
+            </div>
+          </div>
+        </section>`;
+    }
+    const moduleState = ensureModuleState(state);
+    const draft = ensureSupplierPriceListDraft(moduleState, supplierRecord);
+    const priceLists = SupplierPriceLists.listForSupplier(state, supplierRecord);
+    const metrics = getSupplierPriceListMetrics(priceLists);
+    const draftTitle = String(draft && draft.id || '').trim()
+      ? t.t('ui.masterDataSupplierPriceListsEditDraft', 'Modifica listino selezionato')
+      : t.t('ui.masterDataSupplierPriceListsNewDraft', 'Nuovo listino fornitore');
+    const cards = priceLists.length
+      ? priceLists.map((item) => {
+          const priceLine = [item.unitPrice, item.currency, item.unitType].filter(Boolean).join(' · ') || '—';
+          const validityLine = [item.validityFrom, item.validityTo].filter(Boolean).join(' → ') || t.t('ui.masterDataSupplierPriceListsNoValidity', 'validità non definita');
+          const metaLine = [item.routeScope, item.paymentTerms, item.leadTime].filter(Boolean).join(' · ');
+          return `
+            <article class="master-data-price-list-card ${item.active === false ? 'is-inactive' : ''}">
+              <div class="master-data-price-list-card-head">
+                <div>
+                  <h4>${escapeHtml(item.serviceLabel || '—')}</h4>
+                  <div class="master-data-price-list-card-price">${escapeHtml(priceLine)}</div>
+                </div>
+                <button type="button" class="btn secondary small" data-supplier-price-list-id="${escapeHtml(item.id)}">${escapeHtml(t.t('ui.masterDataSupplierPriceListsOpen', 'Apri'))}</button>
+              </div>
+              <div class="master-data-price-list-card-meta">${escapeHtml(validityLine)}</div>
+              ${metaLine ? `<div class="master-data-price-list-card-meta">${escapeHtml(metaLine)}</div>` : ''}
+              ${item.notes ? `<div class="master-data-price-list-card-note">${escapeHtml(item.notes)}</div>` : ''}
+            </article>`;
+        }).join('')
+      : `<div class="master-data-price-list-empty">${escapeHtml(t.t('ui.masterDataSupplierPriceListsEmpty', 'Nessun listino ancora registrato per questo fornitore.'))}</div>`;
+
+    return `
+      <section class="panel master-data-price-list-panel">
+        <div class="panel-head compact">
+          <div>
+            <h3 class="panel-title">${escapeHtml(t.t('ui.masterDataSupplierPriceListsTitle', 'Fornitori · storico / listini foundation'))}</h3>
+            <p class="panel-subtitle">${escapeHtml(t.t('ui.masterDataSupplierPriceListsDetail', 'Registra i primi listini storici del fornitore per preparare il ponte con Quotazioni e confronto costi.'))}</p>
+          </div>
+        </div>
+        <div class="master-data-price-list-metrics">
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.total))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPriceListsMetricTotal', 'listini collegati'))}</span></article>
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.active))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPriceListsMetricActive', 'listini attivi'))}</span></article>
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.withValidity))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPriceListsMetricValidity', 'con validità'))}</span></article>
+          <article class="master-data-price-list-metric"><strong>${escapeHtml(String(metrics.withPrice))}</strong><span>${escapeHtml(t.t('ui.masterDataSupplierPriceListsMetricPrice', 'con costo valorizzato'))}</span></article>
+        </div>
+        <div class="master-data-price-list-layout">
+          <div class="master-data-price-list-history">${cards}</div>
+          <div class="master-data-price-list-editor">
+            <div class="master-data-price-list-editor-head">${escapeHtml(draftTitle)}</div>
+            <form id="supplierPriceListForm" class="master-data-form-stack">
+              <input type="hidden" name="id" value="${escapeHtml(draft.id || '')}" />
+              <input type="hidden" name="supplierId" value="${escapeHtml(draft.supplierId || '')}" />
+              <input type="hidden" name="supplierName" value="${escapeHtml(draft.supplierName || '')}" />
+              <div class="form-grid two master-data-price-list-grid">
+                <div class="field full"><label for="supplierPriceListServiceLabel">${escapeHtml(t.t('ui.masterDataSupplierPriceListsServiceLabel', 'Servizio / voce costo'))}</label><input id="supplierPriceListServiceLabel" name="serviceLabel" type="text" value="${escapeHtml(draft.serviceLabel || '')}" autocomplete="off" /></div>
+                <div class="field full"><label for="supplierPriceListRouteScope">${escapeHtml(t.t('ui.masterDataSupplierPriceListsRouteScope', 'Tratta / ambito'))}</label><input id="supplierPriceListRouteScope" name="routeScope" type="text" value="${escapeHtml(draft.routeScope || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierPriceListValidityFrom">${escapeHtml(t.t('ui.masterDataSupplierPriceListsValidityFrom', 'Validità dal'))}</label><input id="supplierPriceListValidityFrom" name="validityFrom" type="date" value="${escapeHtml(draft.validityFrom || '')}" /></div>
+                <div class="field"><label for="supplierPriceListValidityTo">${escapeHtml(t.t('ui.masterDataSupplierPriceListsValidityTo', 'Validità al'))}</label><input id="supplierPriceListValidityTo" name="validityTo" type="date" value="${escapeHtml(draft.validityTo || '')}" /></div>
+                <div class="field"><label for="supplierPriceListCurrency">${escapeHtml(t.t('ui.masterDataSupplierPriceListsCurrency', 'Valuta'))}</label><input id="supplierPriceListCurrency" name="currency" type="text" value="${escapeHtml(draft.currency || 'EUR')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierPriceListUnitPrice">${escapeHtml(t.t('ui.masterDataSupplierPriceListsUnitPrice', 'Costo'))}</label><input id="supplierPriceListUnitPrice" name="unitPrice" type="text" value="${escapeHtml(draft.unitPrice || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierPriceListUnitType">${escapeHtml(t.t('ui.masterDataSupplierPriceListsUnitType', 'Unità / misura'))}</label><input id="supplierPriceListUnitType" name="unitType" type="text" value="${escapeHtml(draft.unitType || '')}" autocomplete="off" /></div>
+                <div class="field"><label for="supplierPriceListLeadTime">${escapeHtml(t.t('ui.masterDataSupplierPriceListsLeadTime', 'Lead time / resa'))}</label><input id="supplierPriceListLeadTime" name="leadTime" type="text" value="${escapeHtml(draft.leadTime || '')}" autocomplete="off" /></div>
+                <div class="field full"><label for="supplierPriceListPaymentTerms">${escapeHtml(t.t('ui.masterDataSupplierPriceListsPaymentTerms', 'Pagamento listino'))}</label><input id="supplierPriceListPaymentTerms" name="paymentTerms" type="text" value="${escapeHtml(draft.paymentTerms || '')}" autocomplete="off" /></div>
+                <div class="field full"><label for="supplierPriceListNotes">${escapeHtml(t.t('ui.masterDataSupplierPriceListsNotes', 'Note listino'))}</label><textarea id="supplierPriceListNotes" name="notes" rows="3">${escapeHtml(draft.notes || '')}</textarea></div>
+                <div class="field full"><label class="checkbox-chip master-data-checkbox"><input name="active" type="checkbox" ${draft.active !== false ? 'checked' : ''} /> ${escapeHtml(t.t('ui.masterDataSupplierPriceListsActive', 'Listino attivo'))}</label></div>
+              </div>
+              <div class="form-actions master-data-actions">
+                <button class="btn" type="submit">${escapeHtml(t.t('ui.masterDataSupplierPriceListsSave', 'Salva listino'))}</button>
+                <button class="btn secondary" id="supplierPriceListResetButton" type="button">${escapeHtml(t.t('ui.masterDataSupplierPriceListsReset', 'Nuovo listino'))}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>`;
+  }
+
   function renderPanel({ state, module, t }) {
     const defs = getEntityDefinitions(t);
     const moduleState = ensureModuleState(state);
@@ -607,6 +750,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
       </section>
 
       ${activeEntity === 'supplier' && !quickAddContext ? renderSupplierOperationalPanel(state, formDraft, entries, t) : ''}
+      ${activeEntity === 'supplier' && !quickAddContext ? renderSupplierPriceListsPanel(state, formDraft, t) : ''}
       ${activeDef.structured && !quickAddContext && VatAutofill && typeof VatAutofill.renderConfigPanel === 'function' ? VatAutofill.renderConfigPanel(state, t) : ''}`;
   }
 
@@ -691,6 +835,65 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     if (ImportFoundation && typeof ImportFoundation.bind === 'function') {
       ImportFoundation.bind({ state, root, save, render, toast, i18n });
     }
+
+
+    root.querySelectorAll('[data-supplier-price-list-id]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!SupplierPriceLists || typeof SupplierPriceLists.getById !== 'function' || typeof SupplierPriceLists.createDraft !== 'function') return;
+        const supplierDraft = getFormDraft(state, activeEntity);
+        const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+          ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+          : null;
+        const selected = SupplierPriceLists.getById(state, button.dataset.supplierPriceListId || '');
+        if (!selected || !supplierRecord) return;
+        moduleState.supplierPriceListOwnerId = supplierRecord.id;
+        moduleState.supplierPriceListDraft = SupplierPriceLists.createDraft(selected, supplierRecord);
+        save();
+        render();
+      });
+    });
+
+    const supplierPriceListForm = root.querySelector('#supplierPriceListForm');
+    const supplierPriceListResetButton = root.querySelector('#supplierPriceListResetButton');
+
+    supplierPriceListResetButton?.addEventListener('click', () => {
+      const supplierDraft = getFormDraft(state, activeEntity);
+      const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+        ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+        : null;
+      resetSupplierPriceListDraft(state, supplierRecord);
+      save();
+      render();
+    });
+
+    supplierPriceListForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!SupplierPriceLists || typeof SupplierPriceLists.savePriceList !== 'function') return;
+      const supplierDraft = getFormDraft(state, activeEntity);
+      const supplierRecord = supplierDraft && supplierDraft.id && supplierDraft.value
+        ? { id: supplierDraft.id, name: supplierDraft.value, paymentTerms: supplierDraft.paymentTerms }
+        : null;
+      if (!supplierRecord) {
+        toast(i18n.t('ui.masterDataSupplierPriceListsSaveSupplierFirst', 'Salva prima la scheda fornitore: lo storico listini viene agganciato a un fornitore strutturato reale.'), 'warning');
+        return;
+      }
+      const draft = ensureSupplierPriceListDraft(moduleState, supplierRecord);
+      syncSupplierPriceListDraftFromForm(supplierPriceListForm, draft);
+      const result = SupplierPriceLists.savePriceList(state, draft);
+      if (!result.ok) {
+        toast(i18n.t('ui.masterDataSupplierPriceListsMissingValue', 'Compila almeno servizio / voce costo e fornitore collegato.'), 'warning');
+        return;
+      }
+      resetSupplierPriceListDraft(state, supplierRecord);
+      save();
+      render();
+      toast(
+        result.updated
+          ? i18n.t('ui.masterDataSupplierPriceListsUpdated', 'Listino fornitore aggiornato correttamente.')
+          : i18n.t('ui.masterDataSupplierPriceListsSaved', 'Listino fornitore salvato correttamente.'),
+        'success'
+      );
+    });
 
     vatLookupButton?.addEventListener('click', async () => {
       const targetEntity = moduleState.quickAddContext?.entityKey || activeEntity;
