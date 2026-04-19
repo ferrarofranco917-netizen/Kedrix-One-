@@ -1,6 +1,6 @@
-// AQ72 quotation road-rate apply alerts
-const STATIC_CACHE = 'kedrix-one-stepaq72-static-v1';
-const RUNTIME_CACHE = 'kedrix-one-stepaq72-runtime-v1';
+// AQ73 quotation road-rate commercial priority
+const STATIC_CACHE = 'kedrix-one-stepaq73-static-v1';
+const RUNTIME_CACHE = 'kedrix-one-stepaq73-runtime-v1';
 const STATIC_FILES = [
   './',
   './index.html',
