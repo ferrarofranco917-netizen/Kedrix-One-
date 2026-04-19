@@ -310,6 +310,37 @@ window.KedrixOneQuotationsModule = (() => {
     });
   }
 
+  function roadRateManualPreferenceLabel(value = '') {
+    switch (cleanText(value || '')) {
+      case 'preferred':
+        return 'Preferenza forte';
+      case 'backup':
+        return 'Backup';
+      case 'avoid':
+        return 'Evita salvo eccezioni';
+      default:
+        return 'Standard';
+    }
+  }
+
+  function syncRoadRatePreferenceEditor(bridge) {
+    if (!bridge || typeof bridge !== 'object') return;
+    const selectedRoadRateId = cleanText(bridge.selectedRoadRateId || bridge.roadRateId || '');
+    const savedSelectedId = cleanText(bridge.savedPreferenceSelectedId || '');
+    const currentEditorRoadRateId = cleanText(bridge.preferenceEditorRoadRateId || '');
+    if (selectedRoadRateId && selectedRoadRateId === savedSelectedId) {
+      bridge.preferenceEditorRoadRateId = selectedRoadRateId;
+      bridge.preferenceEditorPriority = cleanText(bridge.savedPreferenceManualPriority || '');
+      bridge.preferenceEditorNote = cleanText(bridge.savedPreferenceInternalNote || '');
+      return;
+    }
+    if (currentEditorRoadRateId !== selectedRoadRateId) {
+      bridge.preferenceEditorRoadRateId = selectedRoadRateId;
+      bridge.preferenceEditorPriority = '';
+      bridge.preferenceEditorNote = '';
+    }
+  }
+
   function getRoadRatePreferenceStore(draft) {
     if (!draft || typeof draft !== 'object') return [];
     if (!Array.isArray(draft.roadRatePreferences)) draft.roadRatePreferences = [];
@@ -369,6 +400,8 @@ window.KedrixOneQuotationsModule = (() => {
       selectedRoadRateId: selectedId,
       selectedRouteLabel: [cleanText(bridge.origin || ''), cleanText(bridge.destination || '')].filter(Boolean).join(' → '),
       commercialReference: cleanText(bridge.commercialReference || ''),
+      manualPriority: cleanText(bridge.preferenceEditorPriority || ''),
+      internalNote: cleanText(bridge.preferenceEditorNote || ''),
       filters: { ...getRoadRateBridgeFilters(bridge) },
       savedAt: new Date().toISOString()
     };
@@ -584,6 +617,7 @@ window.KedrixOneQuotationsModule = (() => {
     if (previousRoadRateId !== cleanText(bridge.selectedRoadRateId || '')) {
       delete bridge.applyAcknowledgedForKey;
     }
+    syncRoadRatePreferenceEditor(bridge);
     return bridge;
   }
 
@@ -695,15 +729,20 @@ window.KedrixOneQuotationsModule = (() => {
     const applyAcknowledged = roadRateApplyAcknowledgedForSelection(bridge);
     const preferenceSaved = Boolean(bridge?.savedPreferenceScopeKey && bridge?.savedPreferenceSelectedId && bridge?.savedPreferenceSelectedId === bridge?.selectedRoadRateId);
     const preferenceScopeLabel = cleanText(bridge?.savedPreferenceScopeLabel || 'fornitore/percorso');
+    const savedManualPriorityLabel = roadRateManualPreferenceLabel(bridge?.savedPreferenceManualPriority || '');
     const preferenceRestoreInfo = bridge?.preferenceMatched
       ? `<div class="quotation-static-note">Preferenza commerciale ripristinata automaticamente ${bridge?.preferenceFallbackUsed ? `tramite fallback ${U.escapeHtml(preferenceScopeLabel)}` : `per ${U.escapeHtml(preferenceScopeLabel)}`}: ${U.escapeHtml(bridge.savedPreferenceLabel || 'tratta preferita')}.</div>`
       : bridge?.savedPreferenceScopeKey
         ? `<div class="quotation-static-note">Esiste una preferenza salvata per ${U.escapeHtml(preferenceScopeLabel)}${bridge?.savedPreferenceLabel ? ` (${U.escapeHtml(bridge.savedPreferenceLabel)})` : ''}.${bridge?.preferenceSelectionAvailable === false ? ' La tratta preferita salvata non è più disponibile tra le corrispondenze correnti: il ponte sta usando il miglior fallback disponibile.' : ' La tratta selezionata attuale è diversa: puoi aggiornarla o cancellarla.'}</div>`
         : '';
+    const savedPreferenceMeta = bridge?.savedPreferenceScopeKey && (cleanText(bridge?.savedPreferenceManualPriority || '') || cleanText(bridge?.savedPreferenceInternalNote || ''))
+      ? `<div class="quotation-static-note">Profilo manuale salvato${bridge?.savedPreferenceSelectedId === bridge?.selectedRoadRateId ? ' sulla tratta selezionata' : ''}: priorità ${U.escapeHtml(savedManualPriorityLabel)}${bridge?.savedPreferenceInternalNote ? ` · nota ${U.escapeHtml(bridge.savedPreferenceInternalNote)}` : ''}.</div>`
+      : '';
     const applyLabel = applyNeedsConfirmation
       ? (applyAcknowledged ? 'Applica comunque a riga trasporto' : 'Conferma avvisi prima di applicare')
       : 'Applica a riga trasporto';
     const actionRow = `<div class="action-row"><button class="btn secondary" type="button" data-quotation-road-rate-lookup ${canLookup ? '' : 'disabled'}>Leggi tratte commerciali compatibili</button>${status === 'matched' && bridge?.selectedRoadRateId ? `<button class="btn secondary" type="button" data-quotation-road-rate-save-preference>${preferenceSaved ? 'Aggiorna preferenza' : 'Salva preferenza'}</button>` : ''}${status === 'matched' && bridge?.savedPreferenceScopeKey ? `<button class="btn secondary" type="button" data-quotation-road-rate-clear-preference>Cancella preferenza</button>` : ''}${canApply ? `<button class="btn ${applyNeedsConfirmation && !applyAcknowledged ? 'secondary' : ''}" type="button" data-quotation-road-rate-apply>${U.escapeHtml(applyLabel)}</button>` : ''}</div>`;
+    const preferenceEditorPriorityLabel = roadRateManualPreferenceLabel(bridge?.preferenceEditorPriority || '');
     const selectedSummary = status === 'matched' && candidates.length
       ? `<div class="tag-grid quotation-summary-grid">
           <div class="stack-item"><strong>Match selezionato</strong><span>${U.escapeHtml(bridge.matchType || 'exact')} · score ${U.escapeHtml(String(bridge.score || ''))}</span></div>
@@ -715,6 +754,12 @@ window.KedrixOneQuotationsModule = (() => {
           <div class="stack-item"><strong>Priorità commerciale</strong><span>${U.escapeHtml(bridge.commercialPriorityLabel || 'Da verificare')} · score ${U.escapeHtml(String(bridge.commercialPriorityScore || 0))}</span></div>
           <div class="stack-item"><strong>Stato tratta</strong><span>${U.escapeHtml(bridge.active === false ? 'Inattiva' : 'Attiva')} · ${U.escapeHtml(bridge.validityLabel || '—')}</span></div>
           <div class="stack-item"><strong>Finestra validità</strong><span>${U.escapeHtml(bridge.validityWindowLabel || 'Nessuna finestra')}</span></div>
+          <div class="stack-item"><strong>Priorità manuale preferenza</strong><span>${U.escapeHtml(preferenceEditorPriorityLabel)}</span></div>
+          <div class="stack-item"><strong>Nota interna preferenza</strong><span>${U.escapeHtml(bridge.preferenceEditorNote || '—')}</span></div>
+        </div>
+        <div class="form-grid two">
+          <div class="field quotation-field quotation-field-md"><label for="quotation-road-rate-preference-priority">Priorità manuale preferenza</label><select id="quotation-road-rate-preference-priority" data-quotation-road-rate-preference-field="priority"><option value=""${cleanText(bridge?.preferenceEditorPriority || '') === '' ? ' selected' : ''}>Standard</option><option value="preferred"${cleanText(bridge?.preferenceEditorPriority || '') === 'preferred' ? ' selected' : ''}>Preferenza forte</option><option value="backup"${cleanText(bridge?.preferenceEditorPriority || '') === 'backup' ? ' selected' : ''}>Backup</option><option value="avoid"${cleanText(bridge?.preferenceEditorPriority || '') === 'avoid' ? ' selected' : ''}>Evita salvo eccezioni</option></select></div>
+          <div class="field quotation-field quotation-field-lg"><label for="quotation-road-rate-preference-note">Nota interna preferenza</label><textarea id="quotation-road-rate-preference-note" rows="2" placeholder="Nota interna su questa tratta preferita" data-quotation-road-rate-preference-field="note">${U.escapeHtml(bridge.preferenceEditorNote || '')}</textarea></div>
         </div>`
       : '';
     const filterControls = status === 'matched'
@@ -757,7 +802,8 @@ window.KedrixOneQuotationsModule = (() => {
             candidate.contractualDistanceKm ? `km c. ${candidate.contractualDistanceKm}` : '',
             candidate.operationalDistanceKm ? `km o. ${candidate.operationalDistanceKm}` : '',
             candidate.deltaKm ? `Δ ${candidate.deltaKm}` : '',
-            candidate.commercialReference ? `rif. ${candidate.commercialReference}` : ''
+            candidate.commercialReference ? `rif. ${candidate.commercialReference}` : '',
+            cleanText(bridge?.savedPreferenceSelectedId || '') === cleanText(candidate.roadRateId || '') && cleanText(bridge?.savedPreferenceManualPriority || '') ? `pref. ${roadRateManualPreferenceLabel(bridge.savedPreferenceManualPriority)}` : ''
           ].filter(Boolean).join(' · ');
           return `<div class="quotation-static-note">
               <div><strong>${U.escapeHtml(routeLabel)}</strong></div>
@@ -785,7 +831,7 @@ window.KedrixOneQuotationsModule = (() => {
         ? `<div class="quotation-static-note">${U.escapeHtml(String(filterView.hiddenByFilters))} tratte compatibili sono state nascoste dai filtri avanzati.</div>`
         : '';
       const validityInfo = `<div class="quotation-static-note">Data di riferimento filtri validità: ${U.escapeHtml(filterView.filters.referenceDate || normalizeRoadRateReferenceDate(''))}.</div>`;
-      resultHtml = `${selectedSummary}${preferenceRestoreInfo}${warningHtml}${confirmationHtml}${confirmedHtml}${filterControls}<div class="quotation-static-note">${summaryNote}</div>${validityInfo}${hiddenInfo}${tariffWarning}${filteredEmpty}${alternativesHtml}`;
+      resultHtml = `${selectedSummary}${preferenceRestoreInfo}${savedPreferenceMeta}${warningHtml}${confirmationHtml}${confirmedHtml}${filterControls}<div class="quotation-static-note">${summaryNote}</div>${validityInfo}${hiddenInfo}${tariffWarning}${filteredEmpty}${alternativesHtml}`;
     } else if (status === 'error') {
       const reason = cleanText(bridge.reason || '');
       const guidance = reason === 'no-rates'
@@ -828,6 +874,8 @@ window.KedrixOneQuotationsModule = (() => {
       savedPreferenceLabel: cleanText(storedPreference?.selectedRouteLabel || ''),
       savedPreferenceScopeLevel: cleanText(storedPreference?.resolvedScopeLevel || storedPreference?.scopeLevel || ''),
       savedPreferenceScopeLabel: cleanText(storedPreference?.resolvedScopeLabel || storedPreference?.scopeLabel || ''),
+      savedPreferenceManualPriority: cleanText(storedPreference?.manualPriority || ''),
+      savedPreferenceInternalNote: cleanText(storedPreference?.internalNote || ''),
       preferenceFallbackUsed: Boolean(storedPreference?.fallbackUsed),
       preferenceSelectionAvailable: storedPreference ? storedPreference.selectionAvailable !== false : null
     };
@@ -880,7 +928,9 @@ window.KedrixOneQuotationsModule = (() => {
       bridge.contractualDistanceKm ? `Km contrattuali: ${bridge.contractualDistanceKm}` : '',
       bridge.operationalDistanceKm ? `Km operativi: ${bridge.operationalDistanceKm}` : '',
       bridge.deltaKm ? `Delta km: ${bridge.deltaKm}` : '',
-      bridge.commercialReference ? `Rif. commerciale: ${bridge.commercialReference}` : ''
+      bridge.commercialReference ? `Rif. commerciale: ${bridge.commercialReference}` : '',
+      bridge.preferenceEditorPriority ? `Priorità preferenza: ${roadRateManualPreferenceLabel(bridge.preferenceEditorPriority)}` : '',
+      bridge.preferenceEditorNote ? `Nota interna: ${bridge.preferenceEditorNote}` : ''
     ].filter(Boolean).join(' · ');
     targetLine.notes = [cleanText(targetLine.notes || ''), bridgeNotes].filter(Boolean).join('\n');
     draft.roadMatchedContractualKm = cleanText(bridge.contractualDistanceKm || '');
@@ -2009,13 +2059,16 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
             session.draft.roadRateBridge.savedPreferenceLabel = cleanText(result.preference?.selectedRouteLabel || '');
             session.draft.roadRateBridge.savedPreferenceScopeLevel = cleanText(result.preference?.scopeLevel || 'exact');
             session.draft.roadRateBridge.savedPreferenceScopeLabel = cleanText(result.preference?.scopeLabel || 'fornitore/percorso/mezzo/servizio');
+            session.draft.roadRateBridge.savedPreferenceManualPriority = cleanText(result.preference?.manualPriority || '');
+            session.draft.roadRateBridge.savedPreferenceInternalNote = cleanText(result.preference?.internalNote || '');
             session.draft.roadRateBridge.preferenceFallbackUsed = false;
             session.draft.roadRateBridge.preferenceSelectionAvailable = true;
             session.draft.roadRateBridge.preferenceMatched = session.draft.roadRateBridge.savedPreferenceSelectedId === session.draft.roadRateBridge.selectedRoadRateId;
+            syncRoadRatePreferenceEditor(session.draft.roadRateBridge);
             session.isDirty = true;
             context.save?.();
             context.render?.();
-            Feedback?.success?.('Preferenza commerciale salvata per questo fornitore/percorso/mezzo/servizio.');
+            Feedback?.success?.('Preferenza commerciale salvata con priorità manuale e nota interna per questo contesto.');
           } else {
             Feedback?.warning?.('Seleziona prima una tratta commerciale da memorizzare come preferenza.');
           }
@@ -2035,9 +2088,12 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
             session.draft.roadRateBridge.savedPreferenceLabel = '';
             session.draft.roadRateBridge.savedPreferenceScopeLevel = '';
             session.draft.roadRateBridge.savedPreferenceScopeLabel = '';
+            session.draft.roadRateBridge.savedPreferenceManualPriority = '';
+            session.draft.roadRateBridge.savedPreferenceInternalNote = '';
             session.draft.roadRateBridge.preferenceFallbackUsed = false;
             session.draft.roadRateBridge.preferenceSelectionAvailable = null;
             session.draft.roadRateBridge.preferenceMatched = false;
+            syncRoadRatePreferenceEditor(session.draft.roadRateBridge);
             session.isDirty = true;
             context.save?.();
             context.render?.();
@@ -2221,6 +2277,21 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         return;
       }
 
+      const roadRatePreferenceField = event.target.closest('[data-quotation-road-rate-preference-field]');
+      if (roadRatePreferenceField) {
+        const session = activeSession(context.state);
+        const fieldName = String(roadRatePreferenceField.dataset.quotationRoadRatePreferenceField || '').trim();
+        if (session?.draft?.roadRateBridge && fieldName) {
+          session.draft.roadRateBridge.preferenceEditorRoadRateId = cleanText(session.draft.roadRateBridge.selectedRoadRateId || session.draft.roadRateBridge.roadRateId || '');
+          if (fieldName === 'priority') session.draft.roadRateBridge.preferenceEditorPriority = cleanText(roadRatePreferenceField.value || '');
+          if (fieldName === 'note') session.draft.roadRateBridge.preferenceEditorNote = cleanText(roadRatePreferenceField.value || '');
+          session.isDirty = true;
+          context.save?.();
+          if (fieldName === 'priority') context.render?.();
+        }
+        return;
+      }
+
       const attachmentField = event.target.closest('[data-quotation-attachment-field]');
       if (attachmentField) {
         const index = Number(attachmentField.dataset.quotationAttachmentIndex);
@@ -2235,6 +2306,21 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
     });
 
     root.addEventListener('change', (event) => {
+      const roadRatePreferenceField = event.target.closest('[data-quotation-road-rate-preference-field]');
+      if (roadRatePreferenceField) {
+        const session = activeSession(context.state);
+        const fieldName = String(roadRatePreferenceField.dataset.quotationRoadRatePreferenceField || '').trim();
+        if (session?.draft?.roadRateBridge && fieldName) {
+          session.draft.roadRateBridge.preferenceEditorRoadRateId = cleanText(session.draft.roadRateBridge.selectedRoadRateId || session.draft.roadRateBridge.roadRateId || '');
+          if (fieldName === 'priority') session.draft.roadRateBridge.preferenceEditorPriority = cleanText(roadRatePreferenceField.value || '');
+          if (fieldName === 'note') session.draft.roadRateBridge.preferenceEditorNote = cleanText(roadRatePreferenceField.value || '');
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
       const roadRateFilter = event.target.closest('[data-quotation-road-rate-filter]');
       if (roadRateFilter) {
         const session = activeSession(context.state);
