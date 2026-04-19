@@ -103,6 +103,107 @@ window.KedrixOneQuotationsModule = (() => {
     return cleanText(value).toUpperCase();
   }
 
+  function parseLooseNumber(value) {
+    const raw = cleanText(value).replace(/\s+/g, '');
+    if (!raw) return null;
+    const sanitized = raw.replace(/[^0-9,.-]/g, '');
+    if (!sanitized) return null;
+    let normalized = sanitized;
+    if (sanitized.includes(',') && sanitized.includes('.')) {
+      normalized = sanitized.replace(/\./g, '').replace(',', '.');
+    } else if (sanitized.includes(',')) {
+      normalized = sanitized.replace(',', '.');
+    }
+    const numeric = Number(normalized);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  function defaultRoadRateBridgeFilters() {
+    return {
+      commercialOnly: 'all',
+      matchType: 'all',
+      vehicleMode: 'all',
+      serviceMode: 'all',
+      sortBy: 'best-score'
+    };
+  }
+
+  function getRoadRateBridgeFilters(bridge) {
+    return {
+      ...defaultRoadRateBridgeFilters(),
+      ...(bridge && typeof bridge.filters === 'object' ? bridge.filters : {})
+    };
+  }
+
+  function setRoadRateBridgeFilter(bridge, filterName, value) {
+    if (!bridge || typeof bridge !== 'object') return;
+    const next = getRoadRateBridgeFilters(bridge);
+    next[cleanText(filterName)] = cleanText(value);
+    bridge.filters = next;
+  }
+
+  function compareRoadRateCandidates(sortBy, left, right) {
+    const leftTariff = parseLooseNumber(left?.tariffAmount);
+    const rightTariff = parseLooseNumber(right?.tariffAmount);
+    const leftContractual = parseLooseNumber(left?.contractualDistanceKm);
+    const rightContractual = parseLooseNumber(right?.contractualDistanceKm);
+    const leftOperational = parseLooseNumber(left?.operationalDistanceKm);
+    const rightOperational = parseLooseNumber(right?.operationalDistanceKm);
+    const leftUpdated = cleanText(left?.updatedAt || left?.validityFrom || '');
+    const rightUpdated = cleanText(right?.updatedAt || right?.validityFrom || '');
+    switch (cleanText(sortBy || 'best-score')) {
+      case 'lowest-tariff': {
+        if (Number.isFinite(leftTariff) && Number.isFinite(rightTariff) && leftTariff !== rightTariff) return leftTariff - rightTariff;
+        if (Number.isFinite(leftTariff) !== Number.isFinite(rightTariff)) return Number.isFinite(leftTariff) ? -1 : 1;
+        break;
+      }
+      case 'shortest-contractual-km': {
+        if (Number.isFinite(leftContractual) && Number.isFinite(rightContractual) && leftContractual !== rightContractual) return leftContractual - rightContractual;
+        if (Number.isFinite(leftContractual) !== Number.isFinite(rightContractual)) return Number.isFinite(leftContractual) ? -1 : 1;
+        break;
+      }
+      case 'shortest-operational-km': {
+        if (Number.isFinite(leftOperational) && Number.isFinite(rightOperational) && leftOperational !== rightOperational) return leftOperational - rightOperational;
+        if (Number.isFinite(leftOperational) !== Number.isFinite(rightOperational)) return Number.isFinite(leftOperational) ? -1 : 1;
+        break;
+      }
+      case 'newest':
+        if (rightUpdated !== leftUpdated) return rightUpdated.localeCompare(leftUpdated);
+        break;
+      default:
+        break;
+    }
+    if (Number(right?.score || 0) !== Number(left?.score || 0)) return Number(right?.score || 0) - Number(left?.score || 0);
+    if (Boolean(right?.hasCommercialMatch) !== Boolean(left?.hasCommercialMatch)) return Number(Boolean(right?.hasCommercialMatch)) - Number(Boolean(left?.hasCommercialMatch));
+    if (rightUpdated !== leftUpdated) return rightUpdated.localeCompare(leftUpdated);
+    return cleanText(left?.origin || '').localeCompare(cleanText(right?.origin || ''));
+  }
+
+  function getRoadRateBridgeCandidateView(bridge, query = {}, options = {}) {
+    const allCandidates = Array.isArray(bridge?.candidates) ? bridge.candidates.slice() : [];
+    const filters = getRoadRateBridgeFilters(bridge);
+    const queryVehicle = cleanUpper(query?.vehicleType || '');
+    const queryService = cleanUpper(query?.serviceType || '');
+    let filtered = allCandidates.filter((candidate) => {
+      if (filters.commercialOnly === 'with-tariff' && !candidate?.hasCommercialMatch && !cleanText(candidate?.tariffAmount || '')) return false;
+      if (filters.matchType !== 'all' && cleanText(candidate?.matchType) !== filters.matchType) return false;
+      if (filters.vehicleMode === 'exact-only' && queryVehicle && cleanUpper(candidate?.vehicleType || '') !== queryVehicle) return false;
+      if (filters.serviceMode === 'exact-only' && queryService && cleanUpper(candidate?.serviceType || '') !== queryService) return false;
+      return true;
+    });
+    filtered.sort((left, right) => compareRoadRateCandidates(filters.sortBy, left, right));
+    const limit = Math.max(1, Number(options.limit || 8));
+    return {
+      filters,
+      allCandidates,
+      filteredCandidates: filtered,
+      visibleCandidates: filtered.slice(0, limit),
+      totalCandidates: allCandidates.length,
+      totalVisible: filtered.length,
+      hiddenByFilters: Math.max(0, allCandidates.length - filtered.length)
+    };
+  }
+
   function resolveQuotationRoadSupplierName(draft = {}) {
     const headerSupplier = cleanText(draft?.supplier || '');
     if (headerSupplier) return headerSupplier;
@@ -159,6 +260,9 @@ window.KedrixOneQuotationsModule = (() => {
       commercialReference: cleanText(record.commercialReference || ''),
       matchBasis: cleanText(record.matchBasis || ''),
       sourceType: cleanText(record.sourceType || ''),
+      validityFrom: cleanText(record.validityFrom || ''),
+      validityTo: cleanText(record.validityTo || ''),
+      updatedAt: cleanText(record.updatedAt || ''),
       hasCommercialMatch: match?.commercialMatch === true || Boolean(cleanText(record.tariffAmount || ''))
     };
   }
@@ -215,10 +319,15 @@ window.KedrixOneQuotationsModule = (() => {
       ['Servizio', query.serviceType || '—'],
       ['Mezzo', query.vehicleType || '—']
     ];
+    const filterView = status === 'matched' ? getRoadRateBridgeCandidateView(bridge, query, { limit: 8 }) : null;
+    const candidates = filterView?.visibleCandidates || [];
+    if (status === 'matched' && candidates.length && !candidates.some((candidate) => cleanText(candidate.roadRateId) === cleanText(bridge.selectedRoadRateId || bridge.roadRateId || ''))) {
+      applyRoadRateBridgeSelection(bridge, cleanText(candidates[0]?.roadRateId || ''));
+    }
     const canLookup = query.supplierName && query.origin && query.destination;
-    const canApply = status === 'matched' && cleanText(bridge.tariffAmount || '');
+    const canApply = status === 'matched' && candidates.length && cleanText(bridge.tariffAmount || '');
     const actionRow = `<div class="action-row"><button class="btn secondary" type="button" data-quotation-road-rate-lookup ${canLookup ? '' : 'disabled'}>Leggi tratte commerciali compatibili</button>${canApply ? '<button class="btn" type="button" data-quotation-road-rate-apply>Applica a riga trasporto</button>' : ''}</div>`;
-    const selectedSummary = status === 'matched'
+    const selectedSummary = status === 'matched' && candidates.length
       ? `<div class="tag-grid quotation-summary-grid">
           <div class="stack-item"><strong>Match selezionato</strong><span>${U.escapeHtml(bridge.matchType || 'exact')} · score ${U.escapeHtml(String(bridge.score || ''))}</span></div>
           <div class="stack-item"><strong>Tariffa</strong><span>${U.escapeHtml([bridge.tariffAmount || '', bridge.currency || 'EUR'].filter(Boolean).join(' ') || 'Non presente')}</span></div>
@@ -228,7 +337,16 @@ window.KedrixOneQuotationsModule = (() => {
           <div class="stack-item"><strong>Rif. commerciale</strong><span>${U.escapeHtml(bridge.commercialReference || bridge.matchBasis || '—')}</span></div>
         </div>`
       : '';
-    const candidates = Array.isArray(bridge.candidates) ? bridge.candidates : [];
+    const filterControls = status === 'matched'
+      ? `<div class="form-grid three">
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-commercialOnly"><label for="quotation-road-rate-filter-commercialOnly">Solo tratte con tariffa</label><select id="quotation-road-rate-filter-commercialOnly" data-quotation-road-rate-filter="commercialOnly"><option value="all"${filterView.filters.commercialOnly === 'all' ? ' selected' : ''}>Tutte</option><option value="with-tariff"${filterView.filters.commercialOnly === 'with-tariff' ? ' selected' : ''}>Solo con tariffa</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-matchType"><label for="quotation-road-rate-filter-matchType">Tipo match</label><select id="quotation-road-rate-filter-matchType" data-quotation-road-rate-filter="matchType"><option value="all"${filterView.filters.matchType === 'all' ? ' selected' : ''}>Tutti</option><option value="exact"${filterView.filters.matchType === 'exact' ? ' selected' : ''}>Esatto</option><option value="reverse"${filterView.filters.matchType === 'reverse' ? ' selected' : ''}>Inverso</option><option value="partial"${filterView.filters.matchType === 'partial' ? ' selected' : ''}>Parziale</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-vehicleMode"><label for="quotation-road-rate-filter-vehicleMode">Mezzo</label><select id="quotation-road-rate-filter-vehicleMode" data-quotation-road-rate-filter="vehicleMode"><option value="all"${filterView.filters.vehicleMode === 'all' ? ' selected' : ''}>Tutti</option><option value="exact-only"${filterView.filters.vehicleMode === 'exact-only' ? ' selected' : ''}>Solo stesso mezzo</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-serviceMode"><label for="quotation-road-rate-filter-serviceMode">Servizio</label><select id="quotation-road-rate-filter-serviceMode" data-quotation-road-rate-filter="serviceMode"><option value="all"${filterView.filters.serviceMode === 'all' ? ' selected' : ''}>Tutti</option><option value="exact-only"${filterView.filters.serviceMode === 'exact-only' ? ' selected' : ''}>Solo stesso servizio</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-sortBy"><label for="quotation-road-rate-filter-sortBy">Ordina per</label><select id="quotation-road-rate-filter-sortBy" data-quotation-road-rate-filter="sortBy"><option value="best-score"${filterView.filters.sortBy === 'best-score' ? ' selected' : ''}>Miglior score</option><option value="lowest-tariff"${filterView.filters.sortBy === 'lowest-tariff' ? ' selected' : ''}>Tariffa minore</option><option value="shortest-contractual-km"${filterView.filters.sortBy === 'shortest-contractual-km' ? ' selected' : ''}>Km contrattuali minori</option><option value="shortest-operational-km"${filterView.filters.sortBy === 'shortest-operational-km' ? ' selected' : ''}>Km operativi minori</option><option value="newest"${filterView.filters.sortBy === 'newest' ? ' selected' : ''}>Più recente</option></select></div>
+          <div class="field quotation-field quotation-field-md quotation-road-rate-filter-reset"><label>&nbsp;</label><button class="btn secondary" type="button" data-quotation-road-rate-filters-reset>Azzera filtri</button></div>
+        </div>`
+      : '';
     const alternativesHtml = status === 'matched' && candidates.length
       ? `<div class="stack-list">${candidates.map((candidate, index) => {
           const isSelected = cleanText(candidate.roadRateId) === cleanText(bridge.selectedRoadRateId || bridge.roadRateId || '');
@@ -253,13 +371,20 @@ window.KedrixOneQuotationsModule = (() => {
       : '';
     let resultHtml = '';
     if (status === 'matched') {
-      const totalMatches = Number(bridge.totalMatches || candidates.length || 0);
-      const totalCommercialMatches = Number(bridge.totalCommercialMatches || candidates.filter((candidate) => candidate.hasCommercialMatch).length || 0);
+      const totalMatches = Number(bridge.totalMatches || filterView.totalCandidates || 0);
+      const totalCommercialMatches = Number(bridge.totalCommercialMatches || filterView.allCandidates.filter((candidate) => candidate.hasCommercialMatch).length || 0);
+      const visibleMatches = Number(filterView.totalVisible || candidates.length || 0);
       const summaryNote = totalMatches > 1
-        ? `Sono state trovate ${totalMatches} tratte compatibili (${totalCommercialMatches || 0} con tariffa commerciale). Seleziona quella da applicare alla riga trasporto.`
+        ? `Sono state trovate ${totalMatches} tratte compatibili (${totalCommercialMatches || 0} con tariffa commerciale). Con i filtri correnti ne stai visualizzando ${visibleMatches}.`
         : `Fonte tratta letta dal fornitore stradale: ${U.escapeHtml(bridge.supplierName || query.supplierName || '')}. Puoi applicare il costo a una riga trasporto della quotazione.`;
-      const tariffWarning = canApply ? '' : '<div class="quotation-static-note">La tratta selezionata non ha ancora una tariffa commerciale valorizzata: puoi leggerla e confrontarla, ma non applicarla alla riga trasporto finché il costo non è compilato.</div>';
-      resultHtml = `${selectedSummary}<div class="quotation-static-note">${summaryNote}</div>${tariffWarning}${alternativesHtml}`;
+      const tariffWarning = canApply || !candidates.length ? '' : '<div class="quotation-static-note">La tratta selezionata non ha ancora una tariffa commerciale valorizzata: puoi leggerla e confrontarla, ma non applicarla alla riga trasporto finché il costo non è compilato.</div>';
+      const filteredEmpty = !candidates.length
+        ? '<div class="quotation-static-note">Con i filtri correnti non resta visibile nessuna tratta. Allenta uno o più filtri oppure premi Azzera filtri.</div>'
+        : '';
+      const hiddenInfo = filterView.hiddenByFilters > 0 && candidates.length
+        ? `<div class="quotation-static-note">${U.escapeHtml(String(filterView.hiddenByFilters))} tratte compatibili sono state nascoste dai filtri avanzati.</div>`
+        : '';
+      resultHtml = `${selectedSummary}${filterControls}<div class="quotation-static-note">${summaryNote}</div>${hiddenInfo}${tariffWarning}${filteredEmpty}${alternativesHtml}`;
     } else if (status === 'error') {
       const reason = cleanText(bridge.reason || '');
       const guidance = reason === 'no-rates'
@@ -269,7 +394,7 @@ window.KedrixOneQuotationsModule = (() => {
           : 'Compila fornitore, origine e destinazione e poi rileggi le tratte compatibili.';
       resultHtml = `<div class="quotation-static-note">${U.escapeHtml(bridge.message || 'Nessuna tratta commerciale disponibile con i criteri correnti.')}</div><div class="quotation-static-note">${U.escapeHtml(guidance)}</div>`;
     } else {
-      resultHtml = '<div class="quotation-static-note">Usa questo ponte per leggere dal fornitore stradale le tratte commerciali compatibili in base a fornitore, origine, destinazione, servizio e mezzo. Se esistono più corrispondenze, potrai scegliere quale usare.</div>';
+      resultHtml = '<div class="quotation-static-note">Usa questo ponte per leggere dal fornitore stradale le tratte commerciali compatibili in base a fornitore, origine, destinazione, servizio e mezzo. Se esistono più corrispondenze, potrai scegliere quale usare e applicare filtri avanzati.</div>';
     }
     return `
       <section class="quotation-service-card quotation-road-rate-bridge-card">
@@ -292,6 +417,7 @@ window.KedrixOneQuotationsModule = (() => {
       destination: cleanText(query?.destination || ''),
       vehicleType: cleanText(query?.vehicleType || ''),
       serviceType: cleanText(query?.serviceType || ''),
+      filters: defaultRoadRateBridgeFilters(),
       candidates,
       totalMatches: Number(result?.totalMatches || candidates.length || 0),
       totalCommercialMatches: Number(result?.totalCommercialMatches || candidates.filter((candidate) => candidate.hasCommercialMatch).length || 0)
@@ -1419,7 +1545,7 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
             return;
           }
           const result = canListMatches
-            ? SupplierRoadRates.listRouteMatches(context.state, { name: query.supplierName, value: query.supplierName }, query, { limit: 5 })
+            ? SupplierRoadRates.listRouteMatches(context.state, { name: query.supplierName, value: query.supplierName }, query, { limit: 25 })
             : SupplierRoadRates.matchRoute(context.state, { name: query.supplierName, value: query.supplierName }, query);
           if (result && result.ok) {
             session.draft.roadRateBridge = buildRoadRateBridgeSuccess(result, query);
@@ -1454,6 +1580,20 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
           context.save?.();
           context.render?.();
           Feedback?.success?.('Tratta commerciale selezionata.');
+        }
+        return;
+      }
+
+      const roadRateResetFiltersButton = event.target.closest('[data-quotation-road-rate-filters-reset]');
+      if (roadRateResetFiltersButton) {
+        const session = activeSession(context.state);
+        if (session?.draft?.roadRateBridge && typeof session.draft.roadRateBridge === 'object') {
+          session.draft.roadRateBridge.filters = defaultRoadRateBridgeFilters();
+          selectRoadRateCandidate(session.draft || {}, cleanText(session.draft?.roadRateBridge?.selectedRoadRateId || ''));
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+          Feedback?.success?.('Filtri tratte commerciali azzerati.');
         }
         return;
       }
@@ -1618,6 +1758,20 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
     });
 
     root.addEventListener('change', (event) => {
+      const roadRateFilter = event.target.closest('[data-quotation-road-rate-filter]');
+      if (roadRateFilter) {
+        const session = activeSession(context.state);
+        const filterName = String(roadRateFilter.dataset.quotationRoadRateFilter || '').trim();
+        if (session?.draft?.roadRateBridge && filterName) {
+          setRoadRateBridgeFilter(session.draft.roadRateBridge, filterName, roadRateFilter.value);
+          selectRoadRateCandidate(session.draft || {}, cleanText(session.draft?.roadRateBridge?.selectedRoadRateId || ''));
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
       const field = event.target.closest('[data-quotation-field]');
       if (field) {
         const name = String(field.dataset.quotationField || '').trim();
