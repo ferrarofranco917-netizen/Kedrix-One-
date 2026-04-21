@@ -7,6 +7,7 @@ window.KedrixOneQuotationsModule = (() => {
   const Branding = window.KedrixOneModuleBranding || null;
   const TransportUnits = window.KedrixOneTransportUnitData || { defaultTransportUnitTypes: [] };
   const SupplierRoadRates = window.KedrixOneSupplierRoadRates || null;
+  const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
 
   function safeClone(value) {
     if (Workspace && typeof Workspace.cloneDraft === 'function') return Workspace.cloneDraft(value);
@@ -65,6 +66,68 @@ window.KedrixOneQuotationsModule = (() => {
 
   function directories(state) {
     return state?.companyConfig?.practiceConfig?.directories || {};
+  }
+
+  function quotationClientEntries(state) {
+    if (!MasterDataEntities || typeof MasterDataEntities.listEntityRecords !== 'function') return [];
+    return MasterDataEntities.listEntityRecords(state, 'client');
+  }
+
+  function getQuotationClientRecordById(state, clientId) {
+    if (!MasterDataEntities || typeof MasterDataEntities.getEntityRecordById !== 'function') return null;
+    const cleanId = cleanText(clientId);
+    if (!cleanId) return null;
+    return MasterDataEntities.getEntityRecordById(state, 'client', cleanId) || null;
+  }
+
+  function findQuotationClientRecordByValue(state, value) {
+    if (!MasterDataEntities || typeof MasterDataEntities.findStructuredEntityRecordByValue !== 'function') return null;
+    const cleanValue = cleanText(value);
+    if (!cleanValue) return null;
+    return MasterDataEntities.findStructuredEntityRecordByValue(state, 'client', cleanValue) || null;
+  }
+
+  function buildQuotationClientSnapshot(record) {
+    if (!record || !MasterDataEntities || typeof MasterDataEntities.buildRelationSnapshot !== 'function') return null;
+    return MasterDataEntities.buildRelationSnapshot('client', record, 'client');
+  }
+
+  function syncQuotationClientDraft(state, draft, payload = {}) {
+    if (!draft || typeof draft !== 'object') return null;
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
+
+    const explicitClientId = cleanText(Object.prototype.hasOwnProperty.call(payload, 'clientId') ? payload.clientId : draft.clientId);
+    const explicitClientName = cleanText(
+      Object.prototype.hasOwnProperty.call(payload, 'client')
+        ? payload.client
+        : (Object.prototype.hasOwnProperty.call(payload, 'clientName') ? payload.clientName : draft.client)
+    );
+
+    let record = null;
+    if (explicitClientId) record = getQuotationClientRecordById(state, explicitClientId);
+    if (!record && explicitClientName) record = findQuotationClientRecordByValue(state, explicitClientName);
+
+    const finalClientName = cleanText(record?.name || record?.clientName || explicitClientName);
+    draft.client = finalClientName;
+    draft.clientId = cleanText(record?.id || '');
+
+    const snapshot = buildQuotationClientSnapshot(record);
+    if (snapshot) draft.linkedEntities.client = snapshot;
+    else delete draft.linkedEntities.client;
+
+    return record;
+  }
+
+  function normalizeQuotationDraft(state, draft) {
+    if (!draft || typeof draft !== 'object') return draft;
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
+    const linkedClientId = cleanText(draft.linkedEntities?.client?.recordId || '');
+    const linkedClientValue = cleanText(draft.linkedEntities?.client?.value || draft.linkedEntities?.client?.displayValue || '');
+    syncQuotationClientDraft(state, draft, {
+      clientId: draft.clientId || linkedClientId,
+      client: draft.client || linkedClientValue
+    });
+    return draft;
   }
 
   function transportUnitOptions() {
@@ -1288,6 +1351,7 @@ window.KedrixOneQuotationsModule = (() => {
       practiceReference: '',
       practiceType: '',
       client: '',
+      clientId: '',
       prospect: '',
       contactPerson: '',
       payer: '',
@@ -1324,7 +1388,7 @@ window.KedrixOneQuotationsModule = (() => {
       ...emptySpecificProfile('generic')
     };
     const merged = { ...base, ...overrides };
-    return safeClone({ ...merged, ...emptySpecificProfile(String(merged.serviceProfile || 'generic').trim()) , ...merged });
+    return normalizeQuotationDraft(state, safeClone({ ...merged, ...emptySpecificProfile(String(merged.serviceProfile || 'generic').trim()) , ...merged }));
   }
 
   function detectProfile(rawValue) {
@@ -1348,6 +1412,7 @@ window.KedrixOneQuotationsModule = (() => {
       practiceReference: String(practice?.reference || '').trim(),
       practiceType: String(practice?.practiceTypeLabel || practice?.practiceType || '').trim(),
       client: String(practice?.clientName || practice?.client || '').trim(),
+      clientId: String(practice?.clientId || practice?.linkedClientId || '').trim(),
       prospect: String(dynamic.prospect || '').trim(),
       contactPerson: String(dynamic.attentionTo || '').trim(),
       payer: String(dynamic.payer || '').trim(),
@@ -1529,6 +1594,27 @@ window.KedrixOneQuotationsModule = (() => {
       </section>`;
   }
 
+  function renderQuotationClientField(state, draft, i18n) {
+    const entries = quotationClientEntries(state);
+    const unresolvedClient = cleanText(draft?.client || '') && !cleanText(draft?.clientId || '');
+    const items = [{ value: '', label: unresolvedClient ? `Cliente legacy non allineato: ${cleanText(draft?.client || '')}` : (i18n?.t('ui.selectClient', 'Seleziona cliente') || 'Seleziona cliente') }].concat(entries.map((entry) => {
+      const secondary = cleanText(entry?.secondary || '');
+      const tertiary = cleanText(entry?.tertiary || '');
+      const detail = [secondary !== '—' ? secondary : '', tertiary !== '—' ? tertiary : ''].filter(Boolean).join(' · ');
+      return {
+        value: cleanText(entry?.id || ''),
+        label: detail ? `${cleanText(entry?.primary || entry?.value || '')} — ${detail}` : cleanText(entry?.primary || entry?.value || '')
+      };
+    }));
+    const selectedValue = unresolvedClient ? '' : String(draft?.clientId || '');
+    const wrapClass = fieldClass('client', { size: 'lg' });
+    return `<div class="${wrapClass}"><label for="quotation-client-selector">${U.escapeHtml(i18n?.t('ui.clientRequired', 'Cliente') || 'Cliente')}</label><select id="quotation-client-selector" data-quotation-client-id>${items.map((item) => {
+      const itemValue = String(item?.value ?? '');
+      const selected = itemValue === selectedValue ? ' selected' : '';
+      return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
+    }).join('')}</select></div>`;
+  }
+
   function renderSummary(draft) {
     const items = [
       ['Numero', draft.quotationNumber || '—'],
@@ -1539,7 +1625,7 @@ window.KedrixOneQuotationsModule = (() => {
     return `<div class="tag-grid quotation-summary-grid">${items.map(([label, value]) => `<div class="stack-item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value)}</span></div>`).join('')}</div>`;
   }
 
-  function renderCommonFields(draft, dirs, i18n) {
+  function renderCommonFields(state, draft, dirs, i18n) {
     const seaPorts = (dirs.seaPortLocodes || []).map((entry) => entry?.displayValue || entry?.label || entry?.value || entry?.name).filter(Boolean);
     const airports = (dirs.airports || []).map((entry) => entry?.displayValue || entry?.label || entry?.value || entry?.name || entry).filter(Boolean);
     const companies = [].concat(dirs.shippingCompanies || [], dirs.airlines || [], dirs.carriers || []);
@@ -1554,7 +1640,7 @@ window.KedrixOneQuotationsModule = (() => {
           ${renderField('Codice', 'code', draft.code, { size: 'sm' })}
           ${renderField(i18n?.t('ui.validFrom', 'Valida dal'), 'validFrom', draft.validFrom, { type: 'date', size: 'sm' })}
           ${renderField(i18n?.t('ui.validTo', 'Valida a'), 'validTo', draft.validTo, { type: 'date', size: 'sm' })}
-          ${renderField(i18n?.t('ui.clientRequired', 'Cliente'), 'client', draft.client, { size: 'lg', list: dirs.importers || [] })}
+          ${renderQuotationClientField(state, draft, i18n)}
           ${renderField('Prospect', 'prospect', draft.prospect, { size: 'md' })}
           ${renderField(i18n?.t('ui.contactPerson', 'Contatto'), 'contactPerson', draft.contactPerson, { size: 'md' })}
           ${renderField(i18n?.t('ui.payer', 'Pagatore'), 'payer', draft.payer, { size: 'md' })}
@@ -1708,7 +1794,7 @@ window.KedrixOneQuotationsModule = (() => {
         ${profileButtons(draft.serviceProfile)}
         ${renderSummary(draft)}
         ${renderServiceSpecificFields(draft, state)}
-        ${renderCommonFields(draft, dirs, i18n)}
+        ${renderCommonFields(state, draft, dirs, i18n)}
         ${renderCrmFollowUpCard(draft, state)}
       </section>`;
   }
@@ -1863,7 +1949,7 @@ window.KedrixOneQuotationsModule = (() => {
       context.toast?.('Seleziona una pratica valida prima di creare la quotazione.', 'warning');
       return;
     }
-    const draft = buildDraftFromPractice(context.state, practice);
+    const draft = normalizeQuotationDraft(context.state, buildDraftFromPractice(context.state, practice));
     Workspace?.openSession?.(context.state, draft, { isDirty: true, tab: 'testata' });
     context.save?.();
     context.render?.();
@@ -1871,7 +1957,7 @@ window.KedrixOneQuotationsModule = (() => {
 
   function openFromRecord(context, record, duplicate) {
     if (!record) return;
-    const draft = safeClone(record.draft || {});
+    const draft = normalizeQuotationDraft(context.state, safeClone(record.draft || {}));
     if (duplicate) {
       draft.editingRecordId = '';
       draft.quotationNumber = Workspace?.nextQuotationNumber?.(context.state) || draft.quotationNumber;
@@ -1888,6 +1974,7 @@ window.KedrixOneQuotationsModule = (() => {
     const session = activeSession(context.state);
     if (!session) return null;
     const operator = currentOperatorName(context.state);
+    normalizeQuotationDraft(context.state, session.draft);
     if (queueSend) {
       session.draft.status = 'sent';
       if (!session.draft.validFrom) session.draft.validFrom = today();
@@ -2425,6 +2512,18 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
     });
 
     root.addEventListener('change', (event) => {
+      const clientSelector = event.target.closest('[data-quotation-client-id]');
+      if (clientSelector) {
+        const session = activeSession(context.state);
+        if (session) {
+          syncQuotationClientDraft(context.state, session.draft, { clientId: clientSelector.value, client: '' });
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
       const roadRatePreferenceField = event.target.closest('[data-quotation-road-rate-preference-field]');
       if (roadRatePreferenceField) {
         const session = activeSession(context.state);

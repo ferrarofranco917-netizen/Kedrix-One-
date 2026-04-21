@@ -178,6 +178,8 @@ window.KedrixOneQuotationsWorkspace = (() => {
       serviceProfile: String(draft.serviceProfile || 'generic').trim() || 'generic',
       title: String(draft.title || '').trim(),
       client: String(draft.client || '').trim(),
+      clientId: String(draft.clientId || '').trim(),
+      linkedEntities: clone(draft.linkedEntities || {}),
       validFrom: String(draft.validFrom || '').trim(),
       validTo: String(draft.validTo || '').trim(),
       practiceId: String(draft.practiceId || '').trim(),
