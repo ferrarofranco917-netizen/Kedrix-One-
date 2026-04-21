@@ -179,6 +179,8 @@ window.KedrixOneQuotationsWorkspace = (() => {
       title: String(draft.title || '').trim(),
       client: String(draft.client || '').trim(),
       clientId: String(draft.clientId || '').trim(),
+      payer: String(draft.payer || '').trim(),
+      payerId: String(draft.payerId || '').trim(),
       linkedEntities: clone(draft.linkedEntities || {}),
       validFrom: String(draft.validFrom || '').trim(),
       validTo: String(draft.validTo || '').trim(),

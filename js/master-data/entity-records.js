@@ -35,6 +35,19 @@ window.KedrixOneMasterDataEntities = (() => {
         idPrefix: 'CL-',
         structured: true
       },
+      payer: {
+        key: 'payer',
+        familyLabel: t(i18n, 'ui.masterDataFamilyPayers', 'Pagatori'),
+        singleLabel: t(i18n, 'ui.payer', 'Pagatore'),
+        valueLabel: t(i18n, 'ui.payer', 'Pagatore'),
+        storageType: 'records',
+        recordStoreKey: 'payers',
+        directoryKey: 'payers',
+        fieldNames: ['payer'],
+        suggestionKeys: ['payers'],
+        idPrefix: 'PAY-',
+        structured: true
+      },
       importer: {
         key: 'importer',
         familyLabel: t(i18n, 'ui.masterDataFamilyImporters', 'Importatori'),

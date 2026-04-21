@@ -588,6 +588,7 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     const map = {
       'master-data/fornitori': 'supplier',
       'master-data/clienti': 'client',
+      'master-data/pagatori': 'payer',
       'master-data/importatori': 'importer',
       'master-data/destinatari': 'consignee',
       'master-data/mittenti': 'sender',

@@ -119,6 +119,56 @@ window.KedrixOneQuotationsModule = (() => {
     return record;
   }
 
+  function quotationPayerEntries(state) {
+    if (!MasterDataEntities || typeof MasterDataEntities.listEntityRecords !== 'function') return [];
+    return MasterDataEntities.listEntityRecords(state, 'payer');
+  }
+
+  function getQuotationPayerRecordById(state, payerId) {
+    if (!MasterDataEntities || typeof MasterDataEntities.getEntityRecordById !== 'function') return null;
+    const cleanId = cleanText(payerId);
+    if (!cleanId) return null;
+    return MasterDataEntities.getEntityRecordById(state, 'payer', cleanId) || null;
+  }
+
+  function findQuotationPayerRecordByValue(state, value) {
+    if (!MasterDataEntities || typeof MasterDataEntities.findStructuredEntityRecordByValue !== 'function') return null;
+    const cleanValue = cleanText(value);
+    if (!cleanValue) return null;
+    return MasterDataEntities.findStructuredEntityRecordByValue(state, 'payer', cleanValue) || null;
+  }
+
+  function buildQuotationPayerSnapshot(record) {
+    if (!record || !MasterDataEntities || typeof MasterDataEntities.buildRelationSnapshot !== 'function') return null;
+    return MasterDataEntities.buildRelationSnapshot('payer', record, 'payer');
+  }
+
+  function syncQuotationPayerDraft(state, draft, payload = {}) {
+    if (!draft || typeof draft !== 'object') return null;
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
+
+    const explicitPayerId = cleanText(Object.prototype.hasOwnProperty.call(payload, 'payerId') ? payload.payerId : draft.payerId);
+    const explicitPayerName = cleanText(
+      Object.prototype.hasOwnProperty.call(payload, 'payer')
+        ? payload.payer
+        : (Object.prototype.hasOwnProperty.call(payload, 'payerName') ? payload.payerName : draft.payer)
+    );
+
+    let record = null;
+    if (explicitPayerId) record = getQuotationPayerRecordById(state, explicitPayerId);
+    if (!record && explicitPayerName) record = findQuotationPayerRecordByValue(state, explicitPayerName);
+
+    const finalPayerName = cleanText(record?.name || record?.payerName || explicitPayerName);
+    draft.payer = finalPayerName;
+    draft.payerId = cleanText(record?.id || '');
+
+    const snapshot = buildQuotationPayerSnapshot(record);
+    if (snapshot) draft.linkedEntities.payer = snapshot;
+    else delete draft.linkedEntities.payer;
+
+    return record;
+  }
+
   function normalizeQuotationDraft(state, draft) {
     if (!draft || typeof draft !== 'object') return draft;
     if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
@@ -127,6 +177,12 @@ window.KedrixOneQuotationsModule = (() => {
     syncQuotationClientDraft(state, draft, {
       clientId: draft.clientId || linkedClientId,
       client: draft.client || linkedClientValue
+    });
+    const linkedPayerId = cleanText(draft.linkedEntities?.payer?.recordId || '');
+    const linkedPayerValue = cleanText(draft.linkedEntities?.payer?.value || draft.linkedEntities?.payer?.displayValue || '');
+    syncQuotationPayerDraft(state, draft, {
+      payerId: draft.payerId || linkedPayerId,
+      payer: draft.payer || linkedPayerValue
     });
     const linkedIncotermValue = cleanText(draft.linkedEntities?.incoterm?.value || draft.linkedEntities?.incoterm?.displayValue || draft.linkedEntities?.incoterm?.recordId || '');
     syncQuotationIncotermDraft(state, draft, { incoterm: draft.incoterm || linkedIncotermValue });
@@ -1431,6 +1487,7 @@ window.KedrixOneQuotationsModule = (() => {
       prospect: '',
       contactPerson: '',
       payer: '',
+      payerId: '',
       paymentTerms: '',
       incoterm: '',
       pickupPlace: '',
@@ -1492,6 +1549,7 @@ window.KedrixOneQuotationsModule = (() => {
       prospect: String(dynamic.prospect || '').trim(),
       contactPerson: String(dynamic.attentionTo || '').trim(),
       payer: String(dynamic.payer || '').trim(),
+      payerId: String(dynamic.payerId || dynamic.payerEntityId || practice?.linkedEntities?.payer?.recordId || '').trim(),
       paymentTerms: String(dynamic.paymentTerms || '').trim(),
       incoterm: String(dynamic.incoterm || '').trim(),
       pickupPlace: String(dynamic.pickupPlace || dynamic.pickupLocation || '').trim(),
@@ -1691,6 +1749,27 @@ window.KedrixOneQuotationsModule = (() => {
     }).join('')}</select></div>`;
   }
 
+  function renderQuotationPayerField(state, draft, i18n) {
+    const entries = quotationPayerEntries(state);
+    const unresolvedPayer = cleanText(draft?.payer || '') && !cleanText(draft?.payerId || '');
+    const items = [{ value: '', label: unresolvedPayer ? `Pagatore legacy non allineato: ${cleanText(draft?.payer || '')}` : (i18n?.t('ui.selectPayer', 'Seleziona pagatore') || 'Seleziona pagatore') }].concat(entries.map((entry) => {
+      const secondary = cleanText(entry?.secondary || '');
+      const tertiary = cleanText(entry?.tertiary || '');
+      const detail = [secondary !== '—' ? secondary : '', tertiary !== '—' ? tertiary : ''].filter(Boolean).join(' · ');
+      return {
+        value: cleanText(entry?.id || ''),
+        label: detail ? `${cleanText(entry?.primary || entry?.value || '')} — ${detail}` : cleanText(entry?.primary || entry?.value || '')
+      };
+    }));
+    const selectedValue = unresolvedPayer ? '' : String(draft?.payerId || '');
+    const wrapClass = fieldClass('payer', { size: 'md' });
+    return `<div class="${wrapClass}"><label for="quotation-payer-selector">${U.escapeHtml(i18n?.t('ui.payer', 'Pagatore') || 'Pagatore')}</label><select id="quotation-payer-selector" data-quotation-payer-id>${items.map((item) => {
+      const itemValue = String(item?.value ?? '');
+      const selected = itemValue === selectedValue ? ' selected' : '';
+      return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
+    }).join('')}</select></div>`;
+  }
+
   function renderSummary(draft) {
     const items = [
       ['Numero', draft.quotationNumber || '—'],
@@ -1736,7 +1815,7 @@ window.KedrixOneQuotationsModule = (() => {
           ${renderQuotationClientField(state, draft, i18n)}
           ${renderField('Prospect', 'prospect', draft.prospect, { size: 'md' })}
           ${renderField(i18n?.t('ui.contactPerson', 'Contatto'), 'contactPerson', draft.contactPerson, { size: 'md' })}
-          ${renderField(i18n?.t('ui.payer', 'Pagatore'), 'payer', draft.payer, { size: 'md' })}
+          ${renderQuotationPayerField(state, draft, i18n)}
           ${renderField(i18n?.t('ui.paymentTerms', 'Condizioni pagamento'), 'paymentTerms', draft.paymentTerms, { size: 'md' })}
           ${renderQuotationIncotermField(state, draft, i18n)}
           ${renderField(i18n?.t('ui.pickup', 'Ritiro'), 'pickupPlace', draft.pickupPlace, { size: 'md', list: dirs.logisticsLocations || [] })}
@@ -2610,6 +2689,18 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         const session = activeSession(context.state);
         if (session) {
           syncQuotationClientDraft(context.state, session.draft, { clientId: clientSelector.value, client: '' });
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
+      const payerSelector = event.target.closest('[data-quotation-payer-id]');
+      if (payerSelector) {
+        const session = activeSession(context.state);
+        if (session) {
+          syncQuotationPayerDraft(context.state, session.draft, { payerId: payerSelector.value, payer: '' });
           session.isDirty = true;
           context.save?.();
           context.render?.();
