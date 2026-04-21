@@ -8,6 +8,7 @@ window.KedrixOneQuotationsModule = (() => {
   const TransportUnits = window.KedrixOneTransportUnitData || { defaultTransportUnitTypes: [] };
   const SupplierRoadRates = window.KedrixOneSupplierRoadRates || null;
   const MasterDataEntities = window.KedrixOneMasterDataEntities || null;
+  const PracticeSchemas = window.KedrixOnePracticeSchemas || null;
 
   function safeClone(value) {
     if (Workspace && typeof Workspace.cloneDraft === 'function') return Workspace.cloneDraft(value);
@@ -127,7 +128,82 @@ window.KedrixOneQuotationsModule = (() => {
       clientId: draft.clientId || linkedClientId,
       client: draft.client || linkedClientValue
     });
+    const linkedIncotermValue = cleanText(draft.linkedEntities?.incoterm?.value || draft.linkedEntities?.incoterm?.displayValue || draft.linkedEntities?.incoterm?.recordId || '');
+    syncQuotationIncotermDraft(state, draft, { incoterm: draft.incoterm || linkedIncotermValue });
     return draft;
+  }
+
+  function quotationIncotermPracticeType(draft = {}) {
+    const profile = cleanText(draft?.serviceProfile || '').toLowerCase();
+    if (profile === 'sea') return 'sea_import';
+    if (profile === 'air') return 'air_import';
+    if (profile === 'road') return 'road_import';
+    if (profile === 'warehouse') return 'warehouse';
+    return 'sea_import';
+  }
+
+  function quotationIncotermEntries(state, draft = {}) {
+    if (PracticeSchemas && typeof PracticeSchemas.getFieldOptionEntries === 'function') {
+      const type = quotationIncotermPracticeType(draft);
+      return PracticeSchemas.getFieldOptionEntries(type, { name: 'incoterm', optionSource: 'incoterms' }, state?.companyConfig || {})
+        .map((entry) => ({
+          value: cleanText(entry?.value),
+          label: cleanText(entry?.label || entry?.displayValue || entry?.value),
+          displayValue: cleanText(entry?.displayValue || entry?.label || entry?.value),
+          aliases: Array.isArray(entry?.aliases) ? entry.aliases.map((alias) => cleanUpper(alias)).filter(Boolean) : []
+        }))
+        .filter((entry) => entry.value);
+    }
+    const fallback = Array.isArray(PracticeSchemas?.incoterms2020) && PracticeSchemas.incoterms2020.length
+      ? PracticeSchemas.incoterms2020
+      : ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP', 'FAS', 'FOB', 'CFR', 'CIF'];
+    return fallback.map((value) => ({ value: cleanText(value), label: cleanText(value), displayValue: cleanText(value), aliases: [cleanUpper(value)] })).filter((entry) => entry.value);
+  }
+
+  function findQuotationIncotermEntry(state, draft, rawValue) {
+    const cleanValue = cleanUpper(rawValue);
+    if (!cleanValue) return null;
+    return quotationIncotermEntries(state, draft).find((entry) => {
+      if (cleanUpper(entry.value) === cleanValue) return true;
+      if (cleanUpper(entry.displayValue) === cleanValue) return true;
+      return Array.isArray(entry.aliases) && entry.aliases.includes(cleanValue);
+    }) || null;
+  }
+
+  function buildQuotationIncotermSnapshot(entry) {
+    const value = cleanText(entry?.value);
+    if (!value) return null;
+    return {
+      fieldName: 'incoterm',
+      entityKey: 'incoterm',
+      recordId: value,
+      value,
+      displayValue: cleanText(entry?.displayValue || entry?.label || value),
+      code: value,
+      description: cleanText(entry?.label || value),
+      active: true
+    };
+  }
+
+  function syncQuotationIncotermDraft(state, draft, payload = {}) {
+    if (!draft || typeof draft !== 'object') return null;
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
+    const explicitValue = cleanText(
+      Object.prototype.hasOwnProperty.call(payload, 'incoterm')
+        ? payload.incoterm
+        : (Object.prototype.hasOwnProperty.call(payload, 'value') ? payload.value : draft.incoterm)
+    );
+    if (!explicitValue) {
+      draft.incoterm = '';
+      delete draft.linkedEntities.incoterm;
+      return null;
+    }
+    const entry = findQuotationIncotermEntry(state, draft, explicitValue);
+    draft.incoterm = cleanText(entry?.value || explicitValue);
+    const snapshot = buildQuotationIncotermSnapshot(entry);
+    if (snapshot) draft.linkedEntities.incoterm = snapshot;
+    else delete draft.linkedEntities.incoterm;
+    return entry;
   }
 
   function transportUnitOptions() {
@@ -1625,6 +1701,23 @@ window.KedrixOneQuotationsModule = (() => {
     return `<div class="tag-grid quotation-summary-grid">${items.map(([label, value]) => `<div class="stack-item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value)}</span></div>`).join('')}</div>`;
   }
 
+  function renderQuotationIncotermField(state, draft, i18n) {
+    const entries = quotationIncotermEntries(state, draft);
+    const linkedValue = cleanText(draft?.linkedEntities?.incoterm?.recordId || draft?.linkedEntities?.incoterm?.value || '');
+    const unresolvedIncoterm = cleanText(draft?.incoterm || '') && !linkedValue;
+    const items = [{ value: '', label: unresolvedIncoterm ? `Resa legacy non allineata: ${cleanText(draft?.incoterm || '')}` : (i18n?.t('ui.selectIncoterm', 'Seleziona resa') || 'Seleziona resa') }].concat(entries.map((entry) => ({
+      value: String(entry?.value || '').trim(),
+      label: String(entry?.displayValue || entry?.label || entry?.value || '').trim() || String(entry?.value || '').trim()
+    })));
+    const selectedValue = unresolvedIncoterm ? '' : cleanText(draft?.incoterm || linkedValue);
+    const wrapClass = fieldClass('incoterm', { size: 'sm' });
+    return `<div class="${wrapClass}"><label for="quotation-incoterm-selector">${U.escapeHtml(i18n?.t('ui.incoterm', 'Resa') || 'Resa')}</label><select id="quotation-incoterm-selector" data-quotation-incoterm="true">${items.map((item) => {
+      const itemValue = String(item?.value || '');
+      const selected = itemValue === selectedValue ? ' selected' : '';
+      return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label || itemValue)}</option>`;
+    }).join('')}</select></div>`;
+  }
+
   function renderCommonFields(state, draft, dirs, i18n) {
     const seaPorts = (dirs.seaPortLocodes || []).map((entry) => entry?.displayValue || entry?.label || entry?.value || entry?.name).filter(Boolean);
     const airports = (dirs.airports || []).map((entry) => entry?.displayValue || entry?.label || entry?.value || entry?.name || entry).filter(Boolean);
@@ -1645,7 +1738,7 @@ window.KedrixOneQuotationsModule = (() => {
           ${renderField(i18n?.t('ui.contactPerson', 'Contatto'), 'contactPerson', draft.contactPerson, { size: 'md' })}
           ${renderField(i18n?.t('ui.payer', 'Pagatore'), 'payer', draft.payer, { size: 'md' })}
           ${renderField(i18n?.t('ui.paymentTerms', 'Condizioni pagamento'), 'paymentTerms', draft.paymentTerms, { size: 'md' })}
-          ${renderField(i18n?.t('ui.incoterm', 'Resa'), 'incoterm', draft.incoterm, { size: 'sm' })}
+          ${renderQuotationIncotermField(state, draft, i18n)}
           ${renderField(i18n?.t('ui.pickup', 'Ritiro'), 'pickupPlace', draft.pickupPlace, { size: 'md', list: dirs.logisticsLocations || [] })}
           ${renderField(i18n?.t('ui.delivery', 'Consegna'), 'deliveryPlace', draft.deliveryPlace, { size: 'md', list: dirs.logisticsLocations || [] })}
           ${renderField(i18n?.t('ui.origin', 'Origine'), 'origin', draft.origin, { size: 'md', list: dirs.originDirectories || [] })}
@@ -2517,6 +2610,18 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         const session = activeSession(context.state);
         if (session) {
           syncQuotationClientDraft(context.state, session.draft, { clientId: clientSelector.value, client: '' });
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
+      const incotermSelector = event.target.closest('[data-quotation-incoterm]');
+      if (incotermSelector) {
+        const session = activeSession(context.state);
+        if (session) {
+          syncQuotationIncotermDraft(context.state, session.draft, { incoterm: incotermSelector.value });
           session.isDirty = true;
           context.save?.();
           context.render?.();
