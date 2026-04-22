@@ -169,6 +169,145 @@ window.KedrixOneQuotationsModule = (() => {
     return record;
   }
 
+
+  function quotationSupplierEntries(state) {
+    if (!MasterDataEntities || typeof MasterDataEntities.listEntityRecords !== 'function') return [];
+    return MasterDataEntities.listEntityRecords(state, 'supplier');
+  }
+
+  function getQuotationSupplierRecordById(state, supplierId) {
+    if (!MasterDataEntities || typeof MasterDataEntities.getEntityRecordById !== 'function') return null;
+    const cleanId = cleanText(supplierId);
+    if (!cleanId) return null;
+    return MasterDataEntities.getEntityRecordById(state, 'supplier', cleanId) || null;
+  }
+
+  function findQuotationSupplierRecordByValue(state, value) {
+    if (!MasterDataEntities || typeof MasterDataEntities.findStructuredEntityRecordByValue !== 'function') return null;
+    const cleanValue = cleanText(value);
+    if (!cleanValue) return null;
+    return MasterDataEntities.findStructuredEntityRecordByValue(state, 'supplier', cleanValue) || null;
+  }
+
+  function buildQuotationSupplierSnapshot(record) {
+    if (!record || !MasterDataEntities || typeof MasterDataEntities.buildRelationSnapshot !== 'function') return null;
+    return MasterDataEntities.buildRelationSnapshot('supplier', record, 'supplier');
+  }
+
+  function syncQuotationSupplierDraft(state, draft, payload = {}) {
+    if (!draft || typeof draft !== 'object') return null;
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
+
+    const explicitSupplierId = cleanText(Object.prototype.hasOwnProperty.call(payload, 'supplierId') ? payload.supplierId : draft.supplierId);
+    const explicitSupplierName = cleanText(
+      Object.prototype.hasOwnProperty.call(payload, 'supplier')
+        ? payload.supplier
+        : (Object.prototype.hasOwnProperty.call(payload, 'supplierName') ? payload.supplierName : draft.supplier)
+    );
+
+    let record = null;
+    if (explicitSupplierId) record = getQuotationSupplierRecordById(state, explicitSupplierId);
+    if (!record && explicitSupplierName) record = findQuotationSupplierRecordByValue(state, explicitSupplierName);
+
+    const finalSupplierName = cleanText(record?.name || record?.supplierName || explicitSupplierName);
+    draft.supplier = finalSupplierName;
+    draft.supplierId = cleanText(record?.id || '');
+
+    const snapshot = buildQuotationSupplierSnapshot(record);
+    if (snapshot) draft.linkedEntities.supplier = snapshot;
+    else delete draft.linkedEntities.supplier;
+
+    return record;
+  }
+
+  function quotationCarrierEntityKeys() {
+    return ['shippingCompany', 'airline', 'carrier'];
+  }
+
+  function quotationCarrierEntries(state) {
+    if (!MasterDataEntities || typeof MasterDataEntities.listEntityRecords !== 'function') return [];
+    const familyLabelByKey = {
+      shippingCompany: 'Compagnia marittima',
+      airline: 'Compagnia aerea',
+      carrier: 'Vettore'
+    };
+    return quotationCarrierEntityKeys().flatMap((entityKey) => {
+      return MasterDataEntities.listEntityRecords(state, entityKey).map((entry) => ({
+        ...entry,
+        entityKey,
+        familyLabel: familyLabelByKey[entityKey] || entityKey
+      }));
+    });
+  }
+
+  function getQuotationCarrierRecordById(state, entityKey, recordId) {
+    if (!MasterDataEntities || typeof MasterDataEntities.getEntityRecordById !== 'function') return null;
+    const cleanId = cleanText(recordId);
+    const cleanEntityKey = cleanText(entityKey);
+    if (!cleanId || !cleanEntityKey) return null;
+    return MasterDataEntities.getEntityRecordById(state, cleanEntityKey, cleanId) || null;
+  }
+
+  function findQuotationCarrierRecordByValue(state, value) {
+    if (!MasterDataEntities || typeof MasterDataEntities.findStructuredEntityRecordByValue !== 'function') return null;
+    const cleanValue = cleanText(value);
+    if (!cleanValue) return null;
+    for (const entityKey of quotationCarrierEntityKeys()) {
+      const record = MasterDataEntities.findStructuredEntityRecordByValue(state, entityKey, cleanValue);
+      if (record) return { entityKey, record };
+    }
+    return null;
+  }
+
+  function buildQuotationCarrierSnapshot(entityKey, record) {
+    if (!record || !entityKey || !MasterDataEntities || typeof MasterDataEntities.buildRelationSnapshot !== 'function') return null;
+    return MasterDataEntities.buildRelationSnapshot(entityKey, record, 'carrier');
+  }
+
+  function syncQuotationCarrierDraft(state, draft, payload = {}) {
+    if (!draft || typeof draft !== 'object') return null;
+    if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
+
+    const linkedSnapshot = draft.linkedEntities?.carrier && typeof draft.linkedEntities.carrier === 'object' ? draft.linkedEntities.carrier : null;
+    const explicitEntityKey = cleanText(
+      Object.prototype.hasOwnProperty.call(payload, 'carrierEntityKey')
+        ? payload.carrierEntityKey
+        : (Object.prototype.hasOwnProperty.call(payload, 'entityKey') ? payload.entityKey : (draft.carrierEntityKey || linkedSnapshot?.entityKey))
+    );
+    const explicitCarrierId = cleanText(
+      Object.prototype.hasOwnProperty.call(payload, 'carrierId')
+        ? payload.carrierId
+        : (draft.carrierId || linkedSnapshot?.recordId)
+    );
+    const explicitCarrierName = cleanText(
+      Object.prototype.hasOwnProperty.call(payload, 'carrier')
+        ? payload.carrier
+        : (Object.prototype.hasOwnProperty.call(payload, 'carrierName') ? payload.carrierName : (draft.carrier || linkedSnapshot?.value || linkedSnapshot?.displayValue))
+    );
+
+    let resolvedEntityKey = explicitEntityKey;
+    let record = null;
+    if (resolvedEntityKey && explicitCarrierId) record = getQuotationCarrierRecordById(state, resolvedEntityKey, explicitCarrierId);
+    if (!record && explicitCarrierName) {
+      const match = findQuotationCarrierRecordByValue(state, explicitCarrierName);
+      if (match) {
+        resolvedEntityKey = match.entityKey;
+        record = match.record;
+      }
+    }
+
+    const finalCarrierName = cleanText(record?.name || record?.carrierName || explicitCarrierName);
+    draft.carrier = finalCarrierName;
+    draft.carrierId = cleanText(record?.id || '');
+    draft.carrierEntityKey = cleanText(record ? resolvedEntityKey : '');
+
+    const snapshot = buildQuotationCarrierSnapshot(resolvedEntityKey, record);
+    if (snapshot) draft.linkedEntities.carrier = snapshot;
+    else delete draft.linkedEntities.carrier;
+
+    return record ? { entityKey: resolvedEntityKey, record } : null;
+  }
+
   function normalizeQuotationDraft(state, draft) {
     if (!draft || typeof draft !== 'object') return draft;
     if (!draft.linkedEntities || typeof draft.linkedEntities !== 'object') draft.linkedEntities = {};
@@ -184,8 +323,22 @@ window.KedrixOneQuotationsModule = (() => {
       payerId: draft.payerId || linkedPayerId,
       payer: draft.payer || linkedPayerValue
     });
+    const linkedSupplierId = cleanText(draft.linkedEntities?.supplier?.recordId || '');
+    const linkedSupplierValue = cleanText(draft.linkedEntities?.supplier?.value || draft.linkedEntities?.supplier?.displayValue || '');
+    syncQuotationSupplierDraft(state, draft, {
+      supplierId: draft.supplierId || linkedSupplierId,
+      supplier: draft.supplier || linkedSupplierValue
+    });
     const linkedIncotermValue = cleanText(draft.linkedEntities?.incoterm?.value || draft.linkedEntities?.incoterm?.displayValue || draft.linkedEntities?.incoterm?.recordId || '');
     syncQuotationIncotermDraft(state, draft, { incoterm: draft.incoterm || linkedIncotermValue });
+    const linkedCarrierId = cleanText(draft.linkedEntities?.carrier?.recordId || '');
+    const linkedCarrierValue = cleanText(draft.linkedEntities?.carrier?.value || draft.linkedEntities?.carrier?.displayValue || '');
+    const linkedCarrierEntityKey = cleanText(draft.linkedEntities?.carrier?.entityKey || '');
+    syncQuotationCarrierDraft(state, draft, {
+      carrierId: draft.carrierId || linkedCarrierId,
+      carrierEntityKey: draft.carrierEntityKey || linkedCarrierEntityKey,
+      carrier: draft.carrier || linkedCarrierValue
+    });
     return draft;
   }
 
@@ -1497,7 +1650,10 @@ window.KedrixOneQuotationsModule = (() => {
       loadingPort: '',
       unloadingPort: '',
       carrier: '',
+      carrierId: '',
+      carrierEntityKey: '',
       supplier: '',
+      supplierId: '',
       goodsType: '',
       packagingType: '',
       dangerousGoods: 'NO',
@@ -1558,8 +1714,17 @@ window.KedrixOneQuotationsModule = (() => {
       destination: String(dynamic.destination || dynamic.destinationNode || '').trim(),
       loadingPort: String(dynamic.loadingPort || dynamic.originPort || '').trim(),
       unloadingPort: String(dynamic.unloadingPort || dynamic.destinationPort || '').trim(),
-      carrier: String(dynamic.carrier || dynamic.shippingCompany || '').trim(),
+      carrier: String(practice?.linkedEntities?.carrier?.value || dynamic.carrier || dynamic.shippingCompany || dynamic.airline || '').trim(),
+      carrierId: String(practice?.linkedEntities?.carrier?.recordId || dynamic.carrierId || dynamic.shippingCompanyId || dynamic.airlineId || '').trim(),
+      carrierEntityKey: String(
+        practice?.linkedEntities?.carrier?.entityKey
+        || dynamic.carrierEntityKey
+        || (dynamic.shippingCompany ? 'shippingCompany' : '')
+        || (dynamic.airline ? 'airline' : '')
+        || ((dynamic.carrier || dynamic.carrierId) ? 'carrier' : '')
+      ).trim(),
       supplier: String(dynamic.supplier || '').trim(),
+      supplierId: String(dynamic.supplierId || dynamic.supplierEntityId || practice?.linkedEntities?.supplier?.recordId || '').trim(),
       goodsType: String(dynamic.goodsType || dynamic.goodsDescription || '').trim(),
       packagingType: String(dynamic.packagingType || dynamic.packaging || dynamic.transportUnitType || '').trim(),
       dangerousGoods: String(dynamic.dangerousGoods || 'NO').trim() || 'NO',
@@ -1770,6 +1935,55 @@ window.KedrixOneQuotationsModule = (() => {
     }).join('')}</select></div>`;
   }
 
+
+  function renderQuotationSupplierField(state, draft, i18n) {
+    const entries = quotationSupplierEntries(state);
+    const unresolvedSupplier = cleanText(draft?.supplier || '') && !cleanText(draft?.supplierId || '');
+    const items = [{ value: '', label: unresolvedSupplier ? `Fornitore legacy non allineato: ${cleanText(draft?.supplier || '')}` : (i18n?.t('ui.selectSupplier', 'Seleziona fornitore') || 'Seleziona fornitore') }].concat(entries.map((entry) => {
+      const secondary = cleanText(entry?.secondary || '');
+      const tertiary = cleanText(entry?.tertiary || '');
+      const detail = [secondary !== '—' ? secondary : '', tertiary !== '—' ? tertiary : ''].filter(Boolean).join(' · ');
+      return {
+        value: cleanText(entry?.id || ''),
+        label: detail ? `${cleanText(entry?.primary || entry?.value || '')} — ${detail}` : cleanText(entry?.primary || entry?.value || '')
+      };
+    }));
+    const selectedValue = unresolvedSupplier ? '' : String(draft?.supplierId || '');
+    const wrapClass = fieldClass('supplier', { size: 'md' });
+    return `<div class="${wrapClass}"><label for="quotation-supplier-selector">${U.escapeHtml(i18n?.t('ui.supplier', 'Fornitore') || 'Fornitore')}</label><select id="quotation-supplier-selector" data-quotation-supplier-id>${items.map((item) => {
+      const itemValue = String(item?.value ?? '');
+      const selected = itemValue === selectedValue ? ' selected' : '';
+      return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
+    }).join('')}</select></div>`;
+  }
+
+  function renderQuotationCarrierField(state, draft, i18n) {
+    const entries = quotationCarrierEntries(state);
+    const linkedCarrier = draft?.linkedEntities?.carrier && typeof draft.linkedEntities.carrier === 'object' ? draft.linkedEntities.carrier : null;
+    const unresolvedCarrier = cleanText(draft?.carrier || '') && !(cleanText(draft?.carrierId || '') && cleanText(draft?.carrierEntityKey || '')) && !cleanText(linkedCarrier?.recordId || '');
+    const items = [{
+      value: '',
+      label: unresolvedCarrier
+        ? `Compagnia/vettore legacy non allineato: ${cleanText(draft?.carrier || '')}`
+        : (i18n?.t('ui.selectCarrier', 'Seleziona compagnia / vettore') || 'Seleziona compagnia / vettore')
+    }].concat(entries.map((entry) => {
+      const secondary = cleanText(entry?.secondary || '');
+      const tertiary = cleanText(entry?.tertiary || '');
+      const detail = [cleanText(entry?.familyLabel || ''), secondary !== '—' ? secondary : '', tertiary !== '—' ? tertiary : ''].filter(Boolean).join(' · ');
+      return {
+        value: `${cleanText(entry?.entityKey || '')}::${cleanText(entry?.id || '')}`,
+        label: detail ? `${cleanText(entry?.primary || entry?.value || '')} — ${detail}` : cleanText(entry?.primary || entry?.value || '')
+      };
+    }));
+    const selectedValue = unresolvedCarrier ? '' : `${cleanText(draft?.carrierEntityKey || linkedCarrier?.entityKey || '')}::${cleanText(draft?.carrierId || linkedCarrier?.recordId || '')}`.replace(/^::$/, '');
+    const wrapClass = fieldClass('carrier', { size: 'md' });
+    return `<div class="${wrapClass}"><label for="quotation-carrier-selector">${U.escapeHtml(i18n?.t('ui.carrier', 'Compagnia / vettore') || 'Compagnia / vettore')}</label><select id="quotation-carrier-selector" data-quotation-carrier-selector>${items.map((item) => {
+      const itemValue = String(item?.value ?? '');
+      const selected = itemValue === selectedValue ? ' selected' : '';
+      return `<option value="${U.escapeHtml(itemValue)}"${selected}>${U.escapeHtml(item?.label ?? itemValue)}</option>`;
+    }).join('')}</select></div>`;
+  }
+
   function renderSummary(draft) {
     const items = [
       ['Numero', draft.quotationNumber || '—'],
@@ -1800,7 +2014,6 @@ window.KedrixOneQuotationsModule = (() => {
   function renderCommonFields(state, draft, dirs, i18n) {
     const seaPorts = (dirs.seaPortLocodes || []).map((entry) => entry?.displayValue || entry?.label || entry?.value || entry?.name).filter(Boolean);
     const airports = (dirs.airports || []).map((entry) => entry?.displayValue || entry?.label || entry?.value || entry?.name || entry).filter(Boolean);
-    const companies = [].concat(dirs.shippingCompanies || [], dirs.airlines || [], dirs.carriers || []);
     return `
       <section class="quotation-service-card">
         <div class="quotation-service-card-head">
@@ -1824,8 +2037,8 @@ window.KedrixOneQuotationsModule = (() => {
           ${renderField(i18n?.t('ui.destination', 'Destinazione'), 'destination', draft.destination, { size: 'md', list: dirs.destinationDirectories || [] })}
           ${renderField(i18n?.t('ui.loadingPort', 'Porto imbarco'), 'loadingPort', draft.loadingPort, { size: 'md', list: seaPorts.length ? seaPorts : airports })}
           ${renderField(i18n?.t('ui.unloadingPort', 'Porto sbarco'), 'unloadingPort', draft.unloadingPort, { size: 'md', list: seaPorts.length ? seaPorts : airports })}
-          ${renderField(i18n?.t('ui.carrier', 'Compagnia / vettore'), 'carrier', draft.carrier, { size: 'md', list: companies })}
-          ${renderField(i18n?.t('ui.supplier', 'Fornitore'), 'supplier', draft.supplier, { size: 'md', list: dirs.suppliers || [] })}
+          ${renderQuotationCarrierField(state, draft, i18n)}
+          ${renderQuotationSupplierField(state, draft, i18n)}
           ${renderField(i18n?.t('ui.goodsType', 'Tipologia merce'), 'goodsType', draft.goodsType, { size: 'md' })}
           ${renderField(i18n?.t('ui.dangerousGoods', 'Merce pericolosa'), 'dangerousGoods', draft.dangerousGoods, { type: 'select', size: 'xs', items: [{ value: 'NO', label: 'NO' }, { value: 'SI', label: 'SI' }] })}
           ${renderField(i18n?.t('ui.packages', 'Colli'), 'pieces', draft.pieces, { size: 'xs' })}
@@ -2701,6 +2914,36 @@ ${draft.note ? `<div class="section"><h2>Note</h2><div class="note">${U.escapeHt
         const session = activeSession(context.state);
         if (session) {
           syncQuotationPayerDraft(context.state, session.draft, { payerId: payerSelector.value, payer: '' });
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
+      const supplierSelector = event.target.closest('[data-quotation-supplier-id]');
+      if (supplierSelector) {
+        const session = activeSession(context.state);
+        if (session) {
+          syncQuotationSupplierDraft(context.state, session.draft, { supplierId: supplierSelector.value, supplier: '' });
+          clearRoadRateBridge(session.draft);
+          session.isDirty = true;
+          context.save?.();
+          context.render?.();
+        }
+        return;
+      }
+
+      const carrierSelector = event.target.closest('[data-quotation-carrier-selector]');
+      if (carrierSelector) {
+        const session = activeSession(context.state);
+        if (session) {
+          const [carrierEntityKey, carrierId] = String(carrierSelector.value || '').split('::');
+          syncQuotationCarrierDraft(context.state, session.draft, {
+            carrierEntityKey,
+            carrierId,
+            carrier: ''
+          });
           session.isDirty = true;
           context.save?.();
           context.render?.();

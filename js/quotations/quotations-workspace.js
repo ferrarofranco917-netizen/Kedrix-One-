@@ -181,6 +181,8 @@ window.KedrixOneQuotationsWorkspace = (() => {
       clientId: String(draft.clientId || '').trim(),
       payer: String(draft.payer || '').trim(),
       payerId: String(draft.payerId || '').trim(),
+      supplier: String(draft.supplier || '').trim(),
+      supplierId: String(draft.supplierId || '').trim(),
       linkedEntities: clone(draft.linkedEntities || {}),
       validFrom: String(draft.validFrom || '').trim(),
       validTo: String(draft.validTo || '').trim(),
