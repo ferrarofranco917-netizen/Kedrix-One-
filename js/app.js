@@ -1389,16 +1389,21 @@
 
     function refreshFieldRelationState() {
       if (!dynamicFields || !PracticeFieldRelations || typeof PracticeFieldRelations.applyFieldState !== 'function') return;
-      PracticeFieldRelations.applyFieldState({
-        root: dynamicFields,
-        type: draft.practiceType || '',
-        draft,
-        state,
-        companyConfig: state.companyConfig,
-        i18n: I18N,
-        utils: Utils
-      });
+      try {
+        PracticeFieldRelations.applyFieldState({
+          root: dynamicFields,
+          type: draft.practiceType || '',
+          draft,
+          state,
+          companyConfig: state.companyConfig,
+          i18n: I18N,
+          utils: Utils
+        });
+      } catch (error) {
+        console.warn('[Kedrix One] refresh relazioni pratica non completato', error);
+      }
     }
+
 
     function renderDynamicPanels() {
       if (!dynamicFields) return;
@@ -1498,11 +1503,16 @@
       }
       const MasterDataEntities = window.KedrixOneMasterDataEntities;
       if (MasterDataEntities && typeof MasterDataEntities.syncDraftRelationField === 'function') {
-        MasterDataEntities.syncDraftRelationField({ state, draft, fieldName, value: nextValue });
+        try {
+          MasterDataEntities.syncDraftRelationField({ state, draft, fieldName, value: nextValue });
+        } catch (error) {
+          console.warn('[Kedrix One] sync relazione pratica non completata', fieldName, error);
+        }
       }
       if (!Array.isArray(nextValue) && node && nextValue !== node.value) node.value = nextValue;
       return nextValue;
     }
+
 
     function flushVisibleDynamicFields(options = {}) {
       if (!dynamicFields || (state.practiceTab || 'practice') === 'attachments') return;

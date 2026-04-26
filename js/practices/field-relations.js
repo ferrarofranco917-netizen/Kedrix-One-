@@ -12,8 +12,14 @@ window.KedrixOnePracticeFieldRelations = (() => {
     'vessels',
     'taricCodes',
     'customsOffices',
+    'seaPortLocodes',
+    'airports',
+    'seaTerminals',
     'originDirectories',
     'destinationDirectories',
+    'logisticsLocations',
+    'deposits',
+    'warehouseLinks',
     'articleCodes',
     'shippingCompanies',
     'airlines',
@@ -52,7 +58,12 @@ window.KedrixOnePracticeFieldRelations = (() => {
   function isRelationalField(field) {
     if (!field || typeof field !== 'object') return false;
     if (field.type === 'derived' && field.name === 'client') return true;
-    return Boolean(field.suggestionKey && relationalSuggestionKeys.has(field.suggestionKey));
+    const suggestionKey = String(field.suggestionKey || '').trim();
+    if (!suggestionKey) return false;
+    if (MasterDataEntities && typeof MasterDataEntities.resolveEntityKeyForSuggestion === 'function') {
+      return Boolean(MasterDataEntities.resolveEntityKeyForSuggestion(suggestionKey));
+    }
+    return relationalSuggestionKeys.has(suggestionKey);
   }
 
   function matchEntry(type, field, rawValue, companyConfig) {
@@ -124,6 +135,11 @@ window.KedrixOnePracticeFieldRelations = (() => {
     };
   }
 
+  function shouldRenderInlineSummary(fieldName) {
+    const clean = String(fieldName || '').trim();
+    return clean !== 'transporter';
+  }
+
   function renderFieldRelationMeta(options = {}) {
     const { utils, field = null } = options;
     const meta = getFieldRelationMeta(options);
@@ -131,7 +147,7 @@ window.KedrixOnePracticeFieldRelations = (() => {
     const escape = utils && typeof utils.escapeHtml === 'function' ? utils.escapeHtml : (value) => String(value || '');
     const pillClass = meta.kind === 'linked' ? 'success' : 'default';
     const fieldName = field && field.type === 'derived' ? 'clientName' : field && field.name ? field.name : '';
-    const summaryHtml = meta.kind === 'linked' && LinkedEntitySummary && typeof LinkedEntitySummary.renderInlineSummary === 'function'
+    const summaryHtml = meta.kind === 'linked' && shouldRenderInlineSummary(fieldName) && LinkedEntitySummary && typeof LinkedEntitySummary.renderInlineSummary === 'function'
       ? LinkedEntitySummary.renderInlineSummary({ ...options, fieldName })
       : '';
     return `<div class="field-relation-meta"><div class="field-relation-row"><span class="field-relation-pill ${pillClass}">${escape(meta.badgeLabel)}</span><span class="field-relation-text">${escape(meta.detailLabel)}</span></div>${summaryHtml}</div>`;
@@ -169,7 +185,13 @@ window.KedrixOnePracticeFieldRelations = (() => {
       const field = PracticeSchemas.getField(type, fieldName);
       if (!field || !isRelationalField(field)) return;
 
-      const html = renderFieldRelationMeta({ state, type, field, draft, companyConfig, i18n, utils });
+      let html = '';
+      try {
+        html = renderFieldRelationMeta({ state, type, field, draft, companyConfig, i18n, utils });
+      } catch (error) {
+        console.warn('[Kedrix One] relazione campo non renderizzata', fieldName, error);
+        html = '';
+      }
       const existing = wrap.querySelector('.field-relation-meta');
       if (!html) {
         if (existing) existing.remove();
