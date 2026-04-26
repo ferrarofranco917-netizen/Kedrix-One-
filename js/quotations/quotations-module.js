@@ -1763,6 +1763,48 @@ window.KedrixOneQuotationsModule = (() => {
     return `<div class="tag-grid quotation-summary-grid">${items.map(([label, value]) => `<div class="stack-item"><strong>${U.escapeHtml(label)}</strong><span>${U.escapeHtml(value)}</span></div>`).join('')}</div>`;
   }
 
+  function renderCollapsibleCard(title, subtitle, body, options = {}) {
+    const openAttr = options.open ? ' open' : '';
+    const compactClass = options.compact ? ' is-compact' : '';
+    return `
+      <details class="quotation-collapsible${compactClass}"${openAttr}>
+        <summary>
+          <div class="quotation-collapsible-head">
+            <strong>${U.escapeHtml(title || '')}</strong>
+            ${subtitle ? `<span>${U.escapeHtml(subtitle)}</span>` : ''}
+          </div>
+        </summary>
+        <div class="quotation-collapsible-body">${body || ''}</div>
+      </details>`;
+  }
+
+  function ensureQuotationUiStyle() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('kedrix-quotations-ui-style')) return;
+    const style = document.createElement('style');
+    style.id = 'kedrix-quotations-ui-style';
+    style.textContent = `
+      .quotation-header-stack{display:grid;gap:12px}
+      .quotation-operational-stack{display:grid;gap:12px;margin-top:12px}
+      .quotation-collapsible{border:1px solid var(--border-subtle, #d7e2ec);border-radius:14px;background:var(--surface-raised, #fff);overflow:hidden}
+      .quotation-collapsible + .quotation-collapsible{margin-top:12px}
+      .quotation-collapsible summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+      .quotation-collapsible summary::-webkit-details-marker{display:none}
+      .quotation-collapsible summary::after{content:'▸';font-size:12px;color:var(--text-secondary, #64748b);transition:transform .18s ease}
+      .quotation-collapsible[open] summary::after{transform:rotate(90deg)}
+      .quotation-collapsible-head{display:grid;gap:2px}
+      .quotation-collapsible-head strong{font-size:13px;color:var(--text-primary, #0f172a)}
+      .quotation-collapsible-head span{font-size:12px;color:var(--text-secondary, #64748b)}
+      .quotation-collapsible-body{padding:0 14px 14px}
+      .quotation-collapsible.is-compact .quotation-collapsible-body{padding-top:2px}
+      .quotation-header-banner{margin-top:4px}
+      .quotation-common-card .quotation-service-card-head p{max-width:720px}
+      .quotation-service-card.is-inline{margin-top:0}
+      .quotation-secondary-stack{display:grid;gap:12px}
+    `;
+    document.head.appendChild(style);
+  }
+
   function renderQuotationIncotermField(state, draft, i18n) {
     const entries = quotationIncotermEntries(state, draft);
     const linkedValue = cleanText(draft?.linkedEntities?.incoterm?.recordId || draft?.linkedEntities?.incoterm?.value || '');
@@ -1785,10 +1827,10 @@ window.KedrixOneQuotationsModule = (() => {
     const airports = (dirs.airports || []).map((entry) => entry?.displayValue || entry?.label || entry?.value || entry?.name || entry).filter(Boolean);
     const companies = [].concat(dirs.shippingCompanies || [], dirs.airlines || [], dirs.carriers || []);
     return `
-      <section class="quotation-service-card">
+      <section class="quotation-service-card quotation-common-card">
         <div class="quotation-service-card-head">
-          <h4>Dati comuni</h4>
-          <p>Campi condivisi della testata commerciale e logistica.</p>
+          <h4>Dati operativi principali</h4>
+          <p>Campi condivisi della testata commerciale e logistica, portati subito in alto per lavorare senza scorrere blocchi secondari.</p>
         </div>
         <div class="quotation-grid">
           ${renderField(i18n?.t('ui.description', 'Descrizione'), 'title', draft.title, { size: 'xl' })}
@@ -1931,6 +1973,21 @@ window.KedrixOneQuotationsModule = (() => {
 
   function renderTestata(draft, state, i18n) {
     const dirs = directories(state);
+    const summaryBlock = renderCollapsibleCard(
+      'Riepilogo rapido',
+      'Numero, cliente, profilo e dati testata secondari sempre richiamabili senza occupare spazio operativo.',
+      `<div class="quotation-secondary-stack">
+        <div class="quotation-header-banner">${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One · Quotazioni', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale visualizzato in testata modulo e stampa', meta: companyMeta(state, draft) }) || ''}</div>
+        ${renderSummary(draft)}
+      </div>`,
+      { open: false, compact: true }
+    );
+    const crmBlock = renderCollapsibleCard(
+      'CRM e follow-up feedback',
+      'Sezione secondaria: resta disponibile ma non blocca l’inizio del lavoro sulla quotazione.',
+      renderCrmFollowUpCard(draft, state),
+      { open: false }
+    );
     return `
       <section class="panel quotation-editor-panel">
         <div class="panel-head">
@@ -1945,12 +2002,15 @@ window.KedrixOneQuotationsModule = (() => {
             <button class="btn" type="button" data-quotation-save-close>${U.escapeHtml(i18n?.t('ui.saveAndClose', 'Salva e chiudi'))}</button>
           </div>
         </div>
-        ${Branding?.renderBanner?.(state, { eyebrow: 'Kedrix One · Quotazioni', title: String(state?.companyConfig?.name || 'Kedrix One').trim(), subtitle: 'Header aziendale visualizzato in testata modulo e stampa', meta: companyMeta(state, draft) }) || ''}
-        ${profileButtons(draft.serviceProfile)}
-        ${renderSummary(draft)}
-        ${renderServiceSpecificFields(draft, state)}
-        ${renderCommonFields(state, draft, dirs, i18n)}
-        ${renderCrmFollowUpCard(draft, state)}
+        <div class="quotation-header-stack">
+          ${profileButtons(draft.serviceProfile)}
+          <div class="quotation-operational-stack">
+            ${renderCommonFields(state, draft, dirs, i18n)}
+            ${renderServiceSpecificFields(draft, state)}
+          </div>
+          ${summaryBlock}
+          ${crmBlock}
+        </div>
       </section>`;
   }
 
@@ -2101,6 +2161,7 @@ window.KedrixOneQuotationsModule = (() => {
 
   function render(state, options = {}) {
     const { i18n } = options;
+    ensureQuotationUiStyle();
     ensureState(state);
     const selectedPractice = typeof options.getSelectedPractice === 'function' ? options.getSelectedPractice() : null;
     return `
