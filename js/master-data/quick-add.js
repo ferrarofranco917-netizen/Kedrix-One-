@@ -222,6 +222,10 @@ window.KedrixOneMasterDataQuickAdd = (() => {
     moduleState.formDrafts[entityKey] = MasterDataEntities && typeof MasterDataEntities.createFormDraft === 'function'
       ? MasterDataEntities.createFormDraft(entityKey)
       : { id: '', value: '', description: '', city: '' };
+    const initialValue = String(context.initialValue || '').trim();
+    if (initialValue && moduleState.formDrafts[entityKey] && typeof moduleState.formDrafts[entityKey] === 'object' && !String(moduleState.formDrafts[entityKey].value || '').trim()) {
+      moduleState.formDrafts[entityKey].value = initialValue;
+    }
     moduleState.quickAddContext = {
       entityKey,
       fieldName: normalizedFieldName,

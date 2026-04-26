@@ -197,6 +197,73 @@
     });
   }
 
+  function getPracticeQuickAddInitialValue(fieldName) {
+    const normalizedFieldName = String(fieldName || '').trim() === 'client' ? 'clientName' : String(fieldName || '').trim();
+    const draft = state && state.draftPractice ? state.draftPractice : null;
+    if (!draft || !normalizedFieldName) return '';
+    if (normalizedFieldName === 'clientName') return String(draft.clientName || '').trim();
+    if (draft.dynamicData && Object.prototype.hasOwnProperty.call(draft.dynamicData, normalizedFieldName)) {
+      const value = draft.dynamicData[normalizedFieldName];
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'object') {
+        return String(value.displayValue || value.label || value.value || value.name || value.code || '').trim();
+      }
+      return String(value || '').trim();
+    }
+    return '';
+  }
+
+  function openPracticeQuickAddFromButton(quickAdd, event = null) {
+    if (!quickAdd) return false;
+    if (event && event.__kedrixQuickAddHandled) return true;
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.__kedrixQuickAddHandled = true;
+    }
+
+    const MasterDataQuickAdd = getMasterDataQuickAdd();
+    if (!MasterDataQuickAdd || typeof MasterDataQuickAdd.prepareQuickAdd !== 'function') {
+      toast(I18N.t('ui.masterDataQuickAddUnavailable', 'Quick add non disponibile per questo campo.'), 'warning');
+      return true;
+    }
+
+    const fieldName = String(quickAdd.dataset.quickAddField || '').trim();
+    if (!fieldName) {
+      toast(I18N.t('ui.masterDataQuickAddUnavailable', 'Quick add non disponibile per questo campo.'), 'warning');
+      return true;
+    }
+
+    if (typeof state._persistActivePracticeDraft === 'function') {
+      state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
+    }
+
+    const quickAddContext = MasterDataQuickAdd.prepareQuickAdd(state, {
+      fieldName,
+      initialValue: getPracticeQuickAddInitialValue(fieldName),
+      returnRoute: currentRoute(),
+      returnTab: state.practiceTab || 'practice',
+      returnSessionId: String(state.practiceWorkspace?.activeSessionId || '').trim(),
+      returnFocusField: fieldName,
+      returnFocusTab: fieldName === 'clientName' ? 'identity' : (state.practiceTab || 'practice'),
+      practiceReference: String(state.draftPractice?.generatedReference || state.draftPractice?.editingPracticeId || '').trim()
+    });
+
+    if (!quickAddContext) {
+      toast(I18N.t('ui.masterDataQuickAddUnavailable', 'Quick add non disponibile per questo campo.'), 'warning');
+      return true;
+    }
+
+    save();
+    if (currentRoute() === 'practices/workspace') {
+      openPracticeQuickAddOverlay({ sourceRoute: currentRoute() });
+      return true;
+    }
+
+    navigate('master-data', { preserveQuickAddContext: true });
+    return true;
+  }
+
   function renderPracticeQuickAddOverlay() {
     const MasterDataQuickAdd = getMasterDataQuickAdd();
     const quickAddContext = state.masterDataModule && state.masterDataModule.quickAddContext ? state.masterDataModule.quickAddContext : null;
@@ -2575,6 +2642,12 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     updateNumberingPreview();
   }
 
+  document.addEventListener('pointerdown', (event) => {
+    const quickAdd = event.target.closest('[data-quick-add-field]');
+    if (!quickAdd) return;
+    openPracticeQuickAddFromButton(quickAdd, event);
+  }, true);
+
   document.addEventListener('click', async (event) => {
     const sessionSwitch = event.target.closest('[data-practice-session-switch]');
     if (sessionSwitch) {
@@ -2623,31 +2696,8 @@ resetDocumentTypeOptions?.addEventListener('click', () => {
     }
 
     const quickAdd = event.target.closest('[data-quick-add-field]');
-    const MasterDataQuickAdd = getMasterDataQuickAdd();
-    if (quickAdd && MasterDataQuickAdd && typeof MasterDataQuickAdd.prepareQuickAdd === 'function') {
-      if (typeof state._persistActivePracticeDraft === 'function') {
-        state._persistActivePracticeDraft({ markDirty: true, refreshValidation: false, normalize: true });
-      }
-      const fieldName = String(quickAdd.dataset.quickAddField || '').trim();
-      const quickAddContext = MasterDataQuickAdd.prepareQuickAdd(state, {
-        fieldName,
-        returnRoute: currentRoute(),
-        returnTab: state.practiceTab || 'practice',
-        returnSessionId: String(state.practiceWorkspace?.activeSessionId || '').trim(),
-        returnFocusField: fieldName,
-        returnFocusTab: fieldName === 'clientName' ? 'identity' : (state.practiceTab || 'practice'),
-        practiceReference: String(state.draftPractice?.generatedReference || state.draftPractice?.editingPracticeId || '').trim()
-      });
-      if (!quickAddContext) {
-        toast(I18N.t('ui.masterDataQuickAddUnavailable', 'Quick add non disponibile per questo campo.'), 'warning');
-        return;
-      }
-      if (currentRoute() === 'practices/workspace') {
-        openPracticeQuickAddOverlay({ sourceRoute: currentRoute() });
-        return;
-      }
-      save();
-      navigate('master-data', { preserveQuickAddContext: true });
+    if (quickAdd) {
+      openPracticeQuickAddFromButton(quickAdd, event);
       return;
     }
 
