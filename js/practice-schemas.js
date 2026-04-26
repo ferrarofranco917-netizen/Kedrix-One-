@@ -384,7 +384,7 @@ window.KedrixOnePracticeSchemas = (() => {
     { name: 'fumigation', type: 'text', labelKey: 'ui.fumigation' },
     { name: 'salesOwner', type: 'text', labelKey: 'ui.salesOwner' },
     { name: 'additionalFigures', type: 'text', labelKey: 'ui.additionalFigures' },
-    { name: 'transporter', type: 'text', labelKey: 'ui.transporter' },
+    { name: 'transporter', type: 'text', labelKey: 'ui.transporter', suggestionKey: 'carriers' },
     { name: 'bolla', type: 'text', labelKey: 'ui.bolla' },
     { name: 'appraisalCession', type: 'text', labelKey: 'ui.appraisalCession' },
     { name: 'linkedTo', type: 'text', labelKey: 'ui.linkedTo', suggestionKey: 'warehouseLinks', hintKey: false },
